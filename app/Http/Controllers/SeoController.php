@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\FeedService;
+use App\Services\SeoService;
+use Illuminate\Http\Response;
+
+class SeoController extends Controller
+{
+    public function sitemap(SeoService $seo): Response
+    {
+        return response($seo->sitemapXml(), 200, ['Content-Type' => 'application/xml']);
+    }
+
+    public function robots(SeoService $seo): Response
+    {
+        return response($seo->robotsTxt(), 200, ['Content-Type' => 'text/plain']);
+    }
+
+    public function googleMerchantFeed(FeedService $feed): Response
+    {
+        return response($feed->googleMerchantXml(), 200, ['Content-Type' => 'application/xml']);
+    }
+
+    public function priceCheckFeed(FeedService $feed): Response
+    {
+        return response($feed->priceCheckCsv(), 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="urbanfocus-pricecheck.csv"',
+        ]);
+    }
+}

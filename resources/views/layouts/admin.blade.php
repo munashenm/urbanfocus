@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Admin') - Urban Focus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ asset('css/admin.css') }}" rel="stylesheet">
+</head>
+<body class="admin-body">
+    <div class="d-flex">
+        <aside class="admin-sidebar">
+            <div class="admin-brand">Urban Focus</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">Dashboard</a>
+                <a class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">Products</a>
+                <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">Categories</a>
+                <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">Orders</a>
+                <a class="nav-link {{ request()->routeIs('admin.import.*') ? 'active' : '' }}" href="{{ route('admin.import.index') }}">Import CSV</a>
+                <hr>
+                <a class="nav-link" href="{{ route('home') }}" target="_blank">View Store</a>
+                <form action="{{ route('logout') }}" method="POST">@csrf<button class="nav-link border-0 bg-transparent text-start w-100">Logout</button></form>
+            </nav>
+        </aside>
+        <div class="admin-content flex-grow-1">
+            <header class="admin-topbar d-flex justify-content-between align-items-center">
+                <h1 class="h4 mb-0">@yield('page_title', 'Dashboard')</h1>
+                <span>{{ auth()->user()->name }}</span>
+            </header>
+            <div class="p-4">
+                @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+                @if(session('warning'))<div class="alert alert-warning">{{ session('warning') }}</div>@endif
+                @yield('content')
+            </div>
+        </div>
+    </div>
+</body>
+</html>
