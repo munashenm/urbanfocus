@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Brand;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -23,11 +24,14 @@ class DatabaseSeeder extends Seeder
 
         $categories = [
             ['name' => 'Laptops & Notebooks', 'slug' => 'laptops-notebooks'],
+            ['name' => 'Desktops', 'slug' => 'desktops'],
             ['name' => 'Monitors & Displays', 'slug' => 'monitors-displays'],
             ['name' => 'Networking', 'slug' => 'networking'],
+            ['name' => 'Servers', 'slug' => 'servers'],
+            ['name' => 'Printers', 'slug' => 'printers'],
             ['name' => 'Software & Licensing', 'slug' => 'software-licensing'],
+            ['name' => 'Peripherals & Accessories', 'slug' => 'peripherals'],
             ['name' => 'Components & Storage', 'slug' => 'components-storage'],
-            ['name' => 'Peripherals', 'slug' => 'peripherals'],
         ];
 
         foreach ($categories as $index => $cat) {
@@ -69,5 +73,12 @@ class DatabaseSeeder extends Seeder
         }
 
         Setting::set('api_key', 'uf_'.Str::random(32), 'api');
+
+        foreach (['Dell', 'HP', 'Lenovo', 'Microsoft', 'Samsung', 'TP-Link', 'Logitech', 'LG'] as $i => $brandName) {
+            Brand::firstOrCreate(
+                ['slug' => Str::slug($brandName)],
+                ['name' => $brandName, 'sort_order' => $i, 'is_active' => true]
+            );
+        }
     }
 }

@@ -20,7 +20,7 @@
     </div>
 </div>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top shadow-sm site-header">
     <div class="container">
         <a class="site-logo navbar-brand py-0" href="{{ route('home') }}">
             <img src="{{ asset('images/logo.png') }}" alt="Urban Focus — IT Products & Software" width="200" height="42">
@@ -29,28 +29,60 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="mainNav">
-            <form class="d-flex mx-lg-4 flex-grow-1 my-3 my-lg-0" action="{{ route('shop.index') }}" method="GET" role="search">
-                <input class="form-control search-input" type="search" name="q" placeholder="Search products, brands, SKU..." value="{{ request('q') }}" aria-label="Search products">
-                <button class="btn btn-primary ms-2 px-3" type="submit" aria-label="Search">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
-                </button>
-            </form>
+            <div class="search-wrap mx-lg-3 flex-grow-1 my-3 my-lg-0 position-relative">
+                <form action="{{ route('shop.index') }}" method="GET" role="search" id="searchForm">
+                    <div class="input-group">
+                        <input class="form-control search-input" type="search" name="q" id="searchInput"
+                               placeholder="Search by name, brand, SKU, model..." value="{{ request('q') }}"
+                               autocomplete="off" aria-label="Search products" data-suggest-url="{{ route('search.suggest') }}">
+                        <button class="btn btn-primary px-3" type="submit" aria-label="Search">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                        </button>
+                    </div>
+                </form>
+                <div id="searchSuggestions" class="search-suggestions d-none"></div>
+            </div>
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Home</a></li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {{ request()->routeIs('shop.*') || request()->routeIs('categories.*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown">Shop</a>
+                <li class="nav-item dropdown mega-dropdown">
+                    <a class="nav-link dropdown-toggle {{ request()->routeIs('shop.*') || request()->routeIs('categories.*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside">Shop</a>
+                    <div class="dropdown-menu mega-menu shadow border-0 p-0">
+                        <div class="container py-4">
+                            <div class="row g-4">
+                                @foreach($megaMenuCategories ?? [] as $col)
+                                    <div class="col-6 col-md-4 col-lg-3">
+                                        <a href="{{ $col['url'] }}" class="mega-menu-heading">{{ $col['label'] }}</a>
+                                        @if(count($col['children']))
+                                            <ul class="list-unstyled mega-menu-links mt-2">
+                                                @foreach(array_slice($col['children'], 0, 5) as $child)
+                                                    <li><a href="{{ $child['url'] }}">{{ $child['name'] }}</a></li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="border-top mt-3 pt-3 d-flex flex-wrap gap-2">
+                                <a href="{{ route('shop.index') }}" class="btn btn-sm btn-primary">All Products</a>
+                                <a href="{{ route('b2b.quote') }}" class="btn btn-sm btn-outline-primary">Request Quote</a>
+                                <a href="{{ route('b2b.rfq') }}" class="btn btn-sm btn-outline-secondary">Upload RFQ</a>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="nav-item dropdown d-none d-lg-block">
+                    <a class="nav-link dropdown-toggle {{ request()->routeIs('b2b.*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown">Business</a>
                     <ul class="dropdown-menu shadow border-0">
-                        <li><a class="dropdown-item" href="{{ route('shop.index') }}">All Products</a></li>
-                        @foreach($navCategories ?? [] as $cat)
-                            <li><a class="dropdown-item" href="{{ route('categories.show', $cat) }}">{{ $cat->name }}</a></li>
-                        @endforeach
+                        <li><a class="dropdown-item" href="{{ route('b2b.quote') }}">Request a Quote</a></li>
+                        <li><a class="dropdown-item" href="{{ route('b2b.rfq') }}">Upload RFQ</a></li>
+                        <li><a class="dropdown-item" href="{{ route('b2b.procurement') }}">Corporate Procurement</a></li>
+                        <li><a class="dropdown-item" href="{{ route('b2b.source') }}">Source a Product</a></li>
                     </ul>
                 </li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">About</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact</a></li>
                 <li class="nav-item ms-lg-2">
                     <a class="btn btn-outline-primary position-relative px-3" href="{{ route('cart.index') }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-1" viewBox="0 0 16 16"><path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
                         Cart
                         @php $cartCount = app(\App\Services\CartService::class)->count(); @endphp
                         @if($cartCount > 0)

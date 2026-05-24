@@ -57,6 +57,7 @@
     @include('partials.footer')
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="{{ asset('js/search.js') }}" defer></script>
     @stack('scripts')
 </body>
 </html>

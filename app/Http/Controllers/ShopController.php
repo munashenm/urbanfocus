@@ -18,6 +18,7 @@ class ShopController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%")
                     ->orWhere('brand', 'like', "%{$search}%")
+                    ->orWhere('model_number', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
             });
         }

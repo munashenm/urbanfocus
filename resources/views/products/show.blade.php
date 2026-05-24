@@ -28,16 +28,26 @@
         <div class="col-lg-6">
             <div class="product-detail-image">
                 @if($product->primary_image_url)
-                    <img src="{{ $product->primary_image_url }}" alt="{{ $product->name }}" width="500" height="500">
+                    <img src="{{ $product->primary_image_url }}" alt="{{ $product->name }}" width="500" height="500" loading="eager">
                 @else
                     <div class="py-5 text-muted">No image available</div>
                 @endif
             </div>
+            @if($product->images->count() > 1)
+                <div class="d-flex gap-2 mt-3 flex-wrap product-thumbs">
+                    @foreach($product->images as $img)
+                        <img src="{{ asset('storage/'.$img->path) }}" alt="" width="72" height="72" loading="lazy" class="product-thumb">
+                    @endforeach
+                </div>
+            @endif
         </div>
         <div class="col-lg-6">
-            @if($product->brand)<div class="text-muted small text-uppercase">{{ $product->brand }}</div>@endif
+            @if($product->brand)<div class="product-brand mb-1">{{ $product->brand }}</div>@endif
             <h1 class="h2 fw-bold">{{ $product->name }}</h1>
-            @if($product->sku)<p class="text-muted small">SKU: {{ $product->sku }}</p>@endif
+            <div class="d-flex flex-wrap gap-3 small text-muted mb-3">
+                @if($product->sku)<span>SKU: <strong>{{ $product->sku }}</strong></span>@endif
+                @if($product->model_number)<span>Model: <strong>{{ $product->model_number }}</strong></span>@endif
+            </div>
 
             <div class="my-3">
                 @if($product->is_on_sale)
@@ -47,37 +57,69 @@
                 <span class="text-muted small"> incl. VAT</span>
             </div>
 
-            <p class="{{ $product->isAvailable() ? 'text-success' : 'text-danger' }} fw-semibold">
-                {{ $product->isAvailable() ? 'In Stock' : 'Out of Stock' }}
-            </p>
+            <div class="product-meta-cards mb-4">
+                <div class="product-meta-card">
+                    <span class="label">Availability</span>
+                    <span class="{{ $product->isAvailable() ? 'text-success' : 'text-danger' }} fw-semibold">
+                        {{ $product->isAvailable() ? 'In Stock' : 'Out of Stock' }}
+                    </span>
+                </div>
+                <div class="product-meta-card">
+                    <span class="label">Delivery</span>
+                    <span>{{ $product->deliveryEstimate() }}</span>
+                </div>
+                <div class="product-meta-card">
+                    <span class="label">Warranty</span>
+                    <span>{{ $product->warrantyLabel() }}</span>
+                </div>
+            </div>
 
             @if($product->short_description)
                 <p>{{ $product->short_description }}</p>
             @endif
 
-            @if($product->isAvailable())
-                <form action="{{ route('cart.add', $product) }}" method="POST" class="d-flex gap-2 align-items-center my-4">
-                    @csrf
-                    <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" class="form-control" style="width:80px">
-                    <button type="submit" class="btn btn-primary btn-lg flex-grow-1">Add to Cart</button>
-                </form>
-            @endif
+            <div class="d-flex flex-wrap gap-2 my-4">
+                @if($product->isAvailable())
+                    <form action="{{ route('cart.add', $product) }}" method="POST" class="d-flex gap-2 align-items-center">
+                        @csrf
+                        <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" class="form-control" style="width:80px">
+                        <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
+                    </form>
+                @endif
+                <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg">Request Bulk Quote</a>
+            </div>
 
             <div class="border-top pt-3 small text-muted">
                 <p class="mb-1">Free shipping on orders over R {{ number_format(config('shipping.free_threshold'), 0) }}</p>
-                <p class="mb-0">Questions? Call <a href="tel:0875501813">087 550 1813</a></p>
+                <p class="mb-0">Can't find this item? <a href="{{ route('b2b.source') }}">Let us source it for you</a> · Call <a href="tel:0875501813">087 550 1813</a></p>
             </div>
         </div>
     </div>
 
-    @if($product->description)
-    <div class="row mt-5">
-        <div class="col-lg-8">
-            <h2 class="h4 mb-3">Product Description</h2>
-            <div class="product-description">{!! $product->description !!}</div>
+    <div class="row mt-5 g-4">
+        <div class="col-lg-7">
+            @if($product->description)
+                <div class="checkout-card mb-4">
+                    <h2 class="h5 fw-bold mb-3">Description</h2>
+                    <div class="product-description">{!! $product->description !!}</div>
+                </div>
+            @endif
+        </div>
+        <div class="col-lg-5">
+            @if(count($specs = $product->specificationsList()))
+                <div class="checkout-card">
+                    <h2 class="h5 fw-bold mb-3">Specifications</h2>
+                    <table class="table table-sm spec-table mb-0">
+                        <tbody>
+                            @foreach($specs as $key => $value)
+                                <tr><th scope="row">{{ $key }}</th><td>{{ $value }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         </div>
     </div>
-    @endif
 
     @if($relatedProducts->count())
     <section class="mt-5 pt-4 border-top">
@@ -85,6 +127,17 @@
         <div class="row g-4">
             @foreach($relatedProducts as $related)
                 <div class="col-6 col-md-3">@include('partials.product-card', ['product' => $related])</div>
+            @endforeach
+        </div>
+    </section>
+    @endif
+
+    @if($accessories->count())
+    <section class="mt-5 pt-4 border-top">
+        <h2 class="section-title">Accessories &amp; Add-ons</h2>
+        <div class="row g-4">
+            @foreach($accessories as $accessory)
+                <div class="col-6 col-md-3">@include('partials.product-card', ['product' => $accessory])</div>
             @endforeach
         </div>
     </section>

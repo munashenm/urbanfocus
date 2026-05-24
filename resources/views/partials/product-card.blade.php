@@ -5,8 +5,8 @@
         @else
             <div class="product-placeholder d-flex align-items-center justify-content-center">No image</div>
         @endif
-        @if($product->is_on_sale)
-            <span class="badge-sale">Sale</span>
+        @if($product->is_on_sale || (!empty($product->is_deal)))
+            <span class="badge-sale">{{ $product->deal_label ?: 'Sale' }}</span>
         @endif
     </a>
     <div class="product-card-body">

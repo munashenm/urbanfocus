@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\View\View;
 
@@ -21,9 +22,24 @@ class ProductController extends Controller
             ->take(4)
             ->get();
 
+        $accessories = Product::with('images')
+            ->where('is_active', true)
+            ->where('id', '!=', $product->id)
+            ->where(function ($q) use ($product) {
+                $peripheral = Category::where('slug', 'peripherals')->first();
+                if ($peripheral) {
+                    $q->where('category_id', $peripheral->id);
+                }
+                if ($product->brand) {
+                    $q->orWhere('brand', $product->brand);
+                }
+            })
+            ->take(4)
+            ->get();
+
         $schema = $product->toSchemaArray();
         $breadcrumbSchema = $product->toBreadcrumbSchema();
 
-        return view('products.show', compact('product', 'relatedProducts', 'schema', 'breadcrumbSchema'));
+        return view('products.show', compact('product', 'relatedProducts', 'accessories', 'schema', 'breadcrumbSchema'));
     }
 }

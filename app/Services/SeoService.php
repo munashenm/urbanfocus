@@ -31,7 +31,7 @@ class SeoService
                 'priority' => '0.6',
             ];
 
-            foreach (['about', 'shipping', 'privacy', 'terms'] as $page) {
+            foreach (['about', 'shipping', 'privacy', 'terms', 'b2b.quote', 'b2b.rfq', 'b2b.procurement'] as $page) {
                 $urls[] = [
                     'loc' => route($page),
                     'changefreq' => 'monthly',

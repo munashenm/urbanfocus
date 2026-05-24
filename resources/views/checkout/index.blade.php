@@ -83,6 +83,11 @@
                     @endforeach
                 </div>
 
+                <div class="checkout-card mb-4">
+                    <h2 class="h5 fw-bold mb-3">Coupon Code</h2>
+                    <input type="text" name="coupon_code" class="form-control" value="{{ old('coupon_code') }}" placeholder="Enter coupon code">
+                </div>
+
                 <div class="checkout-card">
                     <h2 class="h5 fw-bold mb-3">Payment Method</h2>
                     <div class="form-check mb-2">

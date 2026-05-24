@@ -40,6 +40,7 @@ class ProductController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateProduct($request);
+        $validated = $this->normalizeProductFields($validated);
         $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
 
         $product = Product::create($validated);
@@ -59,6 +60,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): RedirectResponse
     {
         $validated = $this->validateProduct($request, $product->id);
+        $validated = $this->normalizeProductFields($validated);
         $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
 
         $product->update($validated);
@@ -83,6 +85,7 @@ class ProductController extends Controller
         return $request->validate([
             'category_id' => 'nullable|exists:categories,id',
             'sku' => 'nullable|string|max:100|unique:products,sku,'.$id,
+            'model_number' => 'nullable|string|max:100',
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:products,slug,'.$id,
             'short_description' => 'nullable|string',
@@ -98,13 +101,43 @@ class ProductController extends Controller
             'google_product_category' => 'nullable|string|max:255',
             'weight' => 'nullable|numeric|min:0',
             'dimensions' => 'nullable|string|max:100',
+            'warranty_months' => 'nullable|integer|min:0|max:120',
+            'delivery_days' => 'nullable|integer|min:1|max:60',
+            'specifications' => 'nullable|string',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords' => 'nullable|string|max:255',
             'is_featured' => 'boolean',
+            'is_deal' => 'boolean',
+            'deal_label' => 'nullable|string|max:50',
             'is_active' => 'boolean',
             'images.*' => 'nullable|image|max:5120',
         ]);
+    }
+
+    protected function normalizeProductFields(array $data): array
+    {
+        if (isset($data['specifications']) && is_string($data['specifications'])) {
+            $raw = trim($data['specifications']);
+            if ($raw === '') {
+                $data['specifications'] = null;
+            } elseif ($decoded = json_decode($raw, true)) {
+                $data['specifications'] = $decoded;
+            } else {
+                $specs = [];
+                foreach (preg_split('/\r\n|\r|\n/', $raw) as $line) {
+                    if (str_contains($line, ':')) {
+                        [$key, $value] = array_map('trim', explode(':', $line, 2));
+                        if ($key !== '') {
+                            $specs[$key] = $value;
+                        }
+                    }
+                }
+                $data['specifications'] = $specs ?: null;
+            }
+        }
+
+        return $data;
     }
 
     protected function handleImages(Request $request, Product $product): void

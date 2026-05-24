@@ -6,24 +6,31 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\B2bController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StorageController;
+use App\Http\Controllers\Admin\BannerController as AdminBannerController;
+use App\Http\Controllers\Admin\BrandController as AdminBrandController;
 use App\Http\Controllers\Admin\CatalogController as AdminCatalogController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\QuoteController as AdminQuoteController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/search/suggest', [SearchController::class, 'suggest'])->name('search.suggest');
 Route::get('/category/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 
@@ -47,6 +54,17 @@ Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/shipping-returns', [PageController::class, 'shipping'])->name('shipping');
 Route::get('/privacy-policy', [PageController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [PageController::class, 'terms'])->name('terms');
+
+Route::prefix('b2b')->name('b2b.')->group(function () {
+    Route::get('/quote', [B2bController::class, 'quote'])->name('quote');
+    Route::get('/rfq', [B2bController::class, 'rfq'])->name('rfq');
+    Route::get('/procurement', [B2bController::class, 'procurement'])->name('procurement');
+    Route::get('/source-product', [B2bController::class, 'source'])->name('source');
+    Route::post('/submit', [B2bController::class, 'store'])->name('store');
+});
+
+Route::get('/request-quote', fn () => redirect()->route('b2b.quote'))->name('quote.request');
+Route::get('/upload-rfq', fn () => redirect()->route('b2b.rfq'))->name('rfq.upload');
 
 Route::get('/storage/{path}', [StorageController::class, 'show'])->where('path', '.*')->name('storage.serve');
 
@@ -85,4 +103,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('import', fn () => redirect()->route('admin.catalog.index'))->name('import.index');
     Route::post('import', [AdminCatalogController::class, 'import'])->name('import.store');
     Route::resource('users', AdminUserController::class)->except(['show']);
+    Route::resource('brands', AdminBrandController::class)->except(['show']);
+    Route::resource('banners', AdminBannerController::class)->except(['show']);
+    Route::resource('coupons', AdminCouponController::class)->except(['show']);
+    Route::get('quotes', [AdminQuoteController::class, 'index'])->name('quotes.index');
+    Route::get('quotes/{quote}', [AdminQuoteController::class, 'show'])->name('quotes.show');
+    Route::put('quotes/{quote}', [AdminQuoteController::class, 'update'])->name('quotes.update');
 });

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NewOrderNotification;
 use App\Mail\OrderConfirmation;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\CartService;
@@ -55,6 +57,7 @@ class CheckoutController extends Controller
             'shipping_method' => 'required|in:courier,free,manual_quote,collection',
             'payment_method' => 'required|in:payfast,eft',
             'customer_notes' => 'nullable|string|max:1000',
+            'coupon_code' => 'nullable|string|max:50',
             'same_as_billing' => 'nullable|boolean',
             'shipping_first_name' => 'nullable|string|max:100',
             'shipping_last_name' => 'nullable|string|max:100',
@@ -65,12 +68,23 @@ class CheckoutController extends Controller
         ]);
 
         $subtotal = $this->cart->subtotal();
-        $shippingData = $this->shipping->calculate($subtotal, $validated['shipping_method']);
-        $shippingCost = $shippingData['cost'];
-        $taxAmount = round(($subtotal + $shippingCost) * (config('app.vat_rate', 15) / 100), 2);
-        $total = $subtotal + $shippingCost + $taxAmount;
+        $discountAmount = 0.0;
+        $coupon = null;
 
-        $order = DB::transaction(function () use ($validated, $subtotal, $shippingData, $shippingCost, $taxAmount, $total) {
+        if (! empty($validated['coupon_code'])) {
+            $coupon = Coupon::where('code', strtoupper(trim($validated['coupon_code'])))->first();
+            if ($coupon && $coupon->isValidFor($subtotal)) {
+                $discountAmount = $coupon->discountAmount($subtotal);
+            }
+        }
+
+        $discountedSubtotal = max(0, $subtotal - $discountAmount);
+        $shippingData = $this->shipping->calculate($discountedSubtotal, $validated['shipping_method']);
+        $shippingCost = $shippingData['cost'];
+        $taxAmount = round(($discountedSubtotal + $shippingCost) * (config('app.vat_rate', 15) / 100), 2);
+        $total = $discountedSubtotal + $shippingCost + $taxAmount;
+
+        $order = DB::transaction(function () use ($validated, $subtotal, $discountAmount, $shippingData, $shippingCost, $taxAmount, $total, $coupon) {
             $order = Order::create([
                 'order_number' => Order::generateOrderNumber(),
                 'user_id' => auth()->id(),
@@ -79,6 +93,7 @@ class CheckoutController extends Controller
                 'payment_status' => 'pending',
                 'shipping_method' => $shippingData['method'],
                 'subtotal' => $subtotal,
+                'discount_amount' => $discountAmount,
                 'shipping_cost' => $shippingCost,
                 'tax_amount' => $taxAmount,
                 'total' => $total,
@@ -122,9 +137,14 @@ class CheckoutController extends Controller
             return $order;
         });
 
+        if ($coupon && $discountAmount > 0) {
+            $coupon->increment('used_count');
+        }
+
         $this->cart->clear();
 
         Mail::to($order->customer_email)->send(new OrderConfirmation($order));
+        Mail::to(config('app.email'))->send(new NewOrderNotification($order));
 
         if ($validated['payment_method'] === 'payfast') {
             return redirect()->route('checkout.payfast.redirect', $order);

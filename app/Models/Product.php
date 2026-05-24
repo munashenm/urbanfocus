@@ -15,6 +15,7 @@ class Product extends Model
     protected $fillable = [
         'category_id',
         'sku',
+        'model_number',
         'name',
         'slug',
         'short_description',
@@ -30,10 +31,15 @@ class Product extends Model
         'google_product_category',
         'weight',
         'dimensions',
+        'warranty_months',
+        'delivery_days',
+        'specifications',
         'meta_title',
         'meta_description',
         'meta_keywords',
         'is_featured',
+        'is_deal',
+        'deal_label',
         'is_active',
         'views',
         'woocommerce_id',
@@ -49,7 +55,9 @@ class Product extends Model
             'manage_stock' => 'boolean',
             'in_stock' => 'boolean',
             'is_featured' => 'boolean',
+            'is_deal' => 'boolean',
             'is_active' => 'boolean',
+            'specifications' => 'array',
         ];
     }
 
@@ -214,6 +222,51 @@ class Product extends Model
     public function isGoogleMerchantEligible(): bool
     {
         return $this->is_active && $this->googleMerchantIssues() === [];
+    }
+
+    public function deliveryEstimate(): string
+    {
+        $days = $this->delivery_days ?? config('shipping.default_delivery_days', 3);
+
+        if (! $this->isAvailable()) {
+            return 'Available on request';
+        }
+
+        return $days <= 2
+            ? '1–2 business days'
+            : $days.'–'.($days + 1).' business days';
+    }
+
+    public function warrantyLabel(): string
+    {
+        $months = $this->warranty_months ?? config('shipping.default_warranty_months', 12);
+
+        return $months >= 12
+            ? (int) ($months / 12).' year manufacturer warranty'
+            : $months.' month manufacturer warranty';
+    }
+
+    public function specificationsList(): array
+    {
+        $specs = $this->specifications ?? [];
+
+        if ($this->model_number) {
+            $specs = array_merge(['Model' => $this->model_number], $specs);
+        }
+        if ($this->brand) {
+            $specs = array_merge(['Brand' => $this->brand], $specs);
+        }
+        if ($this->sku) {
+            $specs['SKU'] = $this->sku;
+        }
+        if ($this->weight) {
+            $specs['Weight'] = $this->weight.' kg';
+        }
+        if ($this->dimensions) {
+            $specs['Dimensions'] = $this->dimensions;
+        }
+
+        return $specs;
     }
 
     public function toSchemaArray(): array

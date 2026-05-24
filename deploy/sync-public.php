@@ -70,6 +70,7 @@ echo "Target: {$targetPublic}\n\n";
 $total = 0;
 $total += copyDirectory($sourcePublic.'/images', $targetPublic.'/images');
 $total += copyDirectory($sourcePublic.'/css', $targetPublic.'/css');
+$total += copyDirectory($sourcePublic.'/js', $targetPublic.'/js');
 
 foreach (['favicon.png', 'robots.txt'] as $file) {
     $src = $sourcePublic.'/'.$file;

@@ -26,6 +26,9 @@
                 <ul class="list-unstyled footer-links">
                     <li><a href="{{ route('about') }}">About Us</a></li>
                     <li><a href="{{ route('contact') }}">Contact</a></li>
+                    <li><a href="{{ route('b2b.quote') }}">Request a Quote</a></li>
+                    <li><a href="{{ route('b2b.rfq') }}">Upload RFQ</a></li>
+                    <li><a href="{{ route('b2b.procurement') }}">Procurement</a></li>
                     <li><a href="{{ route('shipping') }}">Shipping &amp; Returns</a></li>
                 </ul>
             </div>
