@@ -17,8 +17,10 @@
                 <a class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">Products</a>
                 <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">Categories</a>
                 <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">Orders</a>
+                <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Users</a>
                 <a class="nav-link {{ request()->routeIs('admin.import.*') ? 'active' : '' }}" href="{{ route('admin.import.index') }}">Import CSV</a>
                 <hr>
+                <a class="nav-link {{ request()->routeIs('account.profile.*') ? 'active' : '' }}" href="{{ route('account.profile.edit') }}">My Profile</a>
                 <a class="nav-link" href="{{ route('home') }}" target="_blank">View Store</a>
                 <form action="{{ route('logout') }}" method="POST">@csrf<button class="nav-link border-0 bg-transparent text-start w-100">Logout</button></form>
             </nav>
@@ -26,11 +28,14 @@
         <div class="admin-content flex-grow-1">
             <header class="admin-topbar d-flex justify-content-between align-items-center">
                 <h1 class="h4 mb-0">@yield('page_title', 'Dashboard')</h1>
-                <span>{{ auth()->user()->name }}</span>
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{{ route('account.profile.edit') }}" class="small text-decoration-none">{{ auth()->user()->name }}</a>
+                </div>
             </header>
             <div class="p-4">
                 @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
                 @if(session('warning'))<div class="alert alert-warning">{{ session('warning') }}</div>@endif
+                @if(session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
                 @yield('content')
             </div>
         </div>

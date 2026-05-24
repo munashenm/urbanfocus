@@ -9,6 +9,7 @@
                 @if(auth()->user()->isAdmin())
                     <a href="{{ route('admin.dashboard') }}" class="text-white text-decoration-none me-3">Admin</a>
                 @endif
+                <a href="{{ route('account.profile.edit') }}" class="text-white text-decoration-none me-3">My Profile</a>
                 <a href="{{ route('account.dashboard') }}" class="text-white text-decoration-none me-3">My Account</a>
                 <form action="{{ route('logout') }}" method="POST" class="d-inline">@csrf<button class="btn btn-link btn-sm text-white p-0">Logout</button></form>
             @else
