@@ -9,11 +9,13 @@ class StorageController extends Controller
 {
     public function show(string $path): Response
     {
-        if (! Storage::disk('public')->exists($path)) {
+        $path = ltrim($path, '/');
+
+        $fullPath = $this->resolvePath($path);
+        if (! $fullPath) {
             abort(404);
         }
 
-        $fullPath = Storage::disk('public')->path($path);
         $mime = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
             'webp' => 'image/webp',
             'png' => 'image/png',
@@ -27,5 +29,19 @@ class StorageController extends Controller
             'Content-Type' => $mime,
             'Cache-Control' => 'public, max-age=31536000',
         ]);
+    }
+
+    protected function resolvePath(string $path): ?string
+    {
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::disk('public')->path($path);
+        }
+
+        $publicFile = public_path('storage/'.$path);
+        if (is_file($publicFile)) {
+            return $publicFile;
+        }
+
+        return null;
     }
 }

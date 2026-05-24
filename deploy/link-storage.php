@@ -53,8 +53,38 @@ if (@symlink($uploads, $link)) {
     echo "Symlink created:\n  {$link}\n  → {$uploads}\n";
 } else {
     echo "Could not create symlink (common on shared hosting).\n";
-    echo "Product images will still work via Laravel /storage/ route after git pull.\n";
-    echo "Ensure urbanfocus/storage/app/public is writable (755 or 775).\n";
+    echo "Copying files to public_html/storage instead...\n\n";
+
+    if (! is_dir($link)) {
+        mkdir($link, 0755, true);
+    }
+
+    $copied = 0;
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($uploads, RecursiveDirectoryIterator::SKIP_DOTS)
+    );
+
+    foreach ($iterator as $file) {
+        if (! $file->isFile()) {
+            continue;
+        }
+
+        $relative = substr($file->getPathname(), strlen($uploads) + 1);
+        $dest = $link.'/'.$relative;
+        $destDir = dirname($dest);
+
+        if (! is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+
+        if (! file_exists($dest)) {
+            copy($file->getPathname(), $dest);
+            $copied++;
+        }
+    }
+
+    echo "Copied {$copied} file(s) to public_html/storage.\n";
+    echo "New uploads also mirror there automatically after git pull.\n";
 }
 
 $productDirs = glob($uploads.'/products/*') ?: [];

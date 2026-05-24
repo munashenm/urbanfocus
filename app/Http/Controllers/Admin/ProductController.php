@@ -176,6 +176,10 @@ class ProductController extends Controller
         $sortOrder = $product->images()->max('sort_order') ?? 0;
 
         foreach ($request->file('images') as $index => $file) {
+            if (! $file || ! $file->isValid()) {
+                continue;
+            }
+
             $path = $this->images->storeProductImage($file, $product->id);
             ProductImage::create([
                 'product_id' => $product->id,

@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class ImageService
 {
@@ -22,7 +23,12 @@ class ImageService
 
         $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
         $path = $directory.'/'.$baseName.'.'.$extension;
-        Storage::disk('public')->put($path, file_get_contents($file->getRealPath()));
+        $contents = file_get_contents($file->getRealPath());
+        if ($contents === false) {
+            throw new RuntimeException('Could not read uploaded image.');
+        }
+
+        $this->storeBytes($path, $contents);
 
         return $path;
     }
@@ -30,6 +36,11 @@ class ImageService
     public function delete(string $path): void
     {
         Storage::disk('public')->delete($path);
+
+        $publicFile = public_path('storage/'.ltrim($path, '/'));
+        if (is_file($publicFile)) {
+            @unlink($publicFile);
+        }
     }
 
     protected function canConvertWebp(): bool
@@ -62,7 +73,7 @@ class ImageService
             return false;
         }
 
-        Storage::disk('public')->put($path, $webpData);
+        $this->storeBytes($path, $webpData);
         $this->storeThumbnail($webpData, $directory.'/'.$baseName.'_thumb.webp');
 
         return true;
@@ -102,7 +113,38 @@ class ImageService
         imagedestroy($thumb);
 
         if ($thumbData) {
-            Storage::disk('public')->put($thumbPath, $thumbData);
+            $this->storeBytes($thumbPath, $thumbData);
+        }
+    }
+
+    protected function storeBytes(string $relativePath, string $contents): void
+    {
+        $relativePath = ltrim($relativePath, '/');
+        Storage::disk('public')->makeDirectory(dirname($relativePath));
+
+        if (! Storage::disk('public')->put($relativePath, $contents)) {
+            throw new RuntimeException('Could not save image to storage/app/public.');
+        }
+
+        $this->mirrorToPublicPath($relativePath, $contents);
+
+        if (! Storage::disk('public')->exists($relativePath)) {
+            throw new RuntimeException('Image file missing after save.');
+        }
+    }
+
+    /** cPanel Plan B: also write under public_html/storage for direct web access. */
+    protected function mirrorToPublicPath(string $relativePath, string $contents): void
+    {
+        $target = public_path('storage/'.$relativePath);
+        $directory = dirname($target);
+
+        if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
+            throw new RuntimeException('Could not create public storage directory.');
+        }
+
+        if (file_put_contents($target, $contents) === false) {
+            throw new RuntimeException('Could not mirror image to public storage.');
         }
     }
 }
