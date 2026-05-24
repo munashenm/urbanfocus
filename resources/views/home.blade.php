@@ -14,6 +14,9 @@
                     <a href="{{ route('contact') }}" class="btn btn-outline-light btn-lg">Get a Quote</a>
                 </div>
             </div>
+            <div class="col-lg-5 hero-logo-wrap d-none d-lg-flex">
+                <img src="{{ asset('images/logo-stacked.png') }}" alt="Urban Focus" width="280" height="280">
+            </div>
         </div>
     </div>
 </section>

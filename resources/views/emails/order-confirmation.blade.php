@@ -2,8 +2,8 @@
 <html>
 <head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto">
-    <div style="background:#0c2340;color:#fff;padding:20px;text-align:center">
-        <h1 style="margin:0;font-size:24px">Urban Focus</h1>
+    <div style="background:#0a1628;color:#fff;padding:20px;text-align:center">
+        <img src="{{ config('app.url') }}/images/logo-stacked.png" alt="Urban Focus" style="max-height:60px;margin-bottom:8px">
     </div>
     <div style="padding:24px">
         <h2>Order Confirmation</h2>

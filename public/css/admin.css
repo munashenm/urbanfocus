@@ -1,6 +1,6 @@
 :root {
-    --admin-navy: #0c2340;
-    --admin-accent: #e87722;
+    --admin-navy: #0a1628;
+    --admin-blue: #0088ff;
 }
 
 .admin-body { background: #f0f2f5; margin: 0; }
@@ -12,9 +12,9 @@
     flex-shrink: 0;
 }
 .admin-brand {
-    padding: 1.5rem;
+    padding: 1.25rem 1.5rem;
     font-weight: 700;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .admin-sidebar .nav-link {
@@ -24,7 +24,7 @@
 .admin-sidebar .nav-link:hover,
 .admin-sidebar .nav-link.active {
     color: #fff;
-    background: rgba(255,255,255,0.08);
+    background: rgba(0,136,255,0.15);
 }
 .admin-topbar {
     background: #fff;
@@ -39,6 +39,14 @@
     border: 1px solid #dee2e6;
 }
 .stat-card .value { font-size: 1.75rem; font-weight: 700; color: var(--admin-navy); }
+.btn-primary {
+    background: var(--admin-blue);
+    border-color: var(--admin-blue);
+}
+.btn-primary:hover {
+    background: #0066cc;
+    border-color: #0066cc;
+}
 
 @media (max-width: 992px) {
     .admin-sidebar { width: 100%; min-height: auto; }

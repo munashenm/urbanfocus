@@ -2,7 +2,11 @@
     <div class="container py-5">
         <div class="row g-4">
             <div class="col-lg-4">
-                <h5 class="text-white mb-3">Urban Focus</h5>
+                <div class="footer-logo-badge">
+                    <a href="{{ route('home') }}" class="site-logo site-logo--footer">
+                        <img src="{{ asset('images/logo-stacked.png') }}" alt="Urban Focus" width="160" height="72">
+                    </a>
+                </div>
                 <p class="text-white-50">South African online supplier of IT products and software. Quality hardware, licensing, and professional support.</p>
             </div>
             <div class="col-md-4 col-lg-2">

@@ -22,8 +22,8 @@
 
 <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
     <div class="container">
-        <a class="navbar-brand fw-bold brand-logo" href="{{ route('home') }}">
-            <span class="brand-primary">Urban</span><span class="brand-accent">Focus</span>
+        <a class="site-logo navbar-brand py-0" href="{{ route('home') }}">
+            <img src="{{ asset('images/logo.png') }}" alt="Urban Focus — IT Products & Software" width="200" height="42">
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
             <span class="navbar-toggler-icon"></span>

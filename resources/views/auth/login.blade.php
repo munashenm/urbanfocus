@@ -7,7 +7,12 @@
     <div class="row justify-content-center">
         <div class="col-md-5">
             <div class="checkout-card">
-                <h1 class="h4 fw-bold mb-4">Login</h1>
+                <div class="text-center mb-4">
+                    <a href="{{ route('home') }}" class="site-logo site-logo--auth d-inline-flex">
+                        <img src="{{ asset('images/logo-stacked.png') }}" alt="Urban Focus" width="180" height="88">
+                    </a>
+                </div>
+                <h1 class="h4 fw-bold mb-4 text-center">Login</h1>
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
                     <div class="mb-3">
