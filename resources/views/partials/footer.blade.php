@@ -2,11 +2,9 @@
     <div class="container py-5">
         <div class="row g-4">
             <div class="col-lg-4">
-                <div class="footer-logo-badge">
-                    <a href="{{ route('home') }}" class="site-logo site-logo--footer">
-                        <img src="{{ asset('images/logo-stacked.png') }}" alt="Urban Focus" width="160" height="72">
-                    </a>
-                </div>
+                <a href="{{ route('home') }}" class="site-logo site-logo--footer d-inline-block mb-3">
+                    <img src="{{ asset('images/logo-stacked.png') }}" alt="Urban Focus" width="160" height="72">
+                </a>
                 <p class="text-white-50 mb-3">South African supplier of IT hardware, networking, components and software licensing. Professional support and nationwide delivery.</p>
                 <div class="payment-badges">
                     <span class="badge bg-white text-dark me-1 mb-1">PayFast</span>

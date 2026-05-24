@@ -5,17 +5,12 @@
 @section('content')
 <section class="hero">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-7">
-                <h1>IT Products &amp; Software for South Africa</h1>
-                <p class="lead mb-4">Urban Focus supplies quality hardware, networking, components and software licensing with fast delivery and professional support.</p>
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ route('shop.index') }}" class="btn btn-primary btn-lg">Shop Now</a>
-                    <a href="{{ route('contact') }}" class="btn btn-outline-light btn-lg">Get a Quote</a>
-                </div>
-            </div>
-            <div class="col-lg-5 hero-logo-wrap d-none d-lg-flex">
-                <img src="{{ asset('images/logo-stacked.png') }}" alt="Urban Focus" width="280" height="280">
+        <div class="hero-content">
+            <h1>IT Products &amp; Software for South Africa</h1>
+            <p class="lead mb-4">Urban Focus supplies quality hardware, networking, components and software licensing with fast delivery and professional support.</p>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ route('shop.index') }}" class="btn btn-primary btn-lg">Shop Now</a>
+                <a href="{{ route('contact') }}" class="btn btn-outline-light btn-lg">Get a Quote</a>
             </div>
         </div>
     </div>
