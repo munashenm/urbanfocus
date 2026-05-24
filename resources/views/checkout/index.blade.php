@@ -25,7 +25,11 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Company</label>
-                            <input type="text" name="billing_company" class="form-control" value="{{ old('billing_company') }}">
+                            <input type="text" name="billing_company" class="form-control" value="{{ old('billing_company', auth()->user()?->company_name) }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">VAT Number</label>
+                            <input type="text" name="billing_vat_number" class="form-control" value="{{ old('billing_vat_number', auth()->user()?->vat_number) }}" placeholder="Optional — for tax invoice">
                         </div>
                         <div class="col-12">
                             <label class="form-label">Address *</label>

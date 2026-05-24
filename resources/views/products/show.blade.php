@@ -81,6 +81,24 @@
                         <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" class="form-control" style="width:80px">
                         <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
                     </form>
+                @else
+                    <div class="checkout-card w-100">
+                        <h2 class="h6 fw-bold mb-2">Notify me when back in stock</h2>
+                        <form action="{{ route('products.stock-alert', $product) }}" method="POST" class="row g-2 align-items-end">
+                            @csrf
+                            <div class="col-md-4">
+                                <label class="form-label small mb-1">Email</label>
+                                <input type="email" name="email" class="form-control form-control-sm" value="{{ old('email', auth()->user()?->email) }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1">Name <span class="text-muted">(optional)</span></label>
+                                <input type="text" name="name" class="form-control form-control-sm" value="{{ old('name', auth()->user()?->name) }}">
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-outline-primary w-100">Notify Me</button>
+                            </div>
+                        </form>
+                    </div>
                 @endif
                 <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg">Request Bulk Quote</a>
             </div>

@@ -26,6 +26,14 @@
                         <label class="form-label">Phone</label>
                         <input type="text" name="phone" class="form-control" value="{{ old('phone', $user->phone) }}">
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" name="company_name" class="form-control" value="{{ old('company_name', $user->company_name) }}" placeholder="Optional — pre-fills at checkout">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">VAT Number</label>
+                        <input type="text" name="vat_number" class="form-control" value="{{ old('vat_number', $user->vat_number) }}" placeholder="Optional — for tax invoices">
+                    </div>
                     @if($user->is_admin)
                         <p class="small text-muted mb-3">Role: <span class="badge bg-primary">Administrator</span></p>
                     @endif

@@ -27,6 +27,7 @@ class Order extends Model
         'billing_first_name',
         'billing_last_name',
         'billing_company',
+        'billing_vat_number',
         'billing_address_line_1',
         'billing_address_line_2',
         'billing_city',

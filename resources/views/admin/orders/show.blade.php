@@ -25,7 +25,14 @@
         <div class="card"><div class="card-body">
             <h3 class="h6 fw-bold">Customer Details</h3>
             <p>{{ $order->customer_name }}<br>{{ $order->customer_email }}<br>{{ $order->customer_phone }}</p>
+            @if($order->billing_company)
+                <p>{{ $order->billing_company }}</p>
+            @endif
+            @if($order->billing_vat_number)
+                <p>VAT No: {{ $order->billing_vat_number }}</p>
+            @endif
             <p>{{ $order->billing_address_line_1 }}<br>{{ $order->billing_city }}, {{ $order->billing_province }} {{ $order->billing_postal_code }}</p>
+            <a href="{{ route('orders.invoice', $order) }}" class="btn btn-outline-primary btn-sm" target="_blank">View Invoice</a>
         </div></div>
     </div>
     <div class="col-lg-4">

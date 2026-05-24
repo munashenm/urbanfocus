@@ -15,4 +15,6 @@ return [
         'country' => 'South Africa',
     ],
     'careers_email' => env('CAREERS_EMAIL', 'sales@urbanfocus.co.za'),
+    'vat_number' => env('BUSINESS_VAT_NUMBER', ''),
+    'company_reg' => env('BUSINESS_COMPANY_REG', ''),
 ];

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\StockAlertController;
 use App\Http\Controllers\B2bController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\LoginController;
@@ -42,6 +44,7 @@ Route::get('/blog/{article:slug}', [BlogController::class, 'show'])->name('blog.
 Route::get('/search/suggest', [SearchController::class, 'suggest'])->name('search.suggest');
 Route::get('/category/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+Route::post('/product/{product:slug}/stock-alert', [StockAlertController::class, 'store'])->middleware('throttle:10,1')->name('products.stock-alert');
 
 Route::get('/storage/{path}', [StorageController::class, 'show'])->where('path', '.*')->name('storage.serve');
 
@@ -98,6 +101,8 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 });
+
+Route::middleware('auth')->get('/orders/{order}/invoice', [InvoiceController::class, 'show'])->name('orders.invoice');
 
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
