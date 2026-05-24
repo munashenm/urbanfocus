@@ -11,9 +11,9 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\Admin\CatalogController as AdminCatalogController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\ImportController as AdminImportController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -59,6 +59,7 @@ Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::get('/feeds/google-merchant.xml', [SeoController::class, 'googleMerchantFeed'])->name('feeds.google');
 Route::get('/feeds/pricecheck.csv', [SeoController::class, 'priceCheckFeed'])->name('feeds.pricecheck');
+Route::get('/feeds/bobshop.csv', [SeoController::class, 'priceCheckFeed'])->name('feeds.bobshop');
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
@@ -67,7 +68,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::put('orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
-    Route::get('import', [AdminImportController::class, 'index'])->name('import.index');
-    Route::post('import', [AdminImportController::class, 'store'])->name('import.store');
+    Route::get('catalog', [AdminCatalogController::class, 'index'])->name('catalog.index');
+    Route::post('catalog/import', [AdminCatalogController::class, 'import'])->name('catalog.import');
+    Route::get('catalog/export', [AdminCatalogController::class, 'export'])->name('catalog.export');
+    Route::get('catalog/export/woocommerce', [AdminCatalogController::class, 'exportWooCommerce'])->name('catalog.export.woocommerce');
+    Route::post('catalog/api-key', [AdminCatalogController::class, 'regenerateApiKey'])->name('catalog.api-key');
+    Route::get('import', fn () => redirect()->route('admin.catalog.index'))->name('import.index');
+    Route::post('import', [AdminCatalogController::class, 'import'])->name('import.store');
     Route::resource('users', AdminUserController::class)->except(['show']);
 });

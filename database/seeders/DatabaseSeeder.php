@@ -4,9 +4,11 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -65,5 +67,7 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]);
         }
+
+        Setting::set('api_key', 'uf_'.Str::random(32), 'api');
     }
 }

@@ -24,7 +24,7 @@
                 <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">Categories</a>
                 <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">Orders</a>
                 <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Users</a>
-                <a class="nav-link {{ request()->routeIs('admin.import.*') ? 'active' : '' }}" href="{{ route('admin.import.index') }}">Import CSV</a>
+                <a class="nav-link {{ request()->routeIs('admin.catalog.*') || request()->routeIs('admin.import.*') ? 'active' : '' }}" href="{{ route('admin.catalog.index') }}">Catalog &amp; Feeds</a>
                 <hr>
                 <a class="nav-link {{ request()->routeIs('account.profile.*') ? 'active' : '' }}" href="{{ route('account.profile.edit') }}">My Profile</a>
                 <a class="nav-link" href="{{ route('home') }}" target="_blank">View Store</a>

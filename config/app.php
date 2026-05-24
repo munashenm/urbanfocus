@@ -24,4 +24,5 @@ return [
     'email' => env('BUSINESS_EMAIL', 'sales@urbanfocus.co.za'),
     'address' => env('BUSINESS_ADDRESS', 'South Africa'),
     'vat_rate' => (float) env('VAT_RATE', 15),
+    'api_key' => env('API_KEY'),
 ];
