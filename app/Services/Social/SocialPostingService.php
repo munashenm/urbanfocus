@@ -31,6 +31,7 @@ class SocialPostingService
             return;
         }
 
+        $product->loadMissing('images');
         $payload = $this->formatter->product($product);
         $this->createPendingPosts($product, $payload);
     }
@@ -80,11 +81,19 @@ class SocialPostingService
         return compact('posted', 'failed', 'skipped');
     }
 
+    public function retryFailed(): int
+    {
+        return SocialPost::where('status', 'failed')->update([
+            'status' => 'pending',
+            'error_message' => null,
+        ]);
+    }
+
     /** @return array{queued: int} */
     public function queueAllActiveProducts(): array
     {
         $queued = 0;
-        Product::where('is_active', true)->orderBy('id')->chunk(50, function ($products) use (&$queued) {
+        Product::where('is_active', true)->with('images')->orderBy('id')->chunk(50, function ($products) use (&$queued) {
             foreach ($products as $product) {
                 $before = SocialPost::where('postable_type', Product::class)->where('postable_id', $product->id)->count();
                 $this->queueProduct($product);
@@ -106,7 +115,7 @@ class SocialPostingService
     protected function createPendingPosts(Product|Article $model, array $payload): void
     {
         foreach (array_keys(array_filter(config('social-posting.platforms', []))) as $platform) {
-            SocialPost::firstOrCreate(
+            $post = SocialPost::firstOrCreate(
                 [
                     'postable_type' => $model::class,
                     'postable_id' => $model->id,
@@ -119,6 +128,16 @@ class SocialPostingService
                     'image_url' => $payload['image_url'],
                 ]
             );
+
+            if ($post->status !== 'posted') {
+                $post->update([
+                    'status' => 'pending',
+                    'message' => $payload['message'],
+                    'link_url' => $payload['link_url'],
+                    'image_url' => $payload['image_url'],
+                    'error_message' => null,
+                ]);
+            }
         }
     }
 }

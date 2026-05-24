@@ -50,4 +50,11 @@ class SocialController extends Controller
 
         return back()->with('success', "Queued {$products['queued']} product(s) and {$articles} article(s) for social posting.");
     }
+
+    public function retryFailed(SocialPostingService $social): RedirectResponse
+    {
+        $count = $social->retryFailed();
+
+        return back()->with('success', "Reset {$count} failed post(s) to pending. Click Publish to try again.");
+    }
 }

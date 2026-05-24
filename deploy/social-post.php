@@ -36,3 +36,11 @@ if (! $social->isEnabled()) {
 
 $result = $social->publishPending();
 echo "Posted: {$result['posted']}\nFailed: {$result['failed']}\nSkipped: {$result['skipped']}\n";
+
+$recentFailed = App\Models\SocialPost::where('status', 'failed')->latest()->take(5)->get(['platform', 'error_message']);
+if ($recentFailed->isNotEmpty()) {
+    echo "\nRecent errors:\n";
+    foreach ($recentFailed as $row) {
+        echo "- {$row->platform}: {$row->error_message}\n";
+    }
+}

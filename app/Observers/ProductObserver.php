@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Services\Social\SocialPostingService;
 use App\Services\StockAlertService;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class ProductObserver
 {
@@ -17,27 +18,40 @@ class ProductObserver
 
     public function saved(Product $product): void
     {
-        if ($product->wasRecentlyCreated || $product->wasChanged('is_active')) {
-            $this->social->queueProduct($product);
-        }
+        $this->safe(fn () => $this->handleSocialQueue($product));
+        $this->safe(fn () => $this->handleStockAlerts($product));
+    }
 
-        if (! $product->manage_stock) {
+    protected function handleSocialQueue(Product $product): void
+    {
+        if (! $product->wasRecentlyCreated && ! $product->wasChanged('is_active')) {
             return;
         }
 
-        if ($product->wasChanged('stock_quantity')) {
-            $previous = (int) $product->getOriginal('stock_quantity');
+        $this->social->queueProduct($product);
+    }
 
-            if ($previous <= 0 && $product->stock_quantity > 0 && $product->is_active) {
-                $this->stockAlerts->notifyWaitlist($product);
-            }
+    protected function handleStockAlerts(Product $product): void
+    {
+        if ($product->wasRecentlyCreated || ! $product->manage_stock || ! $product->wasChanged('stock_quantity')) {
+            return;
+        }
 
-            $threshold = config('inventory.low_stock_threshold', 5);
-            if ($product->stock_quantity > 0
-                && $product->stock_quantity <= $threshold
-                && $previous > $threshold) {
-                $this->sendLowStockAlert($product);
-            }
+        if (! Schema::hasTable('stock_alerts')) {
+            return;
+        }
+
+        $previous = (int) $product->getOriginal('stock_quantity');
+
+        if ($previous <= 0 && $product->stock_quantity > 0 && $product->is_active) {
+            $this->stockAlerts->notifyWaitlist($product);
+        }
+
+        $threshold = config('inventory.low_stock_threshold', 5);
+        if ($product->stock_quantity > 0
+            && $product->stock_quantity <= $threshold
+            && $previous > $threshold) {
+            $this->sendLowStockAlert($product);
         }
     }
 
@@ -48,10 +62,15 @@ class ProductObserver
             return;
         }
 
+        Mail::to($email)->send(new LowStockAlert($product));
+    }
+
+    protected function safe(callable $callback): void
+    {
         try {
-            Mail::to($email)->send(new LowStockAlert($product));
+            $callback();
         } catch (\Throwable) {
-            // avoid breaking product save
+            // Observers must never block admin product saves.
         }
     }
 }

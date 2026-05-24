@@ -133,6 +133,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('articles', AdminArticleController::class)->except(['show']);
     Route::get('social', [AdminSocialController::class, 'index'])->name('social.index');
     Route::post('social/publish', [AdminSocialController::class, 'publish'])->name('social.publish');
+    Route::post('social/retry-failed', [AdminSocialController::class, 'retryFailed'])->name('social.retry-failed');
     Route::post('social/queue-all', [AdminSocialController::class, 'queueAll'])->name('social.queue-all');
     Route::get('quotes', [AdminQuoteController::class, 'index'])->name('quotes.index');
     Route::get('quotes/{quote}', [AdminQuoteController::class, 'show'])->name('quotes.show');

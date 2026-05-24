@@ -41,10 +41,16 @@ class ProductController extends Controller
     {
         $validated = $this->validateProduct($request);
         $validated = $this->normalizeProductFields($validated);
-        $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
+        $validated['slug'] = $this->uniqueSlug($validated['slug'] ?? null, $validated['name']);
 
-        $product = Product::create($validated);
-        $this->handleImages($request, $product);
+        try {
+            $product = Product::create($validated);
+            $this->handleImages($request, $product);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withInput()->with('error', 'Could not save product. '.$e->getMessage());
+        }
 
         return redirect()->route('admin.products.index')->with('success', 'Product created.');
     }
@@ -61,10 +67,16 @@ class ProductController extends Controller
     {
         $validated = $this->validateProduct($request, $product->id);
         $validated = $this->normalizeProductFields($validated);
-        $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
+        $validated['slug'] = $this->uniqueSlug($validated['slug'] ?? null, $validated['name'], $product->id);
 
-        $product->update($validated);
-        $this->handleImages($request, $product);
+        try {
+            $product->update($validated);
+            $this->handleImages($request, $product);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withInput()->with('error', 'Could not save product. '.$e->getMessage());
+        }
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated.');
     }
@@ -138,6 +150,21 @@ class ProductController extends Controller
         }
 
         return $data;
+    }
+
+    protected function uniqueSlug(?string $slug, string $name, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($slug ?: $name) ?: 'product';
+        $candidate = $base;
+        $suffix = 1;
+
+        while (Product::where('slug', $candidate)
+            ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+            ->exists()) {
+            $candidate = $base.'-'.$suffix++;
+        }
+
+        return $candidate;
     }
 
     protected function handleImages(Request $request, Product $product): void

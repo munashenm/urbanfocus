@@ -16,6 +16,10 @@
     @csrf
     <button type="submit" class="btn btn-primary">Publish Pending Posts Now</button>
 </form>
+<form action="{{ route('admin.social.retry-failed') }}" method="POST" class="d-inline mb-4 ms-2">
+    @csrf
+    <button type="submit" class="btn btn-outline-danger">Retry Failed Posts</button>
+</form>
 <form action="{{ route('admin.social.queue-all') }}" method="POST" class="d-inline mb-4 ms-2">
     @csrf
     <button type="submit" class="btn btn-outline-primary">Queue All Products &amp; Articles</button>
@@ -36,7 +40,8 @@
             <strong>X — <a href="{{ config('social.x') }}" target="_blank" rel="noopener">{{ '@urbanfocusza' }}</a></strong>
             <ul class="text-muted mb-0">
                 <li><a href="https://developer.x.com" target="_blank" rel="noopener">X Developer Portal</a></li>
-                <li><code>X_BEARER_TOKEN</code> (OAuth 2.0 with tweet.write)</li>
+                <li><strong>Recommended:</strong> <code>X_API_KEY</code>, <code>X_API_SECRET</code>, <code>X_ACCESS_TOKEN</code>, <code>X_ACCESS_TOKEN_SECRET</code></li>
+                <li>Or OAuth 2 user token: <code>X_BEARER_TOKEN</code> (not the app-only bearer token)</li>
             </ul>
         </div>
         <div class="col-md-6">

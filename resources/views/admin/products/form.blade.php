@@ -3,6 +3,16 @@
 @section('page_title', $product->exists ? 'Edit Product' : 'Add Product')
 
 @section('content')
+@if($errors->any())
+    <div class="alert alert-danger">
+        <strong>Please fix the following:</strong>
+        <ul class="mb-0 mt-2">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 <form action="{{ $product->exists ? route('admin.products.update', $product) : route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
     @if($product->exists) @method('PUT') @endif
