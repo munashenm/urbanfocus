@@ -57,12 +57,21 @@ try {
     exit;
 }
 
-$cacheFiles = glob($laravelRoot.'/bootstrap/cache/*.php') ?: [];
-foreach ($cacheFiles as $file) {
-    if (basename($file) !== '.gitignore' && @unlink($file)) {
-        echo "Deleted cache: {$file}\n";
+foreach (['config:clear', 'route:clear', 'view:clear', 'cache:clear'] as $cmd) {
+    try {
+        $kernel->call($cmd);
+        echo trim($kernel->output())."\n";
+    } catch (Throwable $e) {
+        echo "{$cmd} failed: ".$e->getMessage()."\n";
     }
 }
 
-echo "\nDone. Test /admin/brands and /b2b/quote\n";
+$cacheFiles = glob($laravelRoot.'/bootstrap/cache/*.php') ?: [];
+foreach ($cacheFiles as $file) {
+    if (basename($file) !== '.gitignore' && @unlink($file)) {
+        echo "Deleted cache: ".basename($file)."\n";
+    }
+}
+
+echo "\nDone. Test https://www.urbanfocus.co.za/\n";
 echo "DELETE public_html/migrate.php now.\n</pre>";

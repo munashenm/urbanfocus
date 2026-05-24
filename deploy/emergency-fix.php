@@ -59,11 +59,23 @@ if ($cleared === 0) {
     echo "No cache files (already clear).\n";
 }
 
-echo "\n=== Laravel log (last 25 lines) ===\n";
+echo "\n=== Laravel log (last error) ===\n";
 $logFile = $laravelRoot.'/storage/logs/laravel.log';
 if (file_exists($logFile)) {
     $lines = file($logFile, FILE_IGNORE_NEW_LINES) ?: [];
-    echo implode("\n", array_slice($lines, -25))."\n";
+    $errorStart = null;
+    for ($i = count($lines) - 1; $i >= 0; $i--) {
+        if (str_contains($lines[$i], '.ERROR:') || str_contains($lines[$i], 'local.ERROR')) {
+            $errorStart = $i;
+            break;
+        }
+    }
+    if ($errorStart !== null) {
+        echo implode("\n", array_slice($lines, $errorStart, min(8, count($lines) - $errorStart)))."\n";
+        echo "\n(... stack trace continues — see storage/logs/laravel.log)\n";
+    } else {
+        echo implode("\n", array_slice($lines, -10))."\n";
+    }
 } else {
     echo "No log file yet.\n";
 }
@@ -87,7 +99,27 @@ if ($missing) {
         $kernel->call('cache:clear');
         echo trim($kernel->output())."\n";
         echo "\n✓ Laravel booted OK. Caches cleared.\n";
-        echo "Try: https://www.urbanfocus.co.za/\n";
+
+        echo "\n=== Homepage test ===\n";
+        try {
+            $host = $_SERVER['HTTP_HOST'] ?? 'www.urbanfocus.co.za';
+            $http = $app->make(Illuminate\Contracts\Http\Kernel::class);
+            $request = Illuminate\Http\Request::create("https://{$host}/", 'GET', [], [], [], [
+                'HTTP_HOST' => $host,
+                'HTTPS' => 'on',
+            ]);
+            $response = $http->handle($request);
+            echo 'HTTP status: '.$response->getStatusCode()."\n";
+            if ($response->getStatusCode() < 400) {
+                echo "✓ Homepage OK — try https://{$host}/\n";
+            } else {
+                echo substr($response->getContent(), 0, 400)."\n";
+            }
+            $http->terminate($request, $response);
+        } catch (Throwable $e) {
+            echo "HOMEPAGE ERROR: ".$e->getMessage()."\n";
+            echo $e->getFile().':'.$e->getLine()."\n";
+        }
     } catch (Throwable $e) {
         echo "BOOT FAILED:\n";
         echo $e->getMessage()."\n\n";

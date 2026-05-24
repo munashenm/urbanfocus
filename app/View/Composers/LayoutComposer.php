@@ -14,16 +14,22 @@ class LayoutComposer
 
     public function compose(View $view): void
     {
-        $view->with('navCategories', Category::where('is_active', true)
-            ->whereNull('parent_id')
-            ->orderBy('sort_order')
-            ->take(12)
-            ->get());
+        try {
+            $view->with('navCategories', Category::where('is_active', true)
+                ->whereNull('parent_id')
+                ->orderBy('sort_order')
+                ->take(12)
+                ->get());
 
-        $view->with('megaMenuCategories', $this->search->megaMenuCategories());
+            $view->with('megaMenuCategories', $this->search->megaMenuCategories());
 
-        $view->with('navBrands', Schema::hasTable('brands')
-            ? Brand::where('is_active', true)->orderBy('sort_order')->take(12)->get()
-            : collect());
+            $view->with('navBrands', Schema::hasTable('brands')
+                ? Brand::where('is_active', true)->orderBy('sort_order')->take(12)->get()
+                : collect());
+        } catch (\Throwable) {
+            $view->with('navCategories', collect());
+            $view->with('megaMenuCategories', []);
+            $view->with('navBrands', collect());
+        }
     }
 }
