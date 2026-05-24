@@ -46,7 +46,7 @@ class HomeController extends Controller
             ->get();
 
         $brands = Schema::hasTable('brands')
-            ? Brand::where('is_active', true)->orderBy('sort_order')->take(12)->get()
+            ? Brand::where('is_active', true)->orderBy('sort_order')->take(20)->get()
             : collect();
 
         if ($brands->isEmpty()) {

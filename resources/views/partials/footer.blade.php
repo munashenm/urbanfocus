@@ -7,6 +7,7 @@
                 </a>
                 <p class="text-white-50 mb-3">South African supplier of IT hardware, networking, components and software licensing. Professional support and nationwide delivery.</p>
                 @include('partials.partner-logos', ['title' => 'Secure payments & delivery', 'class' => 'partner-logos--footer'])
+                @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-3'])
             </div>
             <div class="col-6 col-md-4 col-lg-2">
                 <h6 class="text-white mb-3">Shop</h6>

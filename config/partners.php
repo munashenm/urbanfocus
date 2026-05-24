@@ -2,15 +2,18 @@
 
 return [
     'payments' => [
-        ['name' => 'PayFast', 'logo' => 'images/partners/payfast.svg', 'alt' => 'PayFast secure payments'],
         ['name' => 'Visa', 'logo' => 'images/partners/visa.svg', 'alt' => 'Visa'],
         ['name' => 'Mastercard', 'logo' => 'images/partners/mastercard.svg', 'alt' => 'Mastercard'],
+        ['name' => 'Apple Pay', 'logo' => 'images/partners/apple-pay.svg', 'alt' => 'Apple Pay'],
+        ['name' => 'Google Pay', 'logo' => 'images/partners/google-pay.svg', 'alt' => 'Google Pay'],
         ['name' => 'Instant EFT', 'logo' => 'images/partners/instant-eft.svg', 'alt' => 'Instant EFT'],
-        ['name' => 'EFT', 'logo' => 'images/partners/eft.svg', 'alt' => 'Bank EFT'],
+        ['name' => 'SnapScan', 'logo' => 'images/partners/snapscan.svg', 'alt' => 'SnapScan'],
+        ['name' => 'Capitec Pay', 'logo' => 'images/partners/capitec-pay.svg', 'alt' => 'Capitec Pay'],
+        ['name' => 'PayFast', 'logo' => 'images/partners/payfast.svg', 'alt' => 'PayFast secure payments'],
     ],
 
     'shipping' => [
-        ['name' => 'Nationwide Courier', 'logo' => 'images/partners/courier.svg', 'alt' => 'Nationwide courier delivery'],
+        ['name' => 'The Courier Guy', 'logo' => 'images/partners/the-courier-guy.svg', 'alt' => 'The Courier Guy delivery'],
     ],
 
     'trust' => [
@@ -18,8 +21,17 @@ return [
         ['name' => 'VAT Invoice', 'logo' => 'images/partners/vat-invoice.svg', 'alt' => 'VAT invoices supplied'],
     ],
 
-    // Default brand logos for homepage carousel (used when brands table has no logo uploaded)
     'default_brands' => [
+        ['name' => 'Ubiquiti', 'logo' => 'images/brands/ubiquiti.svg', 'slug' => 'ubiquiti'],
+        ['name' => 'Cambium Networks', 'logo' => 'images/brands/cambium-networks.svg', 'slug' => 'cambium-networks'],
+        ['name' => 'Dahua', 'logo' => 'images/brands/dahua.svg', 'slug' => 'dahua'],
+        ['name' => 'Hikvision', 'logo' => 'images/brands/hikvision.svg', 'slug' => 'hikvision'],
+        ['name' => 'Sophos', 'logo' => 'images/brands/sophos.svg', 'slug' => 'sophos'],
+        ['name' => 'Starlink', 'logo' => 'images/brands/starlink.svg', 'slug' => 'starlink'],
+        ['name' => 'Yealink', 'logo' => 'images/brands/yealink.svg', 'slug' => 'yealink'],
+        ['name' => 'MikroTik', 'logo' => 'images/brands/mikrotik.svg', 'slug' => 'mikrotik'],
+        ['name' => 'Huawei', 'logo' => 'images/brands/huawei.svg', 'slug' => 'huawei'],
+        ['name' => 'Kuycon', 'logo' => 'images/brands/kuycon.svg', 'slug' => 'kuycon'],
         ['name' => 'Dell', 'logo' => 'images/brands/dell.svg', 'slug' => 'dell'],
         ['name' => 'HP', 'logo' => 'images/brands/hp.svg', 'slug' => 'hp'],
         ['name' => 'Lenovo', 'logo' => 'images/brands/lenovo.svg', 'slug' => 'lenovo'],
