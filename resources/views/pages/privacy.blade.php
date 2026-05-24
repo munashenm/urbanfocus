@@ -12,7 +12,6 @@
 <p>To process orders, provide support, improve our services, and comply with legal obligations. We do not sell your personal data.</p>
 <h2 class="h5 fw-bold mt-4">POPIA (South Africa)</h2>
 <p>We process personal information in accordance with the Protection of Personal Information Act. You may request access to or correction of your data by contacting <a href="mailto:sales@urbanfocus.co.za">sales@urbanfocus.co.za</a>.</p>
-<h2 class="h5 fw-bold mt-4">Contact</h2>
-<p>Questions about this policy: <a href="mailto:sales@urbanfocus.co.za">sales@urbanfocus.co.za</a></p>
+<p class="mt-4 mb-0">See also our dedicated <a href="{{ route('popia') }}">POPIA page</a> for information rights under South African law.</p>
 </div></div></div>
 @endsection

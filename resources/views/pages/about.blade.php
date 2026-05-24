@@ -37,9 +37,10 @@
         <div class="col-lg-4">
             <div class="checkout-card">
                 <h3 class="h5 fw-bold mb-3">Contact us</h3>
-                <p class="mb-2"><strong>Phone:</strong> <a href="tel:0875501813">087 550 1813</a></p>
-                <p class="mb-2"><strong>Email:</strong> <a href="mailto:sales@urbanfocus.co.za">sales@urbanfocus.co.za</a></p>
-                <p class="mb-3"><strong>Web:</strong> www.urbanfocus.co.za</p>
+                @include('partials.business-address', ['block' => true, 'showLabel' => false, 'class' => 'mb-3'])
+                <p class="mb-2"><strong>Phone:</strong> <a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phone') }}</a></p>
+                <p class="mb-2"><strong>Email:</strong> <a href="mailto:{{ config('business.email') }}">{{ config('business.email') }}</a></p>
+                <p class="mb-3"><strong>Hours:</strong> {{ config('business.hours') }}</p>
                 <a href="{{ route('contact') }}" class="btn btn-primary w-100">Send a Message</a>
             </div>
         </div>

@@ -6,39 +6,50 @@
                     <img src="{{ asset('images/logo-stacked.png') }}" alt="Urban Focus" width="160" height="72">
                 </a>
                 <p class="text-white-50 mb-3">South African supplier of IT hardware, networking, components and software licensing. Professional support and nationwide delivery.</p>
-                @include('partials.partner-logos', ['title' => 'Secure payments & delivery', 'class' => 'partner-logos--footer'])
-                @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-3'])
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <h6 class="text-white mb-3">Shop</h6>
-                <ul class="list-unstyled footer-links">
-                    <li><a href="{{ route('shop.index') }}">All Products</a></li>
-                    @foreach(($navCategories ?? collect())->take(5) as $cat)
-                        <li><a href="{{ route('categories.show', $cat) }}">{{ $cat->name }}</a></li>
-                    @endforeach
-                </ul>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <h6 class="text-white mb-3">Company</h6>
-                <ul class="list-unstyled footer-links">
-                    <li><a href="{{ route('about') }}">About Us</a></li>
-                    <li><a href="{{ route('contact') }}">Contact</a></li>
-                    <li><a href="{{ route('b2b.quote') }}">Request a Quote</a></li>
-                    <li><a href="{{ route('b2b.rfq') }}">Upload RFQ</a></li>
-                    <li><a href="{{ route('b2b.procurement') }}">Procurement</a></li>
-                    <li><a href="{{ route('shipping') }}">Shipping &amp; Returns</a></li>
-                    <li><a href="{{ route('orders.track') }}">Track Order</a></li>
-                    <li><a href="{{ route('blog.index') }}">Blog</a></li>
-                </ul>
-            </div>
-            <div class="col-md-4 col-lg-4">
+                @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-2 mb-4'])
                 <h6 class="text-white mb-3">Get in Touch</h6>
-                <ul class="list-unstyled footer-links mb-3">
-                    <li><a href="tel:0875501813">087 550 1813</a></li>
-                    <li><a href="mailto:sales@urbanfocus.co.za">sales@urbanfocus.co.za</a></li>
-                    <li><a href="https://www.urbanfocus.co.za">www.urbanfocus.co.za</a></li>
+                <ul class="list-unstyled footer-links mb-2">
+                    <li><a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phone') }}</a></li>
+                    <li><a href="mailto:{{ config('business.email') }}">{{ config('business.email') }}</a></li>
+                    @include('partials.business-address', ['showLabel' => false, 'class' => 'mt-2'])
                 </ul>
-                <p class="text-white-50 small mb-0">Mon–Fri 8:00–17:00 · Bulk &amp; quote orders welcome</p>
+                <p class="text-white-50 small mb-0">{{ config('business.hours') }}</p>
+            </div>
+
+            <div class="col-6 col-lg-2">
+                <h6 class="text-white mb-3">Quick Links</h6>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="{{ route('home') }}">Home</a></li>
+                    <li><a href="{{ route('shop.index') }}">Products</a></li>
+                    <li><a href="{{ route('brands.index') }}">Brands</a></li>
+                    <li><a href="{{ route('about') }}">About Us</a></li>
+                    <li><a href="{{ route('contact') }}">Contact Us</a></li>
+                </ul>
+            </div>
+
+            <div class="col-6 col-lg-2">
+                <h6 class="text-white mb-3">Information</h6>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="{{ route('privacy') }}">Privacy Policy</a></li>
+                    <li><a href="{{ route('terms') }}">Terms &amp; Conditions</a></li>
+                    <li><a href="{{ route('warranty') }}">Warranty Terms</a></li>
+                    <li><a href="{{ route('popia') }}">POPIA</a></li>
+                </ul>
+            </div>
+
+            <div class="col-6 col-lg-2">
+                <h6 class="text-white mb-3">Customer Service</h6>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="{{ route('contact') }}">Contact Us</a></li>
+                    <li><a href="{{ route('returns') }}">Returns</a></li>
+                </ul>
+            </div>
+
+            <div class="col-6 col-lg-2">
+                <h6 class="text-white mb-3">Careers</h6>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="{{ route('careers') }}">Work With Us</a></li>
+                </ul>
             </div>
         </div>
     </div>
@@ -47,7 +58,8 @@
             <span>&copy; {{ date('Y') }} Urban Focus. All rights reserved.</span>
             <div>
                 <a href="{{ route('privacy') }}" class="text-white-50 text-decoration-none me-3">Privacy</a>
-                <a href="{{ route('terms') }}" class="text-white-50 text-decoration-none">Terms</a>
+                <a href="{{ route('terms') }}" class="text-white-50 text-decoration-none me-3">Terms</a>
+                <a href="{{ route('popia') }}" class="text-white-50 text-decoration-none">POPIA</a>
             </div>
         </div>
     </div>

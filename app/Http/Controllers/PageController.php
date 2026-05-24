@@ -16,6 +16,26 @@ class PageController extends Controller
         return view('pages.shipping');
     }
 
+    public function returns(): View
+    {
+        return view('pages.returns');
+    }
+
+    public function warranty(): View
+    {
+        return view('pages.warranty');
+    }
+
+    public function popia(): View
+    {
+        return view('pages.popia');
+    }
+
+    public function careers(): View
+    {
+        return view('pages.careers');
+    }
+
     public function privacy(): View
     {
         return view('pages.privacy');

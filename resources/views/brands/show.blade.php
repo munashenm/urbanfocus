@@ -8,7 +8,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('shop.index') }}">Shop</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('brands.index') }}">Brands</a></li>
             <li class="breadcrumb-item active">{{ $brand->name }}</li>
         </ol>
     </nav>

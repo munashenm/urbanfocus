@@ -292,7 +292,7 @@
     "logo": "{{ asset('images/logo-stacked.png') }}",
     "email": "sales@urbanfocus.co.za",
     "telephone": "+27875501813",
-    "address": { "@type": "PostalAddress", "addressCountry": "ZA" },
+    "address": { "@type": "PostalAddress", "streetAddress": "{{ config('business.address.line1') }}", "addressLocality": "{{ config('business.address.city') }}", "addressRegion": "{{ config('business.address.province') }}", "addressCountry": "ZA" },
     "sameAs": [
         @if(config('social.facebook'))"{{ config('social.facebook') }}",@endif
         @if(config('social.x'))"{{ config('social.x') }}",@endif
@@ -312,6 +312,9 @@
     "telephone": "+27875501813",
     "address": {
         "@type": "PostalAddress",
+        "streetAddress": "{{ config('business.address.line1') }}",
+        "addressLocality": "{{ config('business.address.city') }}",
+        "addressRegion": "{{ config('business.address.province') }}",
         "addressCountry": "ZA"
     },
     "areaServed": "ZA",

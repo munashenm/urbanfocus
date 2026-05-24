@@ -18,16 +18,20 @@
                 <p class="text-muted">Our team typically responds within one business day.</p>
                 <ul class="list-unstyled mt-4 mb-4 contact-details">
                     <li class="mb-3">
+                        <strong class="d-block text-navy">Address</strong>
+                        @include('partials.business-address', ['inline' => true, 'class' => 'text-muted'])
+                    </li>
+                    <li class="mb-3">
                         <strong class="d-block text-navy">Phone</strong>
-                        <a href="tel:0875501813">087 550 1813</a>
+                        <a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phone') }}</a>
                     </li>
                     <li class="mb-3">
                         <strong class="d-block text-navy">Email</strong>
-                        <a href="mailto:sales@urbanfocus.co.za">sales@urbanfocus.co.za</a>
+                        <a href="mailto:{{ config('business.email') }}">{{ config('business.email') }}</a>
                     </li>
                     <li>
                         <strong class="d-block text-navy">Business hours</strong>
-                        Mon–Fri, 8:00–17:00
+                        {{ config('business.hours') }}
                     </li>
                 </ul>
                 <p class="small text-muted mb-0">For urgent orders, call us directly — we can assist with stock checks and manual courier quotes.</p>

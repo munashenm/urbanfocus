@@ -34,6 +34,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');
 Route::get('/brand/{brand:slug}', [BrandController::class, 'show'])->name('brands.show');
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{article:slug}', [BlogController::class, 'show'])->name('blog.show');
@@ -65,6 +66,10 @@ Route::post('/contact', [ContactController::class, 'store'])->middleware('thrott
 
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/shipping-returns', [PageController::class, 'shipping'])->name('shipping');
+Route::get('/returns', [PageController::class, 'returns'])->name('returns');
+Route::get('/warranty', [PageController::class, 'warranty'])->name('warranty');
+Route::get('/popia', [PageController::class, 'popia'])->name('popia');
+Route::get('/careers', [PageController::class, 'careers'])->name('careers');
 Route::get('/privacy-policy', [PageController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [PageController::class, 'terms'])->name('terms');
 
