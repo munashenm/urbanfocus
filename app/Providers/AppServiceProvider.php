@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Article;
+use App\Models\Product;
+use App\Observers\ArticleObserver;
+use App\Observers\ProductObserver;
 use App\View\Composers\LayoutComposer;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -24,5 +28,8 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
         Paginator::useBootstrapFive();
         View::composer(['partials.header', 'partials.footer'], LayoutComposer::class);
+
+        Product::observe(ProductObserver::class);
+        Article::observe(ArticleObserver::class);
     }
 }

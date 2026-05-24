@@ -18,6 +18,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StorageController;
+use App\Http\Controllers\Admin\SocialController as AdminSocialController;
 use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Admin\BannerController as AdminBannerController;
 use App\Http\Controllers\Admin\BrandController as AdminBrandController;
@@ -125,6 +126,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('coupons', AdminCouponController::class)->except(['show']);
     Route::post('articles/sync-news', [AdminArticleController::class, 'syncNews'])->name('articles.sync');
     Route::resource('articles', AdminArticleController::class)->except(['show']);
+    Route::get('social', [AdminSocialController::class, 'index'])->name('social.index');
+    Route::post('social/publish', [AdminSocialController::class, 'publish'])->name('social.publish');
+    Route::post('social/queue-all', [AdminSocialController::class, 'queueAll'])->name('social.queue-all');
     Route::get('quotes', [AdminQuoteController::class, 'index'])->name('quotes.index');
     Route::get('quotes/{quote}', [AdminQuoteController::class, 'show'])->name('quotes.show');
     Route::put('quotes/{quote}', [AdminQuoteController::class, 'update'])->name('quotes.update');

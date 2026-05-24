@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\Social\SocialPostingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -61,6 +62,9 @@ class ProductImportService
         $skipped = 0;
         $errors = [];
 
+        SocialPostingService::$suppress = true;
+
+        try {
         while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
             if ($this->isEmptyRow($row)) {
                 $skipped++;
@@ -79,6 +83,9 @@ class ProductImportService
             } catch (\Throwable $e) {
                 $errors[] = ($data['name'] ?? 'Unknown row').': '.$e->getMessage();
             }
+        }
+        } finally {
+            SocialPostingService::$suppress = false;
         }
 
         fclose($handle);
