@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Product image">
+  <rect width="400" height="400" fill="#f5f7fa"/>
+  <rect x="120" y="130" width="160" height="120" rx="8" fill="#e8edf3" stroke="#cbd5e1" stroke-width="2"/>
+  <circle cx="155" cy="165" r="14" fill="#cbd5e1"/>
+  <path d="M130 230 L175 190 L210 215 L270 170 L270 250 L130 250 Z" fill="#cbd5e1"/>
+  <text x="200" y="290" text-anchor="middle" fill="#94a3b8" font-family="Arial,sans-serif" font-size="14" font-weight="600">Urban Focus</text>
+</svg>

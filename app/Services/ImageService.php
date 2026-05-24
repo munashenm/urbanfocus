@@ -15,7 +15,7 @@ class ImageService
 
         if ($this->canConvertWebp()) {
             $webpPath = $directory.'/'.$baseName.'.webp';
-            if ($this->storeAsWebp($file, $webpPath)) {
+            if ($this->storeAsWebp($file, $webpPath, $directory, $baseName)) {
                 return $webpPath;
             }
         }
@@ -37,7 +37,7 @@ class ImageService
         return function_exists('imagewebp') && function_exists('imagecreatefromstring');
     }
 
-    protected function storeAsWebp(UploadedFile $file, string $path): bool
+    protected function storeAsWebp(UploadedFile $file, string $path, string $directory, string $baseName): bool
     {
         $contents = file_get_contents($file->getRealPath());
         if ($contents === false) {
@@ -63,7 +63,46 @@ class ImageService
         }
 
         Storage::disk('public')->put($path, $webpData);
+        $this->storeThumbnail($webpData, $directory.'/'.$baseName.'_thumb.webp');
 
         return true;
+    }
+
+    protected function storeThumbnail(string $imageData, string $thumbPath, int $maxWidth = 400): void
+    {
+        if (! function_exists('imagecreatefromstring')) {
+            return;
+        }
+
+        $image = @imagecreatefromstring($imageData);
+        if ($image === false) {
+            return;
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        if ($width <= $maxWidth) {
+            imagedestroy($image);
+
+            return;
+        }
+
+        $newWidth = $maxWidth;
+        $newHeight = (int) round($height * ($newWidth / $width));
+        $thumb = imagecreatetruecolor($newWidth, $newHeight);
+        imagealphablending($thumb, false);
+        imagesavealpha($thumb, true);
+        imagecopyresampled($thumb, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+        imagedestroy($image);
+
+        ob_start();
+        imagewebp($thumb, null, 80);
+        $thumbData = ob_get_clean();
+        imagedestroy($thumb);
+
+        if ($thumbData) {
+            Storage::disk('public')->put($thumbPath, $thumbData);
+        }
     }
 }

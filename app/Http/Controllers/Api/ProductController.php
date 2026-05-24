@@ -71,7 +71,7 @@ class ProductController extends Controller
             'short_description' => $product->short_description,
             'description' => strip_tags($product->description ?? ''),
             'image' => $product->primary_image_url,
-            'images' => $product->images->map(fn ($img) => asset('storage/'.$img->path))->values(),
+            'images' => $product->images->map(fn ($img) => storage_public_url($img->path))->values(),
             'meta_title' => $product->getAttributes()['meta_title'] ?? null,
             'meta_description' => $product->getAttributes()['meta_description'] ?? null,
         ];

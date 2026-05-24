@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 
 class SearchService
 {
@@ -12,38 +15,128 @@ class SearchService
         $query = trim($query);
 
         if (strlen($query) < 2) {
-            return [];
+            return ['products' => [], 'brands' => [], 'categories' => []];
         }
 
-        $products = Product::with(['category', 'images'])
-            ->where('is_active', true)
-            ->where(function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                    ->orWhere('sku', 'like', "%{$query}%")
-                    ->orWhere('brand', 'like', "%{$query}%")
-                    ->orWhere('model_number', 'like', "%{$query}%")
-                    ->orWhere('short_description', 'like', "%{$query}%")
-                    ->orWhereHas('category', fn ($c) => $c->where('name', 'like', "%{$query}%"));
-            })
-            ->orderByRaw('CASE WHEN name LIKE ? THEN 0 WHEN sku LIKE ? THEN 1 ELSE 2 END', ["{$query}%", "{$query}%"])
-            ->take($limit)
-            ->get();
+        $products = $this->productQuery($query)->take($limit)->get();
 
-        return $products->map(fn (Product $p) => [
-            'name' => $p->name,
-            'url' => route('products.show', $p),
-            'price' => 'R '.number_format($p->effective_price, 2),
-            'brand' => $p->brand,
-            'sku' => $p->sku,
-            'image' => $p->primary_image_url,
-            'in_stock' => $p->isAvailable(),
-        ])->all();
+        if ($products->isEmpty()) {
+            $products = $this->productQuery($query, fuzzy: true)->take($limit)->get();
+        }
+
+        $brands = Product::where('is_active', true)
+            ->whereNotNull('brand')
+            ->where('brand', 'like', "%{$query}%")
+            ->distinct()
+            ->pluck('brand')
+            ->take(4)
+            ->map(fn ($name) => [
+                'name' => $name,
+                'url' => route('shop.index', ['brand' => $name]),
+            ])
+            ->values()
+            ->all();
+
+        if (Schema::hasTable('brands')) {
+            $dbBrands = Brand::where('is_active', true)
+                ->where('name', 'like', "%{$query}%")
+                ->take(4)
+                ->get()
+                ->map(fn (Brand $b) => [
+                    'name' => $b->name,
+                    'url' => route('brands.show', $b),
+                ]);
+            $brands = collect($brands)->merge($dbBrands)->unique('name')->take(4)->values()->all();
+        }
+
+        $categories = Category::where('is_active', true)
+            ->where('name', 'like', "%{$query}%")
+            ->orderBy('sort_order')
+            ->take(4)
+            ->get()
+            ->map(fn (Category $c) => [
+                'name' => $c->name,
+                'url' => route('categories.show', $c),
+            ])
+            ->all();
+
+        return [
+            'products' => $products->map(fn (Product $p) => [
+                'name' => $p->name,
+                'url' => route('products.show', $p),
+                'price' => 'R '.number_format($p->effective_price, 2),
+                'brand' => $p->brand,
+                'sku' => $p->sku,
+                'image' => $p->display_image_url,
+                'in_stock' => $p->isAvailable(),
+            ])->all(),
+            'brands' => $brands,
+            'categories' => $categories,
+        ];
+    }
+
+    public function productQuery(string $search, bool $fuzzy = false): Builder
+    {
+        $search = trim($search);
+
+        return Product::with(['category', 'images'])
+            ->where('is_active', true)
+            ->where(function (Builder $q) use ($search, $fuzzy) {
+                if ($fuzzy) {
+                    $this->applyFuzzySearch($q, $search);
+                } else {
+                    $this->applySearch($q, $search);
+                }
+            })
+            ->orderByRaw('CASE WHEN name LIKE ? THEN 0 WHEN sku LIKE ? THEN 1 WHEN brand LIKE ? THEN 2 ELSE 3 END', [
+                "{$search}%",
+                "{$search}%",
+                "{$search}%",
+            ]);
+    }
+
+    public function applySearch(Builder $query, string $search): Builder
+    {
+        $terms = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [$search];
+
+        foreach ($terms as $term) {
+            if (strlen($term) < 2) {
+                continue;
+            }
+
+            $query->where(function (Builder $q) use ($term) {
+                $like = "%{$term}%";
+                $q->where('name', 'like', $like)
+                    ->orWhere('sku', 'like', $like)
+                    ->orWhere('brand', 'like', $like)
+                    ->orWhere('model_number', 'like', $like)
+                    ->orWhere('short_description', 'like', $like)
+                    ->orWhere('barcode', 'like', $like)
+                    ->orWhereHas('category', fn (Builder $c) => $c->where('name', 'like', $like));
+            });
+        }
+
+        return $query;
+    }
+
+    protected function applyFuzzySearch(Builder $query, string $search): void
+    {
+        $like = '%'.implode('%', str_split(preg_replace('/\s+/', '', $search))).'%';
+
+        $query->where(function (Builder $q) use ($search, $like) {
+            $q->where('name', 'like', "%{$search}%")
+                ->orWhere('sku', 'like', "%{$search}%")
+                ->orWhere('brand', 'like', "%{$search}%")
+                ->orWhere('name', 'like', $like)
+                ->orWhere('sku', 'like', $like);
+        });
     }
 
     public function megaMenuCategories(): array
     {
         $columns = config('mega-menu.columns', []);
         $dbCategories = Category::where('is_active', true)
+            ->whereNull('parent_id')
             ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
             ->get()
             ->keyBy('slug');

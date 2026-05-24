@@ -16,7 +16,9 @@
 
             return [
                 'name' => $brand->name,
-                'url' => route('shop.index', ['brand' => $brand->name]),
+                'url' => ! empty($brand->slug)
+                    ? route('brands.show', $brand->slug)
+                    : route('shop.index', ['brand' => $brand->name]),
                 'logo' => $logo,
             ];
         });
@@ -25,7 +27,7 @@
     if ($brandItems->isEmpty()) {
         $brandItems = $defaults->map(fn ($b) => [
             'name' => $b['name'],
-            'url' => route('shop.index', ['brand' => $b['name']]),
+            'url' => route('brands.show', $b['slug'] ?? \Illuminate\Support\Str::slug($b['name'])),
             'logo' => $b['logo'],
         ]);
     }

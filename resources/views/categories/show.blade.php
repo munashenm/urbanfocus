@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $category->meta_title ?: $category->name.' | Urban Focus')
-@section('meta_description', $category->meta_description ?: 'Browse '.$category->name.' at Urban Focus.')
+@section('meta_description', $category->meta_description ?: 'Browse '.$category->name.' at Urban Focus — South African IT distributor.')
 
 @section('content')
 <div class="container py-4">
@@ -9,22 +9,70 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
             <li class="breadcrumb-item"><a href="{{ route('shop.index') }}">Shop</a></li>
+            @if($category->parent)
+                <li class="breadcrumb-item"><a href="{{ route('categories.show', $category->parent) }}">{{ $category->parent->name }}</a></li>
+            @endif
             <li class="breadcrumb-item active">{{ $category->name }}</li>
         </ol>
     </nav>
 
-    <h1 class="h2 fw-bold mb-2">{{ $category->name }}</h1>
-    @if($category->description)<p class="text-muted mb-4">{{ $category->description }}</p>@endif
+    <div class="category-hero mb-4">
+        <h1 class="h2 fw-bold mb-2">{{ $category->name }}</h1>
+        @if($category->description)<p class="text-muted mb-0">{{ $category->description }}</p>@endif
+    </div>
 
-    @if($products->count())
-        <div class="row g-4">
-            @foreach($products as $product)
-                <div class="col-6 col-md-4 col-lg-3">@include('partials.product-card', ['product' => $product])</div>
+    @if($category->children->count())
+        <div class="subcategory-chips mb-4 d-flex flex-wrap gap-2">
+            @foreach($category->children as $child)
+                <a href="{{ route('categories.show', $child) }}" class="btn btn-sm btn-outline-primary">{{ $child->name }}</a>
             @endforeach
         </div>
-        <div class="mt-4">{{ $products->links() }}</div>
-    @else
-        <p class="text-muted">No products in this category yet.</p>
+    @elseif($siblings->count() > 1)
+        <div class="subcategory-chips mb-4 d-flex flex-wrap gap-2">
+            @foreach($siblings as $sibling)
+                <a href="{{ route('categories.show', $sibling) }}" class="btn btn-sm {{ $sibling->id === $category->id ? 'btn-primary' : 'btn-outline-primary' }}">{{ $sibling->name }}</a>
+            @endforeach
+        </div>
     @endif
+
+    <div class="row g-4">
+        @include('partials.shop-filters', [
+            'filterAction' => route('categories.show', $category),
+            'showCategoryFilter' => false,
+            'categories' => collect(),
+        ])
+
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <span class="text-muted small">{{ $products->total() }} products</span>
+            </div>
+
+            @if($products->count())
+                <div class="row g-4">
+                    @foreach($products as $product)
+                        <div class="col-6 col-md-4">@include('partials.product-card', ['product' => $product])</div>
+                    @endforeach
+                </div>
+                <div class="mt-4">{{ $products->links() }}</div>
+            @else
+                <div class="text-center py-5">
+                    <p class="text-muted">No products in this category yet.</p>
+                    <a href="{{ route('b2b.source') }}" class="btn btn-primary">Request Product Sourcing</a>
+                </div>
+            @endif
+        </div>
+    </div>
 </div>
 @endsection
+
+@push('schema')
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": {{ json_encode($category->name) }},
+    "description": {{ json_encode($category->description ?: 'Browse '.$category->name.' at Urban Focus') }},
+    "url": "{{ route('categories.show', $category) }}"
+}
+</script>
+@endpush

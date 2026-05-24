@@ -59,7 +59,7 @@
                 @if($product->exists && $product->images->count())
                     <div class="d-flex flex-wrap gap-2">
                         @foreach($product->images as $img)
-                            <img src="{{ asset('storage/'.$img->path) }}" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:4px">
+                            <img src="{{ $img->url }}" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:4px">
                         @endforeach
                     </div>
                 @endif

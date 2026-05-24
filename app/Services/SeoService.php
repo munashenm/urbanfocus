@@ -31,12 +31,33 @@ class SeoService
                 'priority' => '0.6',
             ];
 
-            foreach (['about', 'shipping', 'privacy', 'terms', 'b2b.quote', 'b2b.rfq', 'b2b.procurement'] as $page) {
+            foreach (['about', 'shipping', 'privacy', 'terms', 'b2b.quote', 'b2b.rfq', 'b2b.procurement', 'b2b.source', 'blog.index', 'orders.track'] as $page) {
                 $urls[] = [
                     'loc' => route($page),
                     'changefreq' => 'monthly',
                     'priority' => '0.5',
                 ];
+            }
+
+            if (class_exists(\App\Models\Brand::class)) {
+                \App\Models\Brand::where('is_active', true)->get()->each(function ($brand) use (&$urls) {
+                    $urls[] = [
+                        'loc' => route('brands.show', $brand),
+                        'changefreq' => 'weekly',
+                        'priority' => '0.75',
+                    ];
+                });
+            }
+
+            if (class_exists(\App\Models\Article::class)) {
+                \App\Models\Article::published()->get()->each(function ($article) use (&$urls) {
+                    $urls[] = [
+                        'loc' => route('blog.show', $article),
+                        'lastmod' => $article->updated_at->toAtomString(),
+                        'changefreq' => 'monthly',
+                        'priority' => '0.6',
+                    ];
+                });
             }
 
             Category::where('is_active', true)->get()->each(function (Category $category) use (&$urls) {

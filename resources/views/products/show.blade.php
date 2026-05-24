@@ -13,7 +13,7 @@
 @endif
 
 @section('content')
-<div class="container py-4">
+<div class="container py-4 pb-5 mb-lg-0 mb-5">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
@@ -27,16 +27,12 @@
     <div class="row g-5">
         <div class="col-lg-6">
             <div class="product-detail-image">
-                @if($product->primary_image_url)
-                    <img src="{{ $product->primary_image_url }}" alt="{{ $product->name }}" width="500" height="500" loading="eager">
-                @else
-                    <div class="py-5 text-muted">No image available</div>
-                @endif
+                <img id="productMainImage" src="{{ $product->display_image_url }}" alt="{{ $product->name }}" width="500" height="500" loading="eager">
             </div>
             @if($product->images->count() > 1)
                 <div class="d-flex gap-2 mt-3 flex-wrap product-thumbs">
                     @foreach($product->images as $img)
-                        <img src="{{ asset('storage/'.$img->path) }}" alt="" width="72" height="72" loading="lazy" class="product-thumb">
+                        <img src="{{ $img->url }}" alt="" width="72" height="72" loading="lazy" class="product-thumb {{ $loop->first ? 'active' : '' }}">
                     @endforeach
                 </div>
             @endif
@@ -143,7 +139,28 @@
     </section>
     @endif
 </div>
+
+<div class="mobile-buy-bar d-lg-none">
+    <div class="container d-flex align-items-center justify-content-between gap-2 py-2">
+        <div>
+            <strong class="d-block">R {{ number_format($product->effective_price, 2) }}</strong>
+            <span class="small {{ $product->isAvailable() ? 'text-success' : 'text-danger' }}">{{ $product->isAvailable() ? 'In Stock' : 'Out of Stock' }}</span>
+        </div>
+        @if($product->isAvailable())
+            <form action="{{ route('cart.add', $product) }}" method="POST" class="d-flex gap-2">
+                @csrf
+                <button type="submit" class="btn btn-primary">Add to Cart</button>
+            </form>
+        @else
+            <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-sm">Get Quote</a>
+        @endif
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/product-gallery.js') }}" defer></script>
+@endpush
 
 @push('schema')
 <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>

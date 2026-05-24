@@ -34,7 +34,9 @@
                     <div class="input-group">
                         <input class="form-control search-input" type="search" name="q" id="searchInput"
                                placeholder="Search by name, brand, SKU, model..." value="{{ request('q') }}"
-                               autocomplete="off" aria-label="Search products" data-suggest-url="{{ route('search.suggest') }}">
+                               autocomplete="off" aria-label="Search products"
+                               data-suggest-url="{{ route('search.suggest') }}"
+                               data-placeholder-img="{{ asset('images/product-placeholder.svg') }}">
                         <button class="btn btn-primary px-3" type="submit" aria-label="Search">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
                         </button>
@@ -70,7 +72,7 @@
                         </div>
                     </div>
                 </li>
-                <li class="nav-item dropdown d-none d-lg-block">
+                <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle {{ request()->routeIs('b2b.*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown">Business</a>
                     <ul class="dropdown-menu shadow border-0">
                         <li><a class="dropdown-item" href="{{ route('b2b.quote') }}">Request a Quote</a></li>
@@ -79,6 +81,7 @@
                         <li><a class="dropdown-item" href="{{ route('b2b.source') }}">Source a Product</a></li>
                     </ul>
                 </li>
+                <li class="nav-item d-none d-lg-block"><a class="nav-link {{ request()->routeIs('blog.*') ? 'active' : '' }}" href="{{ route('blog.index') }}">Blog</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">About</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact</a></li>
                 <li class="nav-item ms-lg-2">
@@ -94,3 +97,11 @@
         </div>
     </div>
 </nav>
+
+<div class="mobile-search-bar d-lg-none border-bottom bg-white sticky-top" style="top:56px;z-index:1025">
+    <div class="container py-2">
+        <form action="{{ route('shop.index') }}" method="GET" role="search">
+            <input class="form-control form-control-sm search-input" type="search" name="q" placeholder="Search products, SKU, brands..." value="{{ request('q') }}" aria-label="Search">
+        </form>
+    </div>
+</div>

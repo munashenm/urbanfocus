@@ -29,6 +29,6 @@ class ProductImage extends Model
 
     public function getUrlAttribute(): string
     {
-        return asset('storage/'.$this->path);
+        return storage_public_url($this->path);
     }
 }

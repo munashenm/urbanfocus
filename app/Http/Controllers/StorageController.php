@@ -13,6 +13,19 @@ class StorageController extends Controller
             abort(404);
         }
 
-        return response()->file(Storage::disk('public')->path($path));
+        $fullPath = Storage::disk('public')->path($path);
+        $mime = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'webp' => 'image/webp',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'svg' => 'image/svg+xml',
+            'pdf' => 'application/pdf',
+            default => 'image/jpeg',
+        };
+
+        return response()->file($fullPath, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'public, max-age=31536000',
+        ]);
     }
 }

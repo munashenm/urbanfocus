@@ -6,6 +6,8 @@ use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Article;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
@@ -13,55 +15,85 @@ class HomeController extends Controller
 {
     public function index(): View
     {
-        $featuredProducts = Product::with('images')
+        $cacheMinutes = 10;
+
+        $featuredProducts = Cache::remember('home.featured', $cacheMinutes * 60, fn () => Product::with('images')
+            ->where('is_active', true)->where('is_featured', true)->latest()->take(8)->get());
+
+        $dealProducts = Cache::remember('home.deals', $cacheMinutes * 60, function () {
+            $q = Product::with('images')->where('is_active', true);
+            if (Schema::hasColumn('products', 'is_deal')) {
+                $q->where(fn ($w) => $w->where('is_deal', true)->orWhereNotNull('sale_price'));
+            } else {
+                $q->whereNotNull('sale_price');
+            }
+
+            return $q->latest()->take(8)->get();
+        });
+
+        $topSellers = Cache::remember('home.top_sellers', $cacheMinutes * 60, fn () => Product::with('images')
             ->where('is_active', true)
-            ->where('is_featured', true)
-            ->latest()
+            ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
             ->take(8)
-            ->get();
+            ->get());
 
-        $dealQuery = Product::with('images')->where('is_active', true);
+        $networkingProducts = Cache::remember('home.networking', $cacheMinutes * 60, fn () => $this->categoryProducts('networking', 8));
 
-        if (Schema::hasColumn('products', 'is_deal')) {
-            $dealQuery->where(function ($q) {
-                $q->where('is_deal', true)->orWhereNotNull('sale_price');
-            });
-        } else {
-            $dealQuery->whereNotNull('sale_price');
-        }
+        $laptopProducts = Cache::remember('home.laptops', $cacheMinutes * 60, fn () => $this->categoryProducts('laptops-notebooks', 8));
 
-        $dealProducts = $dealQuery->latest()->take(8)->get();
-
-        $categories = Category::where('is_active', true)
+        $categories = Cache::remember('home.categories', $cacheMinutes * 60, fn () => Category::where('is_active', true)
             ->whereNull('parent_id')
             ->with('children')
             ->orderBy('sort_order')
-            ->take(9)
-            ->get();
+            ->take(12)
+            ->get());
 
-        $newProducts = Product::with('images')
-            ->where('is_active', true)
-            ->latest()
-            ->take(8)
-            ->get();
+        $newProducts = Cache::remember('home.new', $cacheMinutes * 60, fn () => Product::with('images')
+            ->where('is_active', true)->latest()->take(8)->get());
 
-        $brands = Schema::hasTable('brands')
-            ? Brand::where('is_active', true)->orderBy('sort_order')->take(20)->get()
-            : collect();
+        $brands = Cache::remember('home.brands', $cacheMinutes * 60, function () {
+            if (Schema::hasTable('brands')) {
+                return Brand::where('is_active', true)->orderBy('sort_order')->take(20)->get();
+            }
 
-        if ($brands->isEmpty()) {
-            $brands = Product::where('is_active', true)
-                ->whereNotNull('brand')
-                ->distinct()
-                ->pluck('brand')
+            return Product::where('is_active', true)->whereNotNull('brand')->distinct()->pluck('brand')
                 ->take(12)
                 ->map(fn ($name) => (object) ['name' => $name, 'slug' => \Illuminate\Support\Str::slug($name), 'logo' => null]);
-        }
+        });
 
         $banners = Schema::hasTable('banners')
-            ? Banner::active('home')->take(3)->get()
+            ? Banner::active('home')->take(4)->get()
             : collect();
 
-        return view('home', compact('featuredProducts', 'dealProducts', 'categories', 'newProducts', 'brands', 'banners'));
+        $articles = Schema::hasTable('articles')
+            ? Article::published()->latest('published_at')->take(3)->get()
+            : collect();
+
+        $heroSlides = config('homepage.hero_slides', []);
+        $solutionBlocks = config('homepage.solution_blocks', []);
+        $categoryIcons = config('homepage.category_icons', []);
+
+        return view('home', compact(
+            'featuredProducts', 'dealProducts', 'topSellers', 'networkingProducts',
+            'laptopProducts', 'categories', 'newProducts', 'brands', 'banners',
+            'articles', 'heroSlides', 'solutionBlocks', 'categoryIcons'
+        ));
+    }
+
+    protected function categoryProducts(string $slug, int $limit)
+    {
+        $category = Category::where('slug', $slug)->first();
+        if (! $category) {
+            return collect();
+        }
+
+        $ids = Category::descendantIds($category->id);
+
+        return Product::with('images')
+            ->where('is_active', true)
+            ->whereIn('category_id', $ids)
+            ->latest()
+            ->take($limit)
+            ->get();
     }
 }

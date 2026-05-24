@@ -62,4 +62,24 @@ class Category extends Model
     {
         return 'slug';
     }
+
+    /** @return array<int> */
+    public static function descendantIds(int $categoryId): array
+    {
+        $all = static::where('is_active', true)->get(['id', 'parent_id']);
+        $ids = [$categoryId];
+        $changed = true;
+
+        while ($changed) {
+            $changed = false;
+            foreach ($all as $cat) {
+                if ($cat->parent_id && in_array($cat->parent_id, $ids, true) && ! in_array($cat->id, $ids, true)) {
+                    $ids[] = $cat->id;
+                    $changed = true;
+                }
+            }
+        }
+
+        return $ids;
+    }
 }

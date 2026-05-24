@@ -108,7 +108,12 @@ class Product extends Model
     {
         $image = $this->images->firstWhere('is_primary', true) ?? $this->images->first();
 
-        return $image ? asset('storage/'.$image->path) : null;
+        return $image ? storage_public_url($image->path) : null;
+    }
+
+    public function getDisplayImageUrlAttribute(): string
+    {
+        return $this->primary_image_url ?? product_image_url();
     }
 
     public function seoTitle(): string
@@ -170,7 +175,7 @@ class Product extends Model
         return $this->images
             ->when($primary, fn ($images) => $images->where('id', '!=', $primary->id))
             ->take(10)
-            ->map(fn ($image) => asset('storage/'.$image->path))
+            ->map(fn ($image) => storage_public_url($image->path))
             ->filter()
             ->values()
             ->all();

@@ -29,7 +29,7 @@
         @if($quote->file_path)
             <p style="margin-top:16px">
                 <strong>RFQ file:</strong>
-                <a href="{{ url('/storage/'.$quote->file_path) }}">Download attachment</a>
+                <a href="{{ storage_public_url($quote->file_path) }}">Download attachment</a>
             </p>
         @endif
 

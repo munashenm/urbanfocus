@@ -10,8 +10,6 @@ class SearchController extends Controller
 {
     public function suggest(Request $request, SearchService $search): JsonResponse
     {
-        return response()->json([
-            'results' => $search->suggest($request->get('q', '')),
-        ]);
+        return response()->json($search->suggest($request->get('q', '')));
     }
 }
