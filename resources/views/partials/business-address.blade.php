@@ -17,7 +17,7 @@
     @else
         <li class="{{ $class ?? '' }}">
             @if($showLabel ?? true)<strong class="d-block text-white mb-1">Address</strong>@endif
-            <span class="text-white-50">{!! implode('<br>', array_map('e', $lines)) !!}</span>
+            <span class="footer-text">{!! implode('<br>', array_map('e', $lines)) !!}</span>
         </li>
     @endif
 @endif
