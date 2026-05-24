@@ -40,23 +40,108 @@ header('Content-Type: text/html; charset=utf-8');
 echo '<!DOCTYPE html><html><head><title>Urban Focus Setup</title></head><body style="font-family:sans-serif;max-width:800px;margin:40px auto;padding:20px">';
 echo '<h1>Urban Focus Setup</h1>';
 
+function parseCommand(string $command): array
+{
+    $parts = preg_split('/\s+/', trim($command));
+    $name = array_shift($parts);
+    $parameters = [];
+
+    foreach ($parts as $part) {
+        if (str_starts_with($part, '--')) {
+            if (str_contains($part, '=')) {
+                [$key, $value] = explode('=', substr($part, 2), 2);
+                $parameters['--'.$key] = $value;
+            } else {
+                $parameters[$part] = true;
+            }
+        } else {
+            $parameters[] = $part;
+        }
+    }
+
+    return [$name, $parameters];
+}
+
+function generateAppKey(string $envPath): string
+{
+    $key = 'base64:'.base64_encode(random_bytes(32));
+    $env = file_get_contents($envPath);
+    $env = preg_replace('/^APP_KEY=.*/m', 'APP_KEY='.$key, $env);
+
+    if (! str_contains($env, 'APP_KEY=')) {
+        $env .= "\nAPP_KEY={$key}\n";
+    }
+
+    file_put_contents($envPath, $env);
+
+    return $key;
+}
+
+function linkPublicStorage(string $laravelRoot): string
+{
+    $publicPath = rtrim(
+        getenv('PUBLIC_PATH') ?: (function () use ($laravelRoot) {
+            $envFile = $laravelRoot.'/.env';
+            if (file_exists($envFile) && preg_match('/^PUBLIC_PATH=(.*)$/m', file_get_contents($envFile), $m)) {
+                return trim($m[1], " \t\"'");
+            }
+
+            return dirname($laravelRoot).'/public_html';
+        })(),
+        '/'
+    );
+
+    $target = $laravelRoot.'/storage/app/public';
+    $link = $publicPath.'/storage';
+
+    if (! is_dir($target)) {
+        mkdir($target, 0755, true);
+    }
+
+    if (is_link($link) || file_exists($link)) {
+        return "Storage path already exists: {$link}";
+    }
+
+    if (@symlink($target, $link)) {
+        return "Symlink created: {$link} → {$target}";
+    }
+
+    // Fallback when host disables symlinks: mirror directory
+    mkdir($link, 0755, true);
+    file_put_contents($link.'/.htaccess', "Options -Indexes\n");
+
+    return "Symlink not allowed. Created {$link} — in File Manager, create a symbolic link from public_html/storage to urbanfocus/storage/app/public if your host allows it. Product uploads will still save on the server.";
+}
+
 $steps = [
-    'key:generate --force' => 'Generate APP_KEY',
-    'migrate --force' => 'Create database tables',
-    'db:seed --force' => 'Seed admin user and sample data',
-    'storage:link' => 'Link storage for uploads',
-    'config:cache' => 'Cache configuration',
-    'route:cache' => 'Cache routes',
-    'view:cache' => 'Cache views',
+    ['action' => 'artisan', 'command' => 'config:clear', 'label' => 'Clear old config cache'],
+    ['action' => 'key', 'label' => 'Generate APP_KEY'],
+    ['action' => 'artisan', 'command' => 'migrate --force', 'label' => 'Create database tables'],
+    ['action' => 'artisan', 'command' => 'db:seed --force', 'label' => 'Seed admin user and sample data'],
+    ['action' => 'storage', 'label' => 'Link storage for uploads'],
+    ['action' => 'artisan', 'command' => 'config:cache', 'label' => 'Cache configuration'],
+    ['action' => 'artisan', 'command' => 'route:cache', 'label' => 'Cache routes'],
+    ['action' => 'artisan', 'command' => 'view:cache', 'label' => 'Cache views'],
 ];
 
-foreach ($steps as $command => $label) {
-    echo '<h3>'.htmlspecialchars($label).'</h3><pre>';
+foreach ($steps as $step) {
+    echo '<h3>'.htmlspecialchars($step['label']).'</h3><pre>';
     try {
-        $parts = preg_split('/\s+/', $command);
-        $exitCode = $kernel->call($parts[0], array_slice($parts, 1));
-        echo htmlspecialchars($kernel->output());
-        echo $exitCode === 0 ? "\n✓ Done" : "\n✗ Exit code: {$exitCode}";
+        if ($step['action'] === 'key') {
+            $envPath = $laravelRoot.'/.env';
+            if (! file_exists($envPath)) {
+                throw new RuntimeException('.env file not found in urbanfocus/');
+            }
+            $key = generateAppKey($envPath);
+            echo "APP_KEY generated successfully.\n✓ Done";
+        } elseif ($step['action'] === 'storage') {
+            echo htmlspecialchars(linkPublicStorage($laravelRoot))."\n✓ Done";
+        } else {
+            [$name, $parameters] = parseCommand($step['command']);
+            $exitCode = $kernel->call($name, $parameters);
+            echo htmlspecialchars($kernel->output());
+            echo $exitCode === 0 ? "\n✓ Done" : "\n✗ Exit code: {$exitCode}";
+        }
     } catch (Throwable $e) {
         echo 'ERROR: '.htmlspecialchars($e->getMessage());
     }
