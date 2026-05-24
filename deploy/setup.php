@@ -38,7 +38,8 @@ $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 
 header('Content-Type: text/html; charset=utf-8');
 echo '<!DOCTYPE html><html><head><title>Urban Focus Setup</title></head><body style="font-family:sans-serif;max-width:800px;margin:40px auto;padding:20px">';
-echo '<h1>Urban Focus Setup</h1>';
+echo '<h1>Urban Focus Setup <small style="font-weight:normal;color:#666">v2</small></h1>';
+echo '<p>If you do <strong>not</strong> see "Clear old config cache" as the first step below, you still have the old setup file.</p>';
 
 function parseCommand(string $command): array
 {
