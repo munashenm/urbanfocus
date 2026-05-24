@@ -16,7 +16,7 @@ if (! function_exists('storage_public_url')) {
             return $path;
         }
 
-        return route('storage.serve', ['path' => ltrim($path, '/')]);
+        return url('/storage/'.ltrim($path, '/'));
     }
 }
 

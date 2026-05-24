@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\B2bController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -39,6 +40,8 @@ Route::get('/search/suggest', [SearchController::class, 'suggest'])->name('searc
 Route::get('/category/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 
+Route::get('/storage/{path}', [StorageController::class, 'show'])->where('path', '.*')->name('storage.serve');
+
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
@@ -74,8 +77,6 @@ Route::prefix('b2b')->name('b2b.')->group(function () {
 
 Route::get('/request-quote', fn () => redirect()->route('b2b.quote'))->name('quote.request');
 Route::get('/upload-rfq', fn () => redirect()->route('b2b.rfq'))->name('rfq.upload');
-
-Route::get('/storage/{path}', [StorageController::class, 'show'])->where('path', '.*')->name('storage.serve');
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
