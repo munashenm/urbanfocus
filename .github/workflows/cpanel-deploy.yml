@@ -1,0 +1,41 @@
+name: Build cPanel Deploy Package
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_mysql, xml, ctype, json, fileinfo, tokenizer
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Create deployment zip
+        run: |
+          zip -r urbanfocus-cpanel.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x ".env" \
+            -x "node_modules/*" \
+            -x ".phpunit.cache/*" \
+            -x "tests/*"
+
+      - name: Upload deploy zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: urbanfocus-cpanel-vendor
+          path: urbanfocus-cpanel.zip
+          retention-days: 90
