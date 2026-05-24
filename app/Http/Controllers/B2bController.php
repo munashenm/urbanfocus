@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NewQuoteNotification;
 use App\Models\Quote;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class B2bController extends Controller
@@ -55,7 +57,7 @@ class B2bController extends Controller
             $filePath = $request->file('rfq_file')->store('rfq', 'public');
         }
 
-        Quote::create([
+        $quote = Quote::create([
             'type' => $validated['type'],
             'name' => $validated['name'],
             'company' => $validated['company'] ?? null,
@@ -65,6 +67,10 @@ class B2bController extends Controller
             'file_path' => $filePath,
             'product_id' => $validated['product_id'] ?? null,
         ]);
+
+        $quote->load('product');
+
+        Mail::to(config('app.email'))->send(new NewQuoteNotification($quote));
 
         $message = match ($validated['type']) {
             'rfq' => 'Your RFQ has been uploaded. Our team will respond within one business day.',

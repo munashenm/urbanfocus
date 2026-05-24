@@ -68,7 +68,7 @@
                     <h2 class="h5 fw-bold mb-3">Shipping Method</h2>
                     @foreach($shippingMethods as $method)
                         <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="shipping_method" id="ship_{{ $method['method'] }}" value="{{ $method['method'] }}" @checked(old('shipping_method', 'courier') === $method['method'])>
+                            <input class="form-check-input" type="radio" name="shipping_method" id="ship_{{ $method['method'] }}" value="{{ $method['method'] }}" @checked(old('shipping_method', $shippingMethods[0]['method'] ?? 'courier') === $method['method'])>
                             <label class="form-check-label" for="ship_{{ $method['method'] }}">
                                 {{ $method['label'] }}
                                 @if($method['requires_quote'])
@@ -85,7 +85,12 @@
 
                 <div class="checkout-card mb-4">
                     <h2 class="h5 fw-bold mb-3">Coupon Code</h2>
-                    <input type="text" name="coupon_code" class="form-control" value="{{ old('coupon_code') }}" placeholder="Enter coupon code">
+                    <div class="input-group">
+                        <input type="text" name="coupon_code" class="form-control @error('coupon_code') is-invalid @enderror" value="{{ old('coupon_code') }}" placeholder="Enter coupon code">
+                        <button type="button" class="btn btn-outline-secondary" id="apply-coupon-btn">Apply</button>
+                    </div>
+                    @error('coupon_code')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    <div id="coupon-feedback" class="small mt-2"></div>
                 </div>
 
                 <div class="checkout-card">
@@ -113,14 +118,40 @@
                         </div>
                     @endforeach
                     <hr>
-                    <div class="d-flex justify-content-between"><span>Subtotal</span><span>R {{ number_format($subtotal, 2) }}</span></div>
-                    <div class="d-flex justify-content-between text-muted small"><span>VAT ({{ $vatRate }}%)</span><span>Calculated at payment</span></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Subtotal</span><span>R {{ number_format($subtotal, 2) }}</span></div>
+                    <div class="d-flex justify-content-between mb-2 text-success d-none" id="checkout-discount-row">
+                        <span>Discount</span><span id="checkout-discount">−R 0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2" id="checkout-shipping-row">
+                        <span>Shipping</span><span id="checkout-shipping">—</span>
+                    </div>
+                    <p class="small text-muted d-none mb-2" id="checkout-shipping-note">Courier cost to be confirmed for manual quote orders.</p>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>VAT ({{ $vatRate }}%)</span><span id="checkout-vat">—</span>
+                    </div>
                     <hr>
-                    <div class="d-flex justify-content-between h5"><span>Subtotal excl. shipping</span><strong>R {{ number_format($subtotal, 2) }}</strong></div>
+                    <div class="d-flex justify-content-between h5 mb-0">
+                        <span>Total</span><strong id="checkout-total">—</strong>
+                    </div>
                     <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">Place Order</button>
                 </div>
             </div>
         </div>
     </form>
 </div>
+
+<script type="application/json" id="checkout-data">
+{!! json_encode([
+    'subtotal' => $subtotal,
+    'vatRate' => $vatRate,
+    'flatRate' => (float) config('shipping.flat_rate'),
+    'freeThreshold' => (float) config('shipping.free_threshold'),
+    'csrfToken' => csrf_token(),
+    'validateCouponUrl' => route('checkout.validate-coupon'),
+]) !!}
+</script>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/checkout.js') }}" defer></script>
+@endpush

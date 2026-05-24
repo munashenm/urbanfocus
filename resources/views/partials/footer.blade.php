@@ -27,6 +27,7 @@
                     <li><a href="{{ route('b2b.rfq') }}">Upload RFQ</a></li>
                     <li><a href="{{ route('b2b.procurement') }}">Procurement</a></li>
                     <li><a href="{{ route('shipping') }}">Shipping &amp; Returns</a></li>
+                    <li><a href="{{ route('orders.track') }}">Track Order</a></li>
                 </ul>
             </div>
             <div class="col-md-4 col-lg-4">

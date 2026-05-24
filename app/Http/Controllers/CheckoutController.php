@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use App\Services\CartService;
 use App\Services\PayFastService;
 use App\Services\ShippingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,44 @@ class CheckoutController extends Controller
         $vatRate = config('app.vat_rate', 15);
 
         return view('checkout.index', compact('subtotal', 'shippingMethods', 'vatRate'));
+    }
+
+    public function validateCoupon(Request $request): JsonResponse
+    {
+        $request->validate([
+            'coupon_code' => 'required|string|max:50',
+        ]);
+
+        if ($this->cart->isEmpty()) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Your cart is empty.',
+            ], 422);
+        }
+
+        $subtotal = $this->cart->subtotal();
+        $coupon = Coupon::where('code', strtoupper(trim($request->coupon_code)))->first();
+
+        if (! $coupon) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Invalid coupon code.',
+            ], 422);
+        }
+
+        if ($message = $coupon->validationMessageFor($subtotal)) {
+            return response()->json([
+                'valid' => false,
+                'message' => $message,
+            ], 422);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'code' => $coupon->code,
+            'discount' => $coupon->discountAmount($subtotal),
+            'discounted_subtotal' => max(0, $subtotal - $coupon->discountAmount($subtotal)),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -73,9 +112,16 @@ class CheckoutController extends Controller
 
         if (! empty($validated['coupon_code'])) {
             $coupon = Coupon::where('code', strtoupper(trim($validated['coupon_code'])))->first();
-            if ($coupon && $coupon->isValidFor($subtotal)) {
-                $discountAmount = $coupon->discountAmount($subtotal);
+
+            if (! $coupon) {
+                return back()->withErrors(['coupon_code' => 'Invalid coupon code.'])->withInput();
             }
+
+            if ($message = $coupon->validationMessageFor($subtotal)) {
+                return back()->withErrors(['coupon_code' => $message])->withInput();
+            }
+
+            $discountAmount = $coupon->discountAmount($subtotal);
         }
 
         $discountedSubtotal = max(0, $subtotal - $discountAmount);

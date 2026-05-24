@@ -11,18 +11,17 @@
 
         @if($order->payment_method === 'eft')
             <div class="alert alert-info text-start mt-4">
-                <strong>EFT Payment Instructions</strong>
-                <p class="mb-1 mt-2">Please use order number <strong>{{ $order->order_number }}</strong> as your payment reference.</p>
-                <p class="mb-0">Amount due: <strong>R {{ number_format($order->total, 2) }}</strong></p>
-                <p class="small text-muted mt-2 mb-0">Bank details will be emailed to you. Contact sales@urbanfocus.co.za for assistance.</p>
+                @include('partials.eft-instructions', ['order' => $order])
             </div>
         @endif
 
         <p class="mt-3">A confirmation email has been sent to <strong>{{ $order->customer_email }}</strong>.</p>
-        <div class="mt-4">
+        <div class="mt-4 d-flex flex-wrap justify-content-center gap-2">
             <a href="{{ route('shop.index') }}" class="btn btn-primary">Continue Shopping</a>
             @auth
                 <a href="{{ route('account.orders.show', $order) }}" class="btn btn-outline-primary">View Order</a>
+            @else
+                <a href="{{ route('orders.track') }}" class="btn btn-outline-primary">Track This Order</a>
             @endauth
         </div>
     </div>

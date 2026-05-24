@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\B2bController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
@@ -40,12 +41,16 @@ Route::post('/cart/update', [CartController::class, 'update'])->name('cart.updat
 Route::delete('/cart/remove/{product}', [CartController::class, 'remove'])->name('cart.remove');
 
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout/validate-coupon', [CheckoutController::class, 'validateCoupon'])->name('checkout.validate-coupon');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 Route::get('/checkout/payfast/{order}', [CheckoutController::class, 'payfastRedirect'])->name('checkout.payfast.redirect');
 Route::get('/checkout/payfast/return', [CheckoutController::class, 'payfastReturn'])->name('checkout.payfast.return');
 Route::get('/checkout/payfast/cancel', [CheckoutController::class, 'payfastCancel'])->name('checkout.payfast.cancel');
 Route::post('/checkout/payfast/notify', [CheckoutController::class, 'payfastNotify'])->name('checkout.payfast.notify');
+
+Route::get('/track-order', [OrderTrackingController::class, 'showForm'])->name('orders.track');
+Route::post('/track-order', [OrderTrackingController::class, 'lookup'])->name('orders.track.lookup');
 
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');

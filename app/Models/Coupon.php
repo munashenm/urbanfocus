@@ -51,4 +51,25 @@ class Coupon extends Model
 
         return round($subtotal * ((float) $this->value / 100), 2);
     }
+
+    public function validationMessageFor(float $subtotal): ?string
+    {
+        if (! $this->is_active) {
+            return 'This coupon is no longer active.';
+        }
+        if ($this->starts_at && $this->starts_at->isFuture()) {
+            return 'This coupon is not valid yet.';
+        }
+        if ($this->ends_at && $this->ends_at->isPast()) {
+            return 'This coupon has expired.';
+        }
+        if ($this->max_uses && $this->used_count >= $this->max_uses) {
+            return 'This coupon has reached its usage limit.';
+        }
+        if ($this->min_order && $subtotal < (float) $this->min_order) {
+            return 'Minimum order of R '.number_format((float) $this->min_order, 2).' required.';
+        }
+
+        return null;
+    }
 }
