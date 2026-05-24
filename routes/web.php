@@ -18,6 +18,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StorageController;
+use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Admin\BannerController as AdminBannerController;
 use App\Http\Controllers\Admin\BrandController as AdminBrandController;
 use App\Http\Controllers\Admin\CatalogController as AdminCatalogController;
@@ -48,8 +49,8 @@ Route::post('/cart/update', [CartController::class, 'update'])->name('cart.updat
 Route::delete('/cart/remove/{product}', [CartController::class, 'remove'])->name('cart.remove');
 
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/checkout/validate-coupon', [CheckoutController::class, 'validateCoupon'])->name('checkout.validate-coupon');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::post('/checkout/validate-coupon', [CheckoutController::class, 'validateCoupon'])->middleware('throttle:20,1')->name('checkout.validate-coupon');
+Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 Route::get('/checkout/payfast/{order}', [CheckoutController::class, 'payfastRedirect'])->name('checkout.payfast.redirect');
 Route::get('/checkout/payfast/return', [CheckoutController::class, 'payfastReturn'])->name('checkout.payfast.return');
@@ -60,7 +61,7 @@ Route::get('/track-order', [OrderTrackingController::class, 'showForm'])->name('
 Route::post('/track-order', [OrderTrackingController::class, 'lookup'])->name('orders.track.lookup');
 
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
-Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
 
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/shipping-returns', [PageController::class, 'shipping'])->name('shipping');
@@ -72,17 +73,17 @@ Route::prefix('b2b')->name('b2b.')->group(function () {
     Route::get('/rfq', [B2bController::class, 'rfq'])->name('rfq');
     Route::get('/procurement', [B2bController::class, 'procurement'])->name('procurement');
     Route::get('/source-product', [B2bController::class, 'source'])->name('source');
-    Route::post('/submit', [B2bController::class, 'store'])->name('store');
+    Route::post('/submit', [B2bController::class, 'store'])->middleware('throttle:5,1')->name('store');
 });
 
 Route::get('/request-quote', fn () => redirect()->route('b2b.quote'))->name('quote.request');
 Route::get('/upload-rfq', fn () => redirect()->route('b2b.rfq'))->name('rfq.upload');
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
+Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [RegisterController::class, 'register']);
+Route::post('/register', [RegisterController::class, 'register'])->middleware('throttle:5,1');
 
 Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
     Route::get('/', [AccountController::class, 'dashboard'])->name('dashboard');
@@ -107,6 +108,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
     Route::get('catalog', [AdminCatalogController::class, 'index'])->name('catalog.index');
     Route::post('catalog/import', [AdminCatalogController::class, 'import'])->name('catalog.import');
+    Route::post('catalog/clear-products', [AdminCatalogController::class, 'clearProducts'])->name('catalog.clear-products');
     Route::get('catalog/export', [AdminCatalogController::class, 'export'])->name('catalog.export');
     Route::get('catalog/export/woocommerce', [AdminCatalogController::class, 'exportWooCommerce'])->name('catalog.export.woocommerce');
     Route::post('catalog/api-key', [AdminCatalogController::class, 'regenerateApiKey'])->name('catalog.api-key');
@@ -116,6 +118,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('brands', AdminBrandController::class)->except(['show']);
     Route::resource('banners', AdminBannerController::class)->except(['show']);
     Route::resource('coupons', AdminCouponController::class)->except(['show']);
+    Route::post('articles/sync-news', [AdminArticleController::class, 'syncNews'])->name('articles.sync');
+    Route::resource('articles', AdminArticleController::class)->except(['show']);
     Route::get('quotes', [AdminQuoteController::class, 'index'])->name('quotes.index');
     Route::get('quotes/{quote}', [AdminQuoteController::class, 'show'])->name('quotes.show');
     Route::put('quotes/{quote}', [AdminQuoteController::class, 'update'])->name('quotes.update');

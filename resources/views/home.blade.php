@@ -300,4 +300,22 @@
     ]
 }
 </script>
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Urban Focus",
+    "url": "{{ config('app.url') }}",
+    "logo": "{{ asset('images/logo-stacked.png') }}",
+    "image": "{{ asset('images/logo-stacked.png') }}",
+    "email": "sales@urbanfocus.co.za",
+    "telephone": "+27875501813",
+    "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "ZA"
+    },
+    "areaServed": "ZA",
+    "priceRange": "$$"
+}
+</script>
 @endpush

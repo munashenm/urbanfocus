@@ -106,6 +106,9 @@ class SeoService
             'Disallow: /cart',
             'Disallow: /checkout',
             'Disallow: /account',
+            'Disallow: /login',
+            'Disallow: /register',
+            'Disallow: /storage/',
             '',
             'Sitemap: '.url('/sitemap.xml'),
         ];

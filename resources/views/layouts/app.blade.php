@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name'))</title>
     <meta name="description" content="@yield('meta_description', 'Urban Focus - South African supplier of IT products, hardware and software. Fast delivery, competitive pricing.')">
+    @hasSection('meta_robots')
+        <meta name="robots" content="@yield('meta_robots')">
+    @endif
     @hasSection('meta_keywords')
         <meta name="keywords" content="@yield('meta_keywords')">
     @endif

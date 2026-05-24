@@ -48,6 +48,21 @@
     </div>
 
     <div class="col-lg-6">
+        <div class="card h-100 border-danger"><div class="card-body">
+            <h2 class="h5 fw-bold text-danger">Clear All Products</h2>
+            <p class="small text-muted">Permanently deletes every product and product image. Orders keep their line-item history. Use before a fresh CSV import.</p>
+            <form action="{{ route('admin.catalog.clear-products') }}" method="POST" onsubmit="return confirm('This permanently deletes ALL products. Continue?')">
+                @csrf
+                <div class="mb-3">
+                    <label class="form-label small">Type <strong>DELETE ALL PRODUCTS</strong> to confirm</label>
+                    <input type="text" name="confirm_phrase" class="form-control form-control-sm" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger">Delete All Products</button>
+            </form>
+        </div></div>
+    </div>
+
+    <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Google Merchant Center</h2>
             <p class="small text-muted">Products must have an image, description, brand, price, and SKU or GTIN to appear in the feed.</p>

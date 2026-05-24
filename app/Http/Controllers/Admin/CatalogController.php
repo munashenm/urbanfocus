@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Services\GoogleMerchantService;
+use App\Services\ProductCleanupService;
 use App\Services\ProductExportService;
 use App\Services\ProductImportService;
 use Illuminate\Http\RedirectResponse;
@@ -62,6 +63,18 @@ class CatalogController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    public function clearProducts(Request $request, ProductCleanupService $cleanup): RedirectResponse
+    {
+        $request->validate([
+            'confirm_phrase' => 'required|in:DELETE ALL PRODUCTS',
+        ]);
+
+        $result = $cleanup->deleteAll();
+        \Illuminate\Support\Facades\Cache::forget('sitemap.xml');
+
+        return back()->with('success', "Deleted {$result['deleted']} products. You can now import a fresh CSV.");
     }
 
     public function export(ProductExportService $exportService): StreamedResponse

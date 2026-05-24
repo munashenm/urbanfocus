@@ -22,8 +22,14 @@
                 @if($article->excerpt)<p class="lead text-muted">{{ $article->excerpt }}</p>@endif
             </header>
             <div class="article-content">
-                {!! nl2br(e($article->content)) !!}
+                {!! $article->content !!}
             </div>
+            @if($article->source_url)
+                <p class="small text-muted mt-4 pt-3 border-top">
+                    Originally published by {{ $article->source_name ?: 'external source' }} —
+                    <a href="{{ $article->source_url }}" target="_blank" rel="noopener noreferrer">view original</a>
+                </p>
+            @endif
         </div>
     </article>
 
