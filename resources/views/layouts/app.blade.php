@@ -13,6 +13,21 @@
         <meta name="google-site-verification" content="{{ env('GOOGLE_SITE_VERIFICATION') }}">
     @endif
     <link rel="canonical" href="@yield('canonical', url()->current())">
+    <meta property="og:site_name" content="Urban Focus">
+    <meta property="og:title" content="@yield('og_title', trim($__env->yieldContent('title')))">
+    <meta property="og:description" content="@yield('og_description', trim($__env->yieldContent('meta_description')))">
+    <meta property="og:url" content="@yield('canonical', url()->current())">
+    <meta property="og:type" content="@yield('og_type', 'website')">
+    <meta property="og:locale" content="en_ZA">
+    @hasSection('og_image')
+        <meta property="og:image" content="@yield('og_image')">
+    @endif
+    <meta name="twitter:card" content="@yield('twitter_card', 'summary')">
+    <meta name="twitter:title" content="@yield('og_title', trim($__env->yieldContent('title')))">
+    <meta name="twitter:description" content="@yield('og_description', trim($__env->yieldContent('meta_description')))">
+    @hasSection('og_image')
+        <meta name="twitter:image" content="@yield('og_image')">
+    @endif
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('images/favicon.png') }}">
     <meta name="theme-color" content="#0a1628">

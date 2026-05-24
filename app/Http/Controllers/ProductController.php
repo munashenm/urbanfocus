@@ -22,7 +22,8 @@ class ProductController extends Controller
             ->get();
 
         $schema = $product->toSchemaArray();
+        $breadcrumbSchema = $product->toBreadcrumbSchema();
 
-        return view('products.show', compact('product', 'relatedProducts', 'schema'));
+        return view('products.show', compact('product', 'relatedProducts', 'schema', 'breadcrumbSchema'));
     }
 }

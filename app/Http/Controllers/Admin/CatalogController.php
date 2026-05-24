@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\GoogleMerchantService;
 use App\Services\ProductExportService;
 use App\Services\ProductImportService;
 use Illuminate\Http\RedirectResponse;
@@ -14,9 +15,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CatalogController extends Controller
 {
-    public function index(): View
+    public function index(GoogleMerchantService $merchant): View
     {
         $apiKey = Setting::get('api_key') ?: config('app.api_key');
+        $feedStats = $merchant->feedStats();
 
         $feeds = [
             ['name' => 'Google Merchant Center', 'url' => route('feeds.google'), 'format' => 'XML'],
@@ -29,7 +31,7 @@ class CatalogController extends Controller
             ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
         ];
 
-        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints'));
+        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats'));
     }
 
     public function import(Request $request, ProductImportService $importService): RedirectResponse

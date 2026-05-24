@@ -95,6 +95,7 @@ class ProductController extends Controller
             'in_stock' => 'boolean',
             'brand' => 'nullable|string|max:100',
             'barcode' => 'nullable|string|max:100',
+            'google_product_category' => 'nullable|string|max:255',
             'weight' => 'nullable|numeric|min:0',
             'dimensions' => 'nullable|string|max:100',
             'meta_title' => 'nullable|string|max:255',

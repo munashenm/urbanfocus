@@ -38,6 +38,52 @@
 
     <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
+            <h2 class="h5 fw-bold">Google Merchant Center</h2>
+            <p class="small text-muted">Products must have an image, description, brand, price, and SKU or GTIN to appear in the feed.</p>
+
+            <div class="row g-3 mb-3">
+                <div class="col-4">
+                    <div class="border rounded p-3 text-center">
+                        <div class="h4 mb-0 text-success">{{ $feedStats['eligible'] }}</div>
+                        <div class="small text-muted">Eligible</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded p-3 text-center">
+                        <div class="h4 mb-0 text-danger">{{ $feedStats['ineligible'] }}</div>
+                        <div class="small text-muted">Need fixes</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded p-3 text-center">
+                        <div class="h4 mb-0">{{ $feedStats['total_active'] }}</div>
+                        <div class="small text-muted">Active</div>
+                    </div>
+                </div>
+            </div>
+
+            @if($feedStats['ineligible'] > 0)
+                <ul class="small text-muted mb-3">
+                    @foreach($feedStats['issues'] as $issue => $count)
+                        @if($count > 0)
+                            <li>{{ str_replace('_', ' ', ucfirst($issue)) }}: {{ $count }} product(s)</li>
+                        @endif
+                    @endforeach
+                </ul>
+            @endif
+
+            <p class="small mb-2"><strong>Setup checklist (in Merchant Center):</strong></p>
+            <ol class="small text-muted mb-3">
+                <li>Verify domain in Google Search Console</li>
+                <li>Add feed URL below (scheduled fetch daily)</li>
+                <li>Set business info, shipping &amp; returns for South Africa</li>
+                <li>Link PayFast checkout and ensure prices match the feed</li>
+            </ol>
+        </div></div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Product Feeds</h2>
             <p class="small text-muted">Use these URLs in Google Merchant Center, PriceCheck, and Bob Shop.</p>
             <table class="table table-sm">

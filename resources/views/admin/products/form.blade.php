@@ -35,7 +35,10 @@
                     </select>
                 </div>
                 <div class="mb-3"><label class="form-label">SKU</label><input type="text" name="sku" class="form-control" value="{{ old('sku', $product->sku) }}"></div>
-                <div class="mb-3"><label class="form-label">Brand</label><input type="text" name="brand" class="form-control" value="{{ old('brand', $product->brand) }}"></div>
+                <div class="mb-3"><label class="form-label">Brand</label><input type="text" name="brand" class="form-control" value="{{ old('brand', $product->brand) }}" placeholder="e.g. HP, Dell, Microsoft"></div>
+                <div class="mb-3"><label class="form-label">Barcode / GTIN</label><input type="text" name="barcode" class="form-control" value="{{ old('barcode', $product->barcode) }}" placeholder="EAN-13, UPC, ISBN"><div class="form-text">Used for Google Merchant &amp; marketplaces</div></div>
+                <div class="mb-3"><label class="form-label">Google Product Category</label><input type="text" name="google_product_category" class="form-control" value="{{ old('google_product_category', $product->google_product_category) }}" placeholder="e.g. Electronics &gt; Computers"><div class="form-text"><a href="https://www.google.com/basepages/producttype/taxonomy.en-US.txt" target="_blank" rel="noopener">Google taxonomy reference</a></div></div>
+                <div class="mb-3"><label class="form-label">Weight (kg)</label><input type="number" step="0.01" name="weight" class="form-control" value="{{ old('weight', $product->weight) }}"></div>
                 <div class="mb-3"><label class="form-label">Price (ZAR) *</label><input type="number" step="0.01" name="price" class="form-control" value="{{ old('price', $product->price) }}" required></div>
                 <div class="mb-3"><label class="form-label">Sale Price</label><input type="number" step="0.01" name="sale_price" class="form-control" value="{{ old('sale_price', $product->sale_price) }}"></div>
                 <div class="mb-3"><label class="form-label">Stock Quantity *</label><input type="number" name="stock_quantity" class="form-control" value="{{ old('stock_quantity', $product->stock_quantity ?? 0) }}" required></div>

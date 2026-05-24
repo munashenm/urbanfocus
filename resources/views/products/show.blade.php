@@ -4,6 +4,13 @@
 @section('meta_description', $product->seoDescription())
 @section('meta_keywords', $product->meta_keywords)
 @section('canonical', route('products.show', $product))
+@section('og_title', $product->name)
+@section('og_description', $product->seoDescription())
+@section('og_type', 'product')
+@if($product->primary_image_url)
+@section('og_image'){{ $product->primary_image_url }}@endsection
+@section('twitter_card', 'summary_large_image')
+@endif
 
 @section('content')
 <div class="container py-4">
@@ -87,4 +94,5 @@
 
 @push('schema')
 <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>
+<script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>
 @endpush

@@ -25,6 +25,20 @@ class SeoService
                 'priority' => '0.9',
             ];
 
+            $urls[] = [
+                'loc' => route('contact'),
+                'changefreq' => 'monthly',
+                'priority' => '0.6',
+            ];
+
+            foreach (['about', 'shipping', 'privacy', 'terms'] as $page) {
+                $urls[] = [
+                    'loc' => route($page),
+                    'changefreq' => 'monthly',
+                    'priority' => '0.5',
+                ];
+            }
+
             Category::where('is_active', true)->get()->each(function (Category $category) use (&$urls) {
                 $urls[] = [
                     'loc' => route('categories.show', $category),

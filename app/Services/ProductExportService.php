@@ -12,7 +12,7 @@ class ProductExportService
         $headers = [
             'ID', 'SKU', 'Name', 'Slug', 'Categories', 'Brand', 'Regular price', 'Sale price',
             'Stock', 'In stock?', 'Published', 'Short description', 'Description',
-            'Meta title', 'Meta description', 'Meta keywords', 'Barcode', 'Weight', 'URL',
+            'Meta title', 'Meta description', 'Meta keywords', 'Barcode', 'Google product category', 'Weight', 'URL',
         ];
 
         return $this->streamCsv('urbanfocus-products.csv', $headers, function ($handle) {
@@ -36,6 +36,7 @@ class ProductExportService
                         $product->getAttributes()['meta_description'] ?? '',
                         $product->meta_keywords,
                         $product->barcode,
+                        $product->google_product_category,
                         $product->weight,
                         route('products.show', $product),
                     ]);
