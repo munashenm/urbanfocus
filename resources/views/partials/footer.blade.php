@@ -6,11 +6,7 @@
                     <img src="{{ asset('images/logo-stacked.png') }}" alt="Urban Focus" width="160" height="72">
                 </a>
                 <p class="text-white-50 mb-3">South African supplier of IT hardware, networking, components and software licensing. Professional support and nationwide delivery.</p>
-                <div class="payment-badges">
-                    <span class="badge bg-white text-dark me-1 mb-1">PayFast</span>
-                    <span class="badge bg-white text-dark me-1 mb-1">EFT</span>
-                    <span class="badge bg-white text-dark mb-1">Courier SA</span>
-                </div>
+                @include('partials.partner-logos', ['title' => 'Secure payments & delivery', 'class' => 'partner-logos--footer'])
             </div>
             <div class="col-6 col-md-4 col-lg-2">
                 <h6 class="text-white mb-3">Shop</h6>

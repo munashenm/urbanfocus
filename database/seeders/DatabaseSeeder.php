@@ -75,9 +75,15 @@ class DatabaseSeeder extends Seeder
         Setting::set('api_key', 'uf_'.Str::random(32), 'api');
 
         foreach (['Dell', 'HP', 'Lenovo', 'Microsoft', 'Samsung', 'TP-Link', 'Logitech', 'LG'] as $i => $brandName) {
+            $slug = Str::slug($brandName);
             Brand::firstOrCreate(
-                ['slug' => Str::slug($brandName)],
-                ['name' => $brandName, 'sort_order' => $i, 'is_active' => true]
+                ['slug' => $slug],
+                [
+                    'name' => $brandName,
+                    'logo' => 'images/brands/'.$slug.'.svg',
+                    'sort_order' => $i,
+                    'is_active' => true,
+                ]
             );
         }
     }

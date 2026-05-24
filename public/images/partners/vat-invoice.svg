@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40" role="img" aria-label="VAT Invoice">
+  <rect width="100" height="40" rx="6" fill="#fff" stroke="#e5e7eb"/>
+  <rect x="16" y="10" width="18" height="22" rx="2" fill="#132743"/>
+  <line x1="20" y1="16" x2="30" y2="16" stroke="#fff" stroke-width="1.5"/>
+  <line x1="20" y1="20" x2="30" y2="20" stroke="#fff" stroke-width="1.5"/>
+  <line x1="20" y1="24" x2="28" y2="24" stroke="#fff" stroke-width="1.5"/>
+  <text x="62" y="18" text-anchor="middle" fill="#132743" font-family="Arial,Helvetica,sans-serif" font-size="10" font-weight="700">VAT</text>
+  <text x="62" y="30" text-anchor="middle" fill="#6b7280" font-family="Arial,Helvetica,sans-serif" font-size="8">INVOICE</text>
+</svg>

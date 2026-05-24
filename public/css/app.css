@@ -310,6 +310,77 @@ a:hover { color: var(--uf-blue); }
     transition: border-color 0.2s;
 }
 .brand-pill:hover { border-color: var(--uf-blue); color: var(--uf-navy); }
+
+.brand-logo-card {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    min-height: 56px;
+    padding: 0.75rem 1.25rem;
+    background: #fff;
+    border: 1px solid var(--uf-gray-200);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.brand-logo-card:hover {
+    border-color: var(--uf-blue);
+    box-shadow: 0 6px 20px rgba(10,22,40,0.08);
+    transform: translateY(-2px);
+}
+.brand-logo-card img {
+    max-width: 110px;
+    max-height: 36px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+.brand-logo-fallback {
+    font-weight: 700;
+    color: var(--uf-navy);
+    font-size: 0.9rem;
+}
+
+.partner-logos-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 0.65rem;
+}
+.partner-logos-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+.partner-logo {
+    height: 32px;
+    width: auto;
+    max-width: 90px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid rgba(255,255,255,0.12);
+}
+.partner-logos--footer .partner-logo {
+    background: rgba(255,255,255,0.95);
+}
+.partner-logos--inline .partner-logos-grid {
+    justify-content: center;
+}
+.partner-logos--inline .partner-logo {
+    height: 28px;
+    max-width: 72px;
+}
+.partner-logos--checkout .partner-logos-grid {
+    justify-content: flex-start;
+}
+.partner-logos--checkout .partner-logo {
+    height: 30px;
+}
 .promo-strip { background: var(--uf-gray-100); }
 .promo-card {
     background: #fff;

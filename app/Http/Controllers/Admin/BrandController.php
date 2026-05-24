@@ -25,7 +25,9 @@ class BrandController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        Brand::create($this->validated($request));
+        $data = $this->validated($request);
+        $this->handleLogoUpload($request, $data);
+        Brand::create($data);
 
         return redirect()->route('admin.brands.index')->with('success', 'Brand created.');
     }
@@ -37,7 +39,9 @@ class BrandController extends Controller
 
     public function update(Request $request, Brand $brand): RedirectResponse
     {
-        $brand->update($this->validated($request, $brand->id));
+        $data = $this->validated($request, $brand->id);
+        $this->handleLogoUpload($request, $data);
+        $brand->update($data);
 
         return redirect()->route('admin.brands.index')->with('success', 'Brand updated.');
     }
@@ -57,11 +61,30 @@ class BrandController extends Controller
             'website' => 'nullable|url|max:255',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
+            'logo_file' => 'nullable|image|max:2048',
         ]);
 
         $data['slug'] = Str::slug($data['slug'] ?: $data['name']);
         $data['is_active'] = $request->boolean('is_active');
+        unset($data['logo_file']);
 
         return $data;
+    }
+
+    protected function handleLogoUpload(Request $request, array &$data): void
+    {
+        if (! $request->hasFile('logo_file')) {
+            return;
+        }
+
+        $directory = public_path('images/brands');
+        if (! is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $extension = $request->file('logo_file')->getClientOriginalExtension();
+        $filename = $data['slug'].'.'.$extension;
+        $request->file('logo_file')->move($directory, $filename);
+        $data['logo'] = 'images/brands/'.$filename;
     }
 }

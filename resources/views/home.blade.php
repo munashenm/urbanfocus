@@ -43,11 +43,18 @@
 
 <section class="trust-bar py-3">
     <div class="container">
-        <div class="row g-0">
-            <div class="col-6 col-md-3 trust-item"><strong>Fast Delivery</strong><span class="small text-muted">Courier nationwide</span></div>
-            <div class="col-6 col-md-3 trust-item"><strong>Secure Checkout</strong><span class="small text-muted">PayFast &amp; EFT</span></div>
-            <div class="col-6 col-md-3 trust-item"><strong>B2B Support</strong><span class="small text-muted">087 550 1813</span></div>
-            <div class="col-6 col-md-3 trust-item"><strong>Trusted Since Day One</strong><span class="small text-muted">Genuine products</span></div>
+        <div class="row g-0 align-items-center">
+            <div class="col-lg-7">
+                <div class="row g-0">
+                    <div class="col-6 col-md-3 trust-item"><strong>Fast Delivery</strong><span class="small text-muted">Courier nationwide</span></div>
+                    <div class="col-6 col-md-3 trust-item"><strong>Secure Checkout</strong><span class="small text-muted">PayFast &amp; EFT</span></div>
+                    <div class="col-6 col-md-3 trust-item"><strong>B2B Support</strong><span class="small text-muted">087 550 1813</span></div>
+                    <div class="col-6 col-md-3 trust-item"><strong>Trusted Supplier</strong><span class="small text-muted">Genuine products</span></div>
+                </div>
+            </div>
+            <div class="col-lg-5 mt-3 mt-lg-0">
+                @include('partials.partner-logos', ['variant' => 'compact', 'class' => 'partner-logos--inline'])
+            </div>
         </div>
     </div>
 </section>
@@ -79,17 +86,7 @@
 <section class="py-4 bg-light brand-carousel-section">
     <div class="container">
         <h2 class="section-title text-center mb-4">Leading Brands We Supply</h2>
-        <div class="brand-carousel d-flex flex-wrap justify-content-center gap-3">
-            @foreach($brands as $brand)
-                <a href="{{ route('shop.index', ['brand' => $brand->name]) }}" class="brand-pill">
-                    @if(!empty($brand->logo))
-                        <img src="{{ asset('storage/'.$brand->logo) }}" alt="{{ $brand->name }}" height="28" loading="lazy">
-                    @else
-                        {{ $brand->name }}
-                    @endif
-                </a>
-            @endforeach
-        </div>
+        @include('partials.brand-logos', ['brands' => $brands])
     </div>
 </section>
 @endif
