@@ -8,9 +8,11 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\StorageController;
 use App\Http\Controllers\Admin\CatalogController as AdminCatalogController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -40,6 +42,13 @@ Route::post('/checkout/payfast/notify', [CheckoutController::class, 'payfastNoti
 
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+Route::get('/about', [PageController::class, 'about'])->name('about');
+Route::get('/shipping-returns', [PageController::class, 'shipping'])->name('shipping');
+Route::get('/privacy-policy', [PageController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [PageController::class, 'terms'])->name('terms');
+
+Route::get('/storage/{path}', [StorageController::class, 'show'])->where('path', '.*')->name('storage.serve');
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);

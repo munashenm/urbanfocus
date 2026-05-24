@@ -21,6 +21,50 @@ body {
     line-height: 1.6;
 }
 
+.text-navy { color: var(--uf-navy) !important; }
+
+.page-hero {
+    background: linear-gradient(135deg, var(--uf-navy) 0%, var(--uf-navy-light) 100%);
+    color: #fff;
+    padding: 2.5rem 0;
+}
+
+.info-card {
+    background: var(--uf-gray-100);
+    border: 1px solid var(--uf-gray-200);
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.legal-content h2 { color: var(--uf-navy); }
+.legal-content p, .legal-content li { color: var(--uf-muted); }
+
+.contact-details strong { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.15rem; }
+
+.navbar .nav-link {
+    font-weight: 500;
+    color: var(--uf-text);
+    padding: 0.5rem 0.75rem !important;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+    color: var(--uf-blue);
+}
+.navbar .dropdown-menu {
+    border-radius: 10px;
+    padding: 0.5rem;
+    min-width: 200px;
+}
+.navbar .dropdown-item {
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+}
+.navbar .dropdown-item:hover {
+    background: var(--uf-gray-100);
+    color: var(--uf-navy);
+}
+
 .top-bar { background: var(--uf-navy); font-size: 0.875rem; }
 
 .site-logo {

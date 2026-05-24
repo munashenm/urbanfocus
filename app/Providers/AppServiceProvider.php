@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\View\Composers\LayoutComposer;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Pagination\Paginator;
@@ -19,5 +21,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         Paginator::useBootstrapFive();
+        View::composer(['partials.header', 'partials.footer'], LayoutComposer::class);
     }
 }

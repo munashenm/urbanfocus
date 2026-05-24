@@ -24,7 +24,7 @@
     @stack('head')
     @stack('schema')
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
     @include('partials.header')
 
     @if(session('success'))
@@ -37,7 +37,7 @@
         <div class="container mt-3"><div class="alert alert-warning mb-0">{{ session('warning') }}</div></div>
     @endif
 
-    <main>@yield('content')</main>
+    <main class="flex-grow-1">@yield('content')</main>
 
     @include('partials.footer')
 

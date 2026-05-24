@@ -3,16 +3,35 @@
 @section('title', 'Contact Us | Urban Focus')
 
 @section('content')
+<div class="page-hero">
+    <div class="container">
+        <h1 class="h2 fw-bold mb-2">Contact Us</h1>
+        <p class="mb-0 opacity-75">Product enquiries, bulk orders and courier quotes.</p>
+    </div>
+</div>
+
 <div class="container py-5">
     <div class="row g-5">
         <div class="col-lg-5">
-            <h1 class="h2 fw-bold mb-3">Contact Urban Focus</h1>
-            <p class="text-muted">Get in touch for product enquiries, bulk orders, or manual courier quotes.</p>
-            <ul class="list-unstyled mt-4">
-                <li class="mb-3"><strong>Phone:</strong> <a href="tel:0875501813">087 550 1813</a></li>
-                <li class="mb-3"><strong>Email:</strong> <a href="mailto:sales@urbanfocus.co.za">sales@urbanfocus.co.za</a></li>
-                <li><strong>Website:</strong> www.urbanfocus.co.za</li>
-            </ul>
+            <div class="checkout-card h-100">
+                <h2 class="h5 fw-bold mb-3">Get in touch</h2>
+                <p class="text-muted">Our team typically responds within one business day.</p>
+                <ul class="list-unstyled mt-4 mb-4 contact-details">
+                    <li class="mb-3">
+                        <strong class="d-block text-navy">Phone</strong>
+                        <a href="tel:0875501813">087 550 1813</a>
+                    </li>
+                    <li class="mb-3">
+                        <strong class="d-block text-navy">Email</strong>
+                        <a href="mailto:sales@urbanfocus.co.za">sales@urbanfocus.co.za</a>
+                    </li>
+                    <li>
+                        <strong class="d-block text-navy">Business hours</strong>
+                        Mon–Fri, 8:00–17:00
+                    </li>
+                </ul>
+                <p class="small text-muted mb-0">For urgent orders, call us directly — we can assist with stock checks and manual courier quotes.</p>
+            </div>
         </div>
         <div class="col-lg-7">
             <div class="checkout-card">
