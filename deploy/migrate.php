@@ -42,9 +42,18 @@ echo "Running pending migrations...\n\n";
 try {
     $exitCode = $kernel->call('migrate', ['--force' => true]);
     echo $kernel->output();
-    echo $exitCode === 0 ? "\n✓ Migrations complete.\n" : "\n✗ Migration exit code: {$exitCode}\n";
+    if ($exitCode === 0) {
+        echo "\n✓ Migrations complete.\n";
+    } else {
+        echo "\n✗ Migration exit code: {$exitCode}\n";
+        echo "If you see 'already exists', pull the latest code (idempotent migration fix) and run this script again.\n";
+    }
 } catch (Throwable $e) {
-    echo 'ERROR: '.$e->getMessage()."\n";
+    echo 'ERROR: '.$e->getMessage()."\n\n";
+    if (str_contains($e->getMessage(), 'already exists')) {
+        echo "Fix: Git pull latest urbanfocus, re-copy this migrate.php to public_html, run again.\n";
+        echo "The updated migration skips tables/columns that already exist.\n";
+    }
     exit;
 }
 
