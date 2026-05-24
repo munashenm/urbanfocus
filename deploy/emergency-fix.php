@@ -2,7 +2,11 @@
 
 /**
  * Emergency fix for 500 errors after deploy (no Terminal)
- * Upload to public_html/emergency-fix.php, visit with key, then DELETE.
+ *
+ * 1. Copy urbanfocus/deploy/emergency-fix.php → public_html/emergency-fix.php
+ * 2. Edit FIX_KEY below
+ * 3. Visit: https://www.urbanfocus.co.za/emergency-fix.php?key=YOUR_SECRET
+ * 4. DELETE this file immediately after use
  */
 
 declare(strict_types=1);
@@ -18,56 +22,83 @@ $laravelRoot = dirname(__DIR__).'/urbanfocus';
 header('Content-Type: text/html; charset=utf-8');
 echo '<pre>';
 
+echo "=== Paths ===\n";
+echo "Laravel root: {$laravelRoot}\n";
+echo "Exists: ".(is_dir($laravelRoot) ? 'yes' : 'NO')."\n\n";
+
 $required = [
-    'routes/web.php',
-    'routes/api.php',
+    'vendor/autoload.php',
     'bootstrap/app.php',
-    'app/Http/Controllers/Admin/CatalogController.php',
-    'app/Http/Controllers/Admin/DashboardController.php',
-    'resources/views/layouts/admin.blade.php',
+    'app/helpers.php',
+    'routes/web.php',
+    '.env',
 ];
 
-echo "=== File check ===\n";
+echo "=== Required files ===\n";
 $missing = [];
 foreach ($required as $file) {
     $path = $laravelRoot.'/'.$file;
     if (file_exists($path)) {
-        echo "OK  {$file}\n";
+        echo "OK   {$file}\n";
     } else {
-        echo "MISSING  {$file}\n";
+        echo "MISSING   {$file}\n";
         $missing[] = $file;
     }
 }
 
-echo "\n=== Clear cache ===\n";
+echo "\n=== Clear bootstrap cache (fixes most 500s) ===\n";
 $cacheFiles = glob($laravelRoot.'/bootstrap/cache/*.php') ?: [];
+$cleared = 0;
 foreach ($cacheFiles as $file) {
     if (basename($file) !== '.gitignore' && @unlink($file)) {
-        echo "Deleted: {$file}\n";
+        echo "Deleted: ".basename($file)."\n";
+        $cleared++;
     }
 }
-
-if (file_exists($laravelRoot.'/vendor/autoload.php')) {
-    require $laravelRoot.'/vendor/autoload.php';
-    $app = require_once $laravelRoot.'/bootstrap/app.php';
-    $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-    try {
-        $kernel->call('config:clear');
-        echo $kernel->output();
-        $kernel->call('route:clear');
-        echo $kernel->output();
-        $kernel->call('view:clear');
-        echo $kernel->output();
-        echo "\nArtisan caches cleared.\n";
-    } catch (Throwable $e) {
-        echo "Artisan error: ".$e->getMessage()."\n";
-    }
+if ($cleared === 0) {
+    echo "No cache files (already clear).\n";
 }
 
-echo "\n=== Result ===\n";
-if ($missing) {
-    echo "Upload missing files via Git pull, then run this script again.\n";
+echo "\n=== Laravel log (last 25 lines) ===\n";
+$logFile = $laravelRoot.'/storage/logs/laravel.log';
+if (file_exists($logFile)) {
+    $lines = file($logFile, FILE_IGNORE_NEW_LINES) ?: [];
+    echo implode("\n", array_slice($lines, -25))."\n";
 } else {
-    echo "Try https://www.urbanfocus.co.za/admin now.\n";
+    echo "No log file yet.\n";
 }
+
+echo "\n=== Boot test ===\n";
+if ($missing) {
+    echo "Cannot boot — missing files above. Run git pull in urbanfocus.\n";
+} elseif (! file_exists($laravelRoot.'/vendor/autoload.php')) {
+    echo "Cannot boot — vendor/ missing. Upload vendor or run composer install.\n";
+} else {
+    try {
+        require $laravelRoot.'/vendor/autoload.php';
+        $app = require_once $laravelRoot.'/bootstrap/app.php';
+        $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+        $kernel->call('config:clear');
+        echo trim($kernel->output())."\n";
+        $kernel->call('route:clear');
+        echo trim($kernel->output())."\n";
+        $kernel->call('view:clear');
+        echo trim($kernel->output())."\n";
+        $kernel->call('cache:clear');
+        echo trim($kernel->output())."\n";
+        echo "\n✓ Laravel booted OK. Caches cleared.\n";
+        echo "Try: https://www.urbanfocus.co.za/\n";
+    } catch (Throwable $e) {
+        echo "BOOT FAILED:\n";
+        echo $e->getMessage()."\n\n";
+        echo $e->getFile().':'.$e->getLine()."\n";
+    }
+}
+
+echo "\n=== Permissions check ===\n";
+foreach (['storage', 'storage/logs', 'storage/framework', 'bootstrap/cache'] as $dir) {
+    $path = $laravelRoot.'/'.$dir;
+    echo $dir.': '.(is_writable($path) ? 'writable' : 'NOT WRITABLE')."\n";
+}
+
 echo "\nDELETE public_html/emergency-fix.php now.\n</pre>";

@@ -15,12 +15,10 @@ class HomeController extends Controller
 {
     public function index(): View
     {
-        $cacheMinutes = 10;
-
-        $featuredProducts = Cache::remember('home.featured', $cacheMinutes * 60, fn () => Product::with('images')
+        $featuredProducts = $this->remember('home.featured', fn () => Product::with('images')
             ->where('is_active', true)->where('is_featured', true)->latest()->take(8)->get());
 
-        $dealProducts = Cache::remember('home.deals', $cacheMinutes * 60, function () {
+        $dealProducts = $this->remember('home.deals', function () {
             $q = Product::with('images')->where('is_active', true);
             if (Schema::hasColumn('products', 'is_deal')) {
                 $q->where(fn ($w) => $w->where('is_deal', true)->orWhereNotNull('sale_price'));
@@ -31,27 +29,27 @@ class HomeController extends Controller
             return $q->latest()->take(8)->get();
         });
 
-        $topSellers = Cache::remember('home.top_sellers', $cacheMinutes * 60, fn () => Product::with('images')
+        $topSellers = $this->remember('home.top_sellers', fn () => Product::with('images')
             ->where('is_active', true)
             ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
             ->take(8)
             ->get());
 
-        $networkingProducts = Cache::remember('home.networking', $cacheMinutes * 60, fn () => $this->categoryProducts('networking', 8));
+        $networkingProducts = $this->remember('home.networking', fn () => $this->categoryProducts('networking', 8));
 
-        $laptopProducts = Cache::remember('home.laptops', $cacheMinutes * 60, fn () => $this->categoryProducts('laptops-notebooks', 8));
+        $laptopProducts = $this->remember('home.laptops', fn () => $this->categoryProducts('laptops-notebooks', 8));
 
-        $categories = Cache::remember('home.categories', $cacheMinutes * 60, fn () => Category::where('is_active', true)
+        $categories = $this->remember('home.categories', fn () => Category::where('is_active', true)
             ->whereNull('parent_id')
             ->with('children')
             ->orderBy('sort_order')
             ->take(12)
             ->get());
 
-        $newProducts = Cache::remember('home.new', $cacheMinutes * 60, fn () => Product::with('images')
+        $newProducts = $this->remember('home.new', fn () => Product::with('images')
             ->where('is_active', true)->latest()->take(8)->get());
 
-        $brands = Cache::remember('home.brands', $cacheMinutes * 60, function () {
+        $brands = $this->remember('home.brands', function () {
             if (Schema::hasTable('brands')) {
                 return Brand::where('is_active', true)->orderBy('sort_order')->take(20)->get();
             }
@@ -95,5 +93,14 @@ class HomeController extends Controller
             ->latest()
             ->take($limit)
             ->get();
+    }
+
+    protected function remember(string $key, callable $callback, int $minutes = 10): mixed
+    {
+        try {
+            return Cache::remember($key, $minutes * 60, $callback);
+        } catch (\Throwable) {
+            return $callback();
+        }
     }
 }
