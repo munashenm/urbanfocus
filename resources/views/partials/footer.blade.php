@@ -6,14 +6,7 @@
                     <img src="{{ asset('images/logo-stacked.png') }}" alt="Urban Focus" width="160" height="72">
                 </a>
                 <p class="text-white-50 mb-3">South African supplier of IT hardware, networking, components and software licensing. Professional support and nationwide delivery.</p>
-                @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-2 mb-4'])
-                <h6 class="text-white mb-3">Get in Touch</h6>
-                <ul class="list-unstyled footer-links mb-2">
-                    <li><a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phone') }}</a></li>
-                    <li><a href="mailto:{{ config('business.email') }}">{{ config('business.email') }}</a></li>
-                    @include('partials.business-address', ['showLabel' => false, 'class' => 'mt-2'])
-                </ul>
-                <p class="text-white-50 small mb-0">{{ config('business.hours') }}</p>
+                @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-2'])
             </div>
 
             <div class="col-6 col-lg-2">
@@ -34,6 +27,7 @@
                     <li><a href="{{ route('terms') }}">Terms &amp; Conditions</a></li>
                     <li><a href="{{ route('warranty') }}">Warranty Terms</a></li>
                     <li><a href="{{ route('popia') }}">POPIA</a></li>
+                    <li><a href="{{ route('careers') }}">Work With Us</a></li>
                 </ul>
             </div>
 
@@ -46,20 +40,26 @@
             </div>
 
             <div class="col-6 col-lg-2">
-                <h6 class="text-white mb-3">Careers</h6>
-                <ul class="list-unstyled footer-links">
-                    <li><a href="{{ route('careers') }}">Work With Us</a></li>
+                <h6 class="text-white mb-3">Get in Touch</h6>
+                <ul class="list-unstyled footer-links mb-2">
+                    <li><a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phone') }}</a></li>
+                    <li><a href="mailto:{{ config('business.email') }}">{{ config('business.email') }}</a></li>
+                    @include('partials.business-address', ['showLabel' => false, 'class' => 'mt-2'])
                 </ul>
+                <p class="text-white-50 small mb-0">{{ config('business.hours') }}</p>
             </div>
         </div>
     </div>
     <div class="footer-bottom py-3">
-        <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2 small text-white-50">
-            <span>&copy; {{ date('Y') }} Urban Focus. All rights reserved.</span>
-            <div>
-                <a href="{{ route('privacy') }}" class="text-white-50 text-decoration-none me-3">Privacy</a>
-                <a href="{{ route('terms') }}" class="text-white-50 text-decoration-none me-3">Terms</a>
-                <a href="{{ route('popia') }}" class="text-white-50 text-decoration-none">POPIA</a>
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <span class="small text-white-50">&copy; {{ date('Y') }} Urban Focus. All rights reserved.</span>
+                <img src="{{ asset('images/partners/visa-mastercard.png') }}" alt="Visa and Mastercard accepted" class="footer-payment-logos" width="120" height="32" loading="lazy">
+                <div class="small">
+                    <a href="{{ route('privacy') }}" class="text-white-50 text-decoration-none me-3">Privacy</a>
+                    <a href="{{ route('terms') }}" class="text-white-50 text-decoration-none me-3">Terms</a>
+                    <a href="{{ route('popia') }}" class="text-white-50 text-decoration-none">POPIA</a>
+                </div>
             </div>
         </div>
     </div>

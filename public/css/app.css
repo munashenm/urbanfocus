@@ -228,6 +228,7 @@ body {
 .footer-links a { color: rgba(255,255,255,0.7); text-decoration: none; }
 .footer-links a:hover { color: #fff; }
 .footer-bottom { background: rgba(0,0,0,0.2); }
+.footer-payment-logos { height: 28px; width: auto; object-fit: contain; display: block; }
 
 .product-detail-image {
     background: var(--uf-gray-100);
