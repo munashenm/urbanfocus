@@ -10,7 +10,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        if ($publicPath = env('PUBLIC_PATH')) {
+            $this->app->usePublicPath($publicPath);
+        }
     }
 
     public function boot(): void
