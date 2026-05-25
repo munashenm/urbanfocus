@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\CatalogFilterService;
+use App\Services\CategoryMapperService;
 use App\Services\ProductImportService;
 use App\Services\ProductPricingService;
 use Tests\TestCase;
@@ -32,6 +33,7 @@ class ProductImportServiceTest extends TestCase
             app(\App\Services\ImageService::class),
             new ProductPricingService,
             new CatalogFilterService,
+            new CategoryMapperService,
         );
     }
 
@@ -163,7 +165,7 @@ class ProductImportServiceTest extends TestCase
         ]);
 
         $this->assertSame('DCW', $data['sku']);
-        $this->assertSame('Cables & Adapters > Cable: Power', $data['categories']);
+        $this->assertSame('Peripherals & Accessories > Cables & Adapters', $data['categories']);
 
         $result = $this->import->evaluateRow($data);
 

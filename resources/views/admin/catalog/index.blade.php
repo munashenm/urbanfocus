@@ -86,6 +86,44 @@
     </div>
 
     <div class="col-lg-6">
+        <div class="card h-100 border-primary"><div class="card-body">
+            <h2 class="h5 fw-bold text-primary">Consolidate Categories</h2>
+            <p class="small text-muted">Move imported Esquire/Pinnacle products into the clean 12-department storefront tree (Laptops, Networking, CCTV, etc.) and deactivate empty legacy categories.</p>
+
+            <div class="border rounded p-3 mb-3 bg-light small">
+                <div class="row g-2 text-center mb-3">
+                    <div class="col-6">
+                        <div class="fw-bold text-primary">{{ number_format($categoryConsolidationPreview['products_to_move']) }}</div>
+                        <div class="text-muted">Products to reassign</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="fw-bold">{{ number_format($categoryConsolidationPreview['empty_categories']) }}</div>
+                        <div class="text-muted">Empty legacy categories</div>
+                    </div>
+                </div>
+
+                @if($categoryConsolidationPreview['sample_moves'] !== [])
+                    <p class="fw-semibold mb-1">Sample moves:</p>
+                    <ul class="mb-0 ps-3">
+                        @foreach($categoryConsolidationPreview['sample_moves'] as $move)
+                            <li>{{ $move['from'] }} → {{ $move['to'] }} ({{ number_format($move['count']) }})</li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="text-success mb-0">Products already use the canonical category tree.</p>
+                @endif
+            </div>
+
+            @if($categoryConsolidationPreview['products_to_move'] > 0 || $categoryConsolidationPreview['empty_categories'] > 0)
+            <form action="{{ route('admin.catalog.consolidate-categories') }}" method="POST" onsubmit="return confirm('Reassign {{ number_format($categoryConsolidationPreview['products_to_move']) }} product(s) to the clean category tree?')">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-primary">Run Category Consolidation</button>
+            </form>
+            @endif
+        </div></div>
+    </div>
+
+    <div class="col-lg-6">
         <div class="card h-100 border-warning"><div class="card-body">
             <h2 class="h5 fw-bold text-warning">Remove Non-IT Catalog</h2>
             <p class="small text-muted">Permanently deletes non-IT products <strong>and</strong> their categories (lady shavers, dictionaries, bathroom accessories, stationery, homeware, etc.). IT categories with mixed stock are kept — only matching products are removed. Large catalogs may take several minutes — use <code>deploy/cleanup-non-it.php</code> in <code>public_html</code> if this times out.</p>
@@ -215,7 +253,17 @@
                 <form action="{{ route('admin.catalog.bulk-fix-merchant') }}" method="POST" class="d-inline" onsubmit="return confirm('Generate UF-{id} SKUs for products missing identifiers?')">
                     @csrf
                     <input type="hidden" name="action" value="fill_sku">
-                    <button type="submit" class="btn btn-sm btn-outline-primary">Generate Missing SKUs</button>
+                    <button type="submit" class="btn btn-sm btn-outline-primary me-2">Generate Missing SKUs</button>
+                </form>
+                <form action="{{ route('admin.catalog.bulk-fix-merchant') }}" method="POST" class="d-inline" onsubmit="return confirm('Strip non-digits from barcode fields to normalize GTINs?')">
+                    @csrf
+                    <input type="hidden" name="action" value="normalize_gtin">
+                    <button type="submit" class="btn btn-sm btn-outline-primary me-2">Normalize GTIN/Barcodes</button>
+                </form>
+                <form action="{{ route('admin.catalog.bulk-fix-merchant') }}" method="POST" class="d-inline" onsubmit="return confirm('Use the first word of the product name as brand where missing?')">
+                    @csrf
+                    <input type="hidden" name="action" value="fill_brand">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Fill Missing Brands</button>
                 </form>
             @endif
 

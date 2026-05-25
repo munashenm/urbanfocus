@@ -1,8 +1,10 @@
 <?php
 
 return [
+    'hide_out_of_stock' => filter_var(env('CATALOG_HIDE_OUT_OF_STOCK', true), FILTER_VALIDATE_BOOL),
+    'deprioritize_out_of_stock' => filter_var(env('CATALOG_DEPRIORITIZE_OUT_OF_STOCK', true), FILTER_VALIDATE_BOOL),
+
     /*
-    | Esquire / distributor CategoryHead values treated as IT departments.
     | Categories under these heads are kept unless they match excluded_category_terms.
     | Top-level categories NOT in this list (orphan categories) are non-IT by default.
     */

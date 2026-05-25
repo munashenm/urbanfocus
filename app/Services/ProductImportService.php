@@ -16,6 +16,7 @@ class ProductImportService
         protected ImageService $images,
         protected ProductPricingService $pricing,
         protected CatalogFilterService $catalogFilter,
+        protected CategoryMapperService $categoryMapper,
     ) {}
 
     protected array $headerMap = [
@@ -437,13 +438,36 @@ class ProductImportService
 
     protected function resolveCategoryId(string $categories): ?int
     {
-        $parts = array_values(array_filter(array_map('trim', preg_split('/\s*>\s*/', $categories) ?: [])));
-
-        if ($parts === []) {
+        if (trim($categories) === '') {
             return null;
         }
 
         if ($this->catalogFilter->isExcludedCategoryPath($categories)) {
+            return null;
+        }
+
+        $this->categoryMapper->ensureCanonicalTree();
+
+        $categoryId = $this->categoryMapper->resolveCategoryId($categories);
+
+        if ($categoryId !== null) {
+            $category = Category::find($categoryId);
+
+            if ($category && $this->catalogFilter->isCategoryExcluded($category)) {
+                return null;
+            }
+
+            return $categoryId;
+        }
+
+        return $this->resolveLegacyCategoryId($categories);
+    }
+
+    protected function resolveLegacyCategoryId(string $categories): ?int
+    {
+        $parts = array_values(array_filter(array_map('trim', preg_split('/\s*>\s*/', $categories) ?: [])));
+
+        if ($parts === []) {
             return null;
         }
 
@@ -548,6 +572,10 @@ class ProductImportService
             } elseif ($sub) {
                 $data['categories'] = $sub;
             }
+        }
+
+        if (trim($data['categories'] ?? '') !== '') {
+            $data['categories'] = $this->categoryMapper->mapImportCategories($data);
         }
 
         if (empty($data['meta_title']) && ! empty($data['name'])) {

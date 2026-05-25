@@ -145,6 +145,53 @@ class Product extends Model
         return $this->stock_quantity > 0;
     }
 
+    public function scopeAvailableInStock($query)
+    {
+        return $query->where(function ($q) {
+            $q->where(function ($inner) {
+                $inner->where('manage_stock', true)->where('stock_quantity', '>', 0);
+            })->orWhere(function ($inner) {
+                $inner->where('manage_stock', false)->where('in_stock', true);
+            });
+        });
+    }
+
+    public function scopeForStorefront($query, ?bool $includeOutOfStock = null)
+    {
+        $query->where('is_active', true);
+
+        $includeOutOfStock ??= ! config('catalog.hide_out_of_stock', true);
+
+        if (! $includeOutOfStock) {
+            $query->availableInStock();
+        } elseif (config('catalog.deprioritize_out_of_stock', true)) {
+            $query->orderByRaw(
+                'CASE WHEN (manage_stock = 1 AND stock_quantity > 0) OR (manage_stock = 0 AND in_stock = 1) THEN 0 ELSE 1 END'
+            );
+        }
+
+        return $query;
+    }
+
+    public static function applyStorefrontStockFilter($query, ?\Illuminate\Http\Request $request = null): void
+    {
+        if (config('catalog.hide_out_of_stock', true)) {
+            if (! $request?->boolean('include_out_of_stock')) {
+                $query->availableInStock();
+            } elseif (config('catalog.deprioritize_out_of_stock', true)) {
+                $query->orderByRaw(
+                    'CASE WHEN (manage_stock = 1 AND stock_quantity > 0) OR (manage_stock = 0 AND in_stock = 1) THEN 0 ELSE 1 END'
+                );
+            }
+
+            return;
+        }
+
+        if ($request?->boolean('in_stock')) {
+            $query->availableInStock();
+        }
+    }
+
     public function googleFeedId(): string
     {
         return $this->sku ?: (string) $this->id;

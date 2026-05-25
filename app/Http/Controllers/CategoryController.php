@@ -29,12 +29,10 @@ class CategoryController extends Controller
             ->whereIn('category_id', $categoryIds)
             ->where('is_active', true);
 
+        Product::applyStorefrontStockFilter($query, $request);
+
         if ($brand = $request->get('brand')) {
             $query->where('brand', $brand);
-        }
-
-        if ($request->get('in_stock')) {
-            $query->where('in_stock', true)->where('stock_quantity', '>', 0);
         }
 
         if ($min = $request->get('price_min')) {

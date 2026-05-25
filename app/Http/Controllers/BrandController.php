@@ -25,6 +25,7 @@ class BrandController extends Controller
 
         $products = Product::with(['category', 'images'])
             ->where('is_active', true)
+            ->availableInStock()
             ->where('brand', $brand->name)
             ->latest()
             ->paginate(24);

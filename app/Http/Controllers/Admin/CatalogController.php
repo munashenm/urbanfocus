@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Services\CategoryConsolidationService;
 use App\Services\GoogleMerchantService;
 use App\Services\ProductCleanupService;
 use App\Services\ProductExportService;
@@ -17,11 +18,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CatalogController extends Controller
 {
-    public function index(GoogleMerchantService $merchant, ProductCleanupService $cleanup): View
+    public function index(GoogleMerchantService $merchant, ProductCleanupService $cleanup, CategoryConsolidationService $consolidation): View
     {
         $apiKey = Setting::get('api_key') ?: config('app.api_key');
         $feedStats = $merchant->feedStats();
         $nonItPreview = $cleanup->previewNonItCleanup();
+        $categoryConsolidationPreview = $consolidation->preview();
         $merchantIssueLabels = Product::googleMerchantIssueLabels();
         $ineligibleSample = $merchant->ineligibleProducts(10);
         $importPricing = app(ProductImportService::class)->pricingPolicy();
@@ -37,7 +39,7 @@ class CatalogController extends Controller
             ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
         ];
 
-        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing'));
+        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing'));
     }
 
     public function import(Request $request, ProductImportService $importService): RedirectResponse
@@ -177,17 +179,21 @@ class CatalogController extends Controller
     public function bulkFixMerchant(Request $request, GoogleMerchantService $merchant): RedirectResponse
     {
         $request->validate([
-            'action' => 'required|in:fill_descriptions,fill_sku',
+            'action' => 'required|in:fill_descriptions,fill_sku,normalize_gtin,fill_brand',
         ]);
 
         $count = match ($request->action) {
             'fill_descriptions' => $merchant->bulkFillDescriptions(),
             'fill_sku' => $merchant->bulkFillSkuFromId(),
+            'normalize_gtin' => $merchant->bulkNormalizeGtin(),
+            'fill_brand' => $merchant->bulkFillBrandFromName(),
         };
 
         $label = match ($request->action) {
             'fill_descriptions' => 'descriptions',
             'fill_sku' => 'SKUs',
+            'normalize_gtin' => 'GTIN/barcode values',
+            'fill_brand' => 'brands',
         };
 
         if ($count === 0) {
@@ -195,5 +201,15 @@ class CatalogController extends Controller
         }
 
         return back()->with('success', "Updated {$count} product {$label} for Google Merchant eligibility.");
+    }
+
+    public function consolidateCategories(CategoryConsolidationService $consolidation): RedirectResponse
+    {
+        $result = $consolidation->consolidate();
+
+        return back()->with(
+            'success',
+            "Moved {$result['moved']} products into the canonical category tree and deactivated {$result['deactivated']} empty import categories."
+        );
     }
 }

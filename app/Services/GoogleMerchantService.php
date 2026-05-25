@@ -157,4 +157,57 @@ class GoogleMerchantService
 
         return $updated;
     }
+
+    public function bulkNormalizeGtin(): int
+    {
+        $updated = 0;
+
+        Product::query()
+            ->where('is_active', true)
+            ->whereNotNull('barcode')
+            ->where('barcode', '!=', '')
+            ->chunkById(200, function ($products) use (&$updated) {
+                foreach ($products as $product) {
+                    $normalized = preg_replace('/\D/', '', (string) $product->barcode);
+
+                    if ($normalized === '' || $normalized === (string) $product->barcode) {
+                        continue;
+                    }
+
+                    $product->update(['barcode' => $normalized]);
+                    $updated++;
+                }
+            });
+
+        return $updated;
+    }
+
+    public function bulkFillBrandFromName(): int
+    {
+        $updated = 0;
+
+        Product::query()
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('brand')->orWhere('brand', '');
+            })
+            ->chunkById(200, function ($products) use (&$updated) {
+                foreach ($products as $product) {
+                    if (! in_array('no_brand', $product->googleMerchantIssues(), true)) {
+                        continue;
+                    }
+
+                    $brand = trim(strtok($product->name, ' '));
+
+                    if ($brand === '') {
+                        continue;
+                    }
+
+                    $product->update(['brand' => $brand]);
+                    $updated++;
+                }
+            });
+
+        return $updated;
+    }
 }

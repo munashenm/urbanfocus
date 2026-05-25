@@ -82,6 +82,7 @@ class SearchService
 
         return Product::with(['category', 'images'])
             ->where('is_active', true)
+            ->when(config('catalog.hide_out_of_stock', true), fn ($q) => $q->availableInStock())
             ->where(function (Builder $q) use ($search, $fuzzy) {
                 if ($fuzzy) {
                     $this->applyFuzzySearch($q, $search);

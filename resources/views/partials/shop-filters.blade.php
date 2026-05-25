@@ -9,7 +9,7 @@
         <div class="collapse d-lg-block" id="shopFilters">
             <h6 class="fw-bold mb-3 d-none d-lg-block">Filters</h6>
             <form method="GET" action="{{ $filterAction ?? route('shop.index') }}">
-                @foreach(request()->except(['category', 'brand', 'in_stock', 'deals', 'price_min', 'price_max', 'sort', 'page']) as $key => $val)
+                @foreach(request()->except(['category', 'brand', 'in_stock', 'include_out_of_stock', 'deals', 'price_min', 'price_max', 'sort', 'page']) as $key => $val)
                     @if(is_string($val))<input type="hidden" name="{{ $key }}" value="{{ $val }}">@endif
                 @endforeach
                 @if(!empty($showCategoryFilter) && $categories->count())
@@ -44,10 +44,17 @@
                         <div class="col-6"><input type="number" name="price_max" class="form-control form-control-sm" placeholder="Max" value="{{ request('price_max') }}" min="0"></div>
                     </div>
                 </div>
+                @if(config('catalog.hide_out_of_stock', true))
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="include_out_of_stock" value="1" id="includeOutOfStock" @checked(request('include_out_of_stock'))>
+                    <label class="form-check-label small" for="includeOutOfStock">Include out of stock</label>
+                </div>
+                @else
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="inStock" @checked(request('in_stock'))>
                     <label class="form-check-label small" for="inStock">In stock only</label>
                 </div>
+                @endif
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" name="deals" value="1" id="dealsOnly" @checked(request('deals'))>
                     <label class="form-check-label small" for="dealsOnly">Deals only</label>

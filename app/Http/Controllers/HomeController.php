@@ -16,10 +16,10 @@ class HomeController extends Controller
     public function index(): View
     {
         $featuredProducts = $this->remember('home.featured', fn () => Product::with('images')
-            ->where('is_active', true)->where('is_featured', true)->latest()->take(8)->get());
+            ->forStorefront()->where('is_featured', true)->latest()->take(8)->get());
 
         $dealProducts = $this->remember('home.deals', function () {
-            $q = Product::with('images')->where('is_active', true);
+            $q = Product::with('images')->forStorefront();
             if (Schema::hasColumn('products', 'is_deal')) {
                 $q->where(fn ($w) => $w->where('is_deal', true)->orWhereNotNull('sale_price'));
             } else {
@@ -30,7 +30,7 @@ class HomeController extends Controller
         });
 
         $topSellers = $this->remember('home.top_sellers', fn () => Product::with('images')
-            ->where('is_active', true)
+            ->forStorefront()
             ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
             ->take(8)
             ->get());
@@ -48,7 +48,7 @@ class HomeController extends Controller
             ->get());
 
         $newProducts = $this->remember('home.new', fn () => Product::with('images')
-            ->where('is_active', true)->latest()->take(8)->get());
+            ->forStorefront()->latest()->take(8)->get());
 
         $brands = $this->remember('home.brands', function () {
             if (Schema::hasTable('brands')) {
@@ -89,7 +89,7 @@ class HomeController extends Controller
         $ids = Category::descendantIds($category->id);
 
         return Product::with('images')
-            ->where('is_active', true)
+            ->forStorefront()
             ->whereIn('category_id', $ids)
             ->latest()
             ->take($limit)

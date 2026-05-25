@@ -244,6 +244,8 @@ body {
 .product-stock.in-stock { color: #059669; }
 .product-stock.out-stock { color: #dc2626; }
 .product-card-action { margin-top: 0.75rem; }
+.product-card.is-unavailable { opacity: 0.78; }
+.product-card.is-unavailable .product-card-image img { filter: grayscale(25%); }
 
 .trust-bar {
     background: var(--uf-gray-100);

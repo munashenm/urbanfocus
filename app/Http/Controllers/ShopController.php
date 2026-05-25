@@ -21,8 +21,10 @@ class ShopController extends Controller
             if ((clone $query)->count() === 0) {
                 $query = $this->search->productQuery($searchTerm, fuzzy: true);
             }
+            Product::applyStorefrontStockFilter($query, $request);
         } else {
             $query = Product::with(['category', 'images'])->where('is_active', true);
+            Product::applyStorefrontStockFilter($query, $request);
         }
 
         if ($categorySlug = $request->get('category')) {
@@ -34,10 +36,6 @@ class ShopController extends Controller
 
         if ($brand = $request->get('brand')) {
             $query->where('brand', $brand);
-        }
-
-        if ($request->get('in_stock')) {
-            $query->where('in_stock', true)->where('stock_quantity', '>', 0);
         }
 
         if ($request->boolean('deals')) {

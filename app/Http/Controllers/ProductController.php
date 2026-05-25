@@ -16,14 +16,14 @@ class ProductController extends Controller
         $product->load(['category', 'images']);
 
         $relatedProducts = Product::with('images')
-            ->where('is_active', true)
+            ->forStorefront()
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(4)
             ->get();
 
         $accessories = Product::with('images')
-            ->where('is_active', true)
+            ->forStorefront()
             ->where('id', '!=', $product->id)
             ->where(function ($q) use ($product) {
                 $peripheral = Category::where('slug', 'peripherals')->first();
