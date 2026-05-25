@@ -26,7 +26,7 @@
 
             <ul class="small text-muted mb-3">
                 <li><strong>Pinnacle:</strong> StockCode, ProdName, ProdImg, ProdPriceExclVAT, ProdQty, category_tree, BarcodeEAN</li>
-                <li><strong>Esquire:</strong> ProductName, ProductCode, CategoryHead, Category, Image, Price</li>
+                <li><strong>Esquire:</strong> ProductName, ProductCode, CategoryHead, Category, Image, Price (Data Export CSV)</li>
                 <li>Required: name, image URL(s), cost/price — skipped if missing</li>
                 <li>Pinnacle cost (<code>ProdPriceExclVAT</code>) → retail with {{ $importPricing['markup_percent'] }}% markup, rounded to R{{ $importPricing['round_to'] }}</li>
                 <li>Matches existing products by SKU or WooCommerce ID</li>

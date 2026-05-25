@@ -144,4 +144,30 @@ class ProductImportServiceTest extends TestCase
         $this->assertSame('skip', $result['action']);
         $this->assertSame('non_it', $result['reason']);
     }
+
+    public function test_accepts_esquire_data_export_row(): void
+    {
+        config(['catalog.it_category_heads' => ['Cables & Adapters']]);
+
+        $data = $this->import->normalizeImportRow([
+            'name' => 'DC CONNECTOR MALE',
+            'sku' => '="DCW"',
+            'category_head' => 'Cables & Adapters ',
+            'category' => 'Cable: Power',
+            'images' => 'https://api.esquire.co.za/Resources/Images/Products/Big_images-(1).jfif.png',
+            'regular_price' => '4.000045',
+            'stock' => '106',
+            'brand' => 'Securnix',
+            'short_description' => 'DC Male Connector Cable',
+        ]);
+
+        $this->assertSame('DCW', $data['sku']);
+        $this->assertSame('Cables & Adapters > Cable: Power', $data['categories']);
+
+        $result = $this->import->evaluateRow($data);
+
+        $this->assertSame('create', $result['action']);
+        $this->assertSame(4.0, $result['cost_price']);
+        $this->assertSame(50.0, $result['retail_price']);
+    }
 }
