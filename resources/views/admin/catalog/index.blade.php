@@ -7,15 +7,13 @@
     <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Import Products (CSV)</h2>
-            <p class="small text-muted">Supports WooCommerce exports and Urban Focus CSV format. UTF-8 with comma or semicolon delimiters.</p>
+            <p class="small text-muted">Supports WooCommerce exports and distributor CSVs (ProductName, ProductCode, Category, Image, etc.). UTF-8 with comma or semicolon delimiters.</p>
 
             <div class="alert alert-light border small mb-3">
-                <strong>First-time setup from WooCommerce:</strong>
+                <strong>Large imports (1000+ products):</strong>
                 <ol class="mb-0 ps-3 mt-2">
-                    <li>In WooCommerce admin: <strong>Products → Export</strong></li>
-                    <li>Select all products and download the CSV</li>
-                    <li>Upload the file below — existing products match by SKU or WooCommerce ID</li>
-                    <li>Re-import anytime to update prices and stock</li>
+                    <li>Upload CSV to <code>urbanfocus/storage/imports/products.csv</code> via File Manager</li>
+                    <li>Run <code>deploy/import-csv.php</code> from <code>public_html</code> (no browser timeout)</li>
                 </ol>
             </div>
 
