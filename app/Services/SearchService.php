@@ -50,6 +50,7 @@ class SearchService
         }
 
         $categories = Category::where('is_active', true)
+            ->visibleInCatalog()
             ->where('name', 'like', "%{$query}%")
             ->orderBy('sort_order')
             ->take(4)
@@ -137,7 +138,8 @@ class SearchService
         $columns = config('mega-menu.columns', []);
         $dbCategories = Category::where('is_active', true)
             ->whereNull('parent_id')
-            ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
+            ->visibleInCatalog()
+            ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])
             ->get()
             ->keyBy('slug');
 

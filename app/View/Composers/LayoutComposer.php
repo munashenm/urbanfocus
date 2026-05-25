@@ -17,6 +17,7 @@ class LayoutComposer
         try {
             $view->with('navCategories', Category::where('is_active', true)
                 ->whereNull('parent_id')
+                ->visibleInCatalog()
                 ->orderBy('sort_order')
                 ->take(12)
                 ->get());

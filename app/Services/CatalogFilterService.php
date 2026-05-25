@@ -8,6 +8,9 @@ use Illuminate\Support\Collection;
 
 class CatalogFilterService
 {
+    /** @var list<int>|null */
+    protected ?array $excludedCategoryIdsCache = null;
+
     /** @return list<string> */
     public function itCategoryHeads(): array
     {
@@ -250,6 +253,18 @@ class CatalogFilterService
     }
 
     /** @return list<int> */
+    public function excludedCategoryIds(): array
+    {
+        if ($this->excludedCategoryIdsCache !== null) {
+            return $this->excludedCategoryIdsCache;
+        }
+
+        $this->excludedCategoryIdsCache = $this->collectExcludedCategoryIds();
+
+        return $this->excludedCategoryIdsCache;
+    }
+
+    /** @return list<int> */
     public function collectExcludedCategoryIds(): array
     {
         return Category::query()
@@ -266,6 +281,16 @@ class CatalogFilterService
         return Category::query()
             ->get()
             ->filter(fn (Category $category) => $this->isCategoryExcluded($category))
+            ->values();
+    }
+
+    /** @param \Illuminate\Support\Collection<int, Category> $categories */
+    public function filterVisibleCategories(\Illuminate\Support\Collection $categories): \Illuminate\Support\Collection
+    {
+        $excluded = array_flip($this->excludedCategoryIds());
+
+        return $categories
+            ->reject(fn (Category $category) => isset($excluded[$category->id]))
             ->values();
     }
 }

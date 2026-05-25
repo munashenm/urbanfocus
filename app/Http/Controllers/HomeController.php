@@ -41,7 +41,8 @@ class HomeController extends Controller
 
         $categories = $this->remember('home.categories', fn () => Category::where('is_active', true)
             ->whereNull('parent_id')
-            ->with('children')
+            ->visibleInCatalog()
+            ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])
             ->orderBy('sort_order')
             ->take(12)
             ->get());

@@ -63,6 +63,17 @@ class Category extends Model
         return 'slug';
     }
 
+    public function scopeVisibleInCatalog($query)
+    {
+        $excluded = app(\App\Services\CatalogFilterService::class)->excludedCategoryIds();
+
+        if ($excluded !== []) {
+            $query->whereNotIn('id', $excluded);
+        }
+
+        return $query;
+    }
+
     /** @return array<int> */
     public static function descendantIds(int $categoryId): array
     {

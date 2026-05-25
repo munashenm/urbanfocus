@@ -104,6 +104,13 @@ class ProductCleanupService
         // 3. Delete excluded categories once they are empty (deepest first).
         $categoriesDeleted = $this->deleteExcludedCategories($excludedCategoryIds);
 
+        // 4. Hide any excluded categories that could not be removed yet.
+        if ($excludedCategoryIds !== []) {
+            Category::query()
+                ->whereIn('id', $excludedCategoryIds)
+                ->update(['is_active' => false]);
+        }
+
         Cache::forget('sitemap.xml');
 
         return [

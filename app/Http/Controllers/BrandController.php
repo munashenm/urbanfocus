@@ -31,6 +31,8 @@ class BrandController extends Controller
 
         $categories = Category::where('is_active', true)
             ->whereNull('parent_id')
+            ->visibleInCatalog()
+            ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])
             ->orderBy('sort_order')
             ->get();
 

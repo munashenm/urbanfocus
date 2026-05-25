@@ -1,4 +1,6 @@
+@if(empty($embedded))
 <aside class="col-lg-3">
+@endif
     <div class="filter-sidebar">
         <div class="d-flex justify-content-between align-items-center mb-3 d-lg-none">
             <h6 class="fw-bold mb-0">Filters</h6>
@@ -64,4 +66,6 @@
             </form>
         </div>
     </div>
+@if(empty($embedded))
 </aside>
+@endif

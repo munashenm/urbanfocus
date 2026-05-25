@@ -4,14 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\CatalogFilterService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
+    public function __construct(protected CatalogFilterService $catalogFilter) {}
+
     public function show(Category $category, Request $request): View
     {
-        $category->load(['children', 'parent']);
+        if ($this->catalogFilter->isCategoryExcluded($category)) {
+            abort(404);
+        }
+
+        $category->load([
+            'parent',
+            'children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order'),
+        ]);
+
         $categoryIds = Category::descendantIds($category->id);
 
         $query = Product::with('images')
@@ -52,10 +63,18 @@ class CategoryController extends Controller
             ->orderBy('brand')
             ->pluck('brand');
 
-        $siblings = $category->parent_id
-            ? Category::where('parent_id', $category->parent_id)->where('is_active', true)->orderBy('sort_order')->get()
-            : Category::whereNull('parent_id')->where('is_active', true)->orderBy('sort_order')->get();
+        $subcategories = $category->children;
 
-        return view('categories.show', compact('category', 'products', 'brands', 'siblings'));
+        $siblingCategories = collect();
+        if ($category->parent_id) {
+            $siblingCategories = Category::query()
+                ->where('parent_id', $category->parent_id)
+                ->where('is_active', true)
+                ->visibleInCatalog()
+                ->orderBy('sort_order')
+                ->get();
+        }
+
+        return view('categories.show', compact('category', 'products', 'brands', 'subcategories', 'siblingCategories'));
     }
 }

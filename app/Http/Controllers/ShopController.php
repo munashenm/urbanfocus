@@ -67,7 +67,7 @@ class ShopController extends Controller
         };
 
         $products = $query->paginate(24)->withQueryString();
-        $categories = Category::where('is_active', true)->whereNull('parent_id')->with('children')->orderBy('sort_order')->get();
+        $categories = Category::where('is_active', true)->whereNull('parent_id')->visibleInCatalog()->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])->orderBy('sort_order')->get();
         $brands = Product::where('is_active', true)->whereNotNull('brand')->distinct()->orderBy('brand')->pluck('brand');
 
         return view('shop.index', compact('products', 'categories', 'brands'));

@@ -21,26 +21,30 @@
         @if($category->description)<p class="text-muted mb-0">{{ $category->description }}</p>@endif
     </div>
 
-    @if($category->children->count())
-        <div class="subcategory-chips mb-4 d-flex flex-wrap gap-2">
-            @foreach($category->children as $child)
-                <a href="{{ route('categories.show', $child) }}" class="btn btn-sm btn-outline-primary">{{ $child->name }}</a>
-            @endforeach
-        </div>
-    @elseif($siblings->count() > 1)
-        <div class="subcategory-chips mb-4 d-flex flex-wrap gap-2">
-            @foreach($siblings as $sibling)
-                <a href="{{ route('categories.show', $sibling) }}" class="btn btn-sm {{ $sibling->id === $category->id ? 'btn-primary' : 'btn-outline-primary' }}">{{ $sibling->name }}</a>
-            @endforeach
-        </div>
+    @if($siblingCategories->count() > 1)
+        <nav class="category-sibling-nav mb-4" aria-label="Related subcategories in {{ $category->parent->name }}">
+            <p class="small text-muted mb-2">Browse {{ $category->parent->name }}</p>
+            <div class="category-sibling-scroll d-flex gap-2 pb-1">
+                @foreach($siblingCategories as $sibling)
+                    <a href="{{ route('categories.show', $sibling) }}" class="category-sibling-pill {{ $sibling->id === $category->id ? 'is-active' : '' }}">{{ $sibling->name }}</a>
+                @endforeach
+            </div>
+        </nav>
     @endif
 
     <div class="row g-4">
-        @include('partials.shop-filters', [
-            'filterAction' => route('categories.show', $category),
-            'showCategoryFilter' => false,
-            'categories' => collect(),
-        ])
+        <aside class="col-lg-3">
+            @if($subcategories->count())
+                @include('partials.category-subnav', ['title' => 'Subcategories', 'categories' => $subcategories])
+            @endif
+
+            @include('partials.shop-filters', [
+                'filterAction' => route('categories.show', $category),
+                'showCategoryFilter' => false,
+                'categories' => collect(),
+                'embedded' => true,
+            ])
+        </aside>
 
         <div class="col-lg-9">
             <div class="d-flex justify-content-between align-items-center mb-4">

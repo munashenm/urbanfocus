@@ -60,7 +60,7 @@ class SeoService
                 });
             }
 
-            Category::where('is_active', true)->get()->each(function (Category $category) use (&$urls) {
+            Category::where('is_active', true)->visibleInCatalog()->get()->each(function (Category $category) use (&$urls) {
                 $urls[] = [
                     'loc' => route('categories.show', $category),
                     'changefreq' => 'weekly',
