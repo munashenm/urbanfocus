@@ -20,8 +20,9 @@
             </div>
 
             <ul class="small text-muted">
-                <li>Required column: <strong>Name</strong></li>
+                <li>Required columns: <strong>Name</strong>, <strong>Images</strong> (full image URLs)</li>
                 <li>Recommended: SKU, Categories, Regular price, Stock, Published</li>
+                <li>Rows without images are skipped — existing products keep updating if they already have photos</li>
                 <li>Matches existing products by SKU or WooCommerce ID</li>
             </ul>
             <form action="{{ route('admin.catalog.import') }}" method="POST" enctype="multipart/form-data">

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Services\Social\SocialPostingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -11,11 +12,15 @@ use Illuminate\Support\Str;
 
 class ProductImportService
 {
+    public function __construct(protected ImageService $images) {}
+
     protected array $headerMap = [
         'id' => 'id',
         'sku' => 'sku',
         'name' => 'name',
         'categories' => 'categories',
+        'images' => 'images',
+        'image' => 'images',
         'regular price' => 'regular_price',
         'sale price' => 'sale_price',
         'stock' => 'stock',
@@ -60,6 +65,7 @@ class ProductImportService
         $imported = 0;
         $updated = 0;
         $skipped = 0;
+        $skippedNoImage = 0;
         $errors = [];
 
         SocialPostingService::$suppress = true;
@@ -80,6 +86,14 @@ class ProductImportService
                     $result = $this->importRow($data);
                     $result === 'created' ? $imported++ : $updated++;
                 });
+            } catch (\InvalidArgumentException $e) {
+                if (str_starts_with($e->getMessage(), 'Skipped:')) {
+                    $skippedNoImage++;
+
+                    continue;
+                }
+
+                $errors[] = ($data['name'] ?? 'Unknown row').': '.$e->getMessage();
             } catch (\Throwable $e) {
                 $errors[] = ($data['name'] ?? 'Unknown row').': '.$e->getMessage();
             }
@@ -90,7 +104,7 @@ class ProductImportService
 
         fclose($handle);
 
-        return compact('imported', 'updated', 'skipped', 'errors');
+        return compact('imported', 'updated', 'skipped', 'skippedNoImage', 'errors');
     }
 
     protected function detectDelimiter(string $line): string
@@ -147,6 +161,16 @@ class ProductImportService
             throw new \InvalidArgumentException('Product name is required');
         }
 
+        $wooId = $data['id'] ?? null;
+        $sku = $data['sku'] ?? null;
+        $existing = $this->findExisting($sku, $wooId);
+        $imageUrls = $this->parseImageUrls($data['images'] ?? '');
+        $hasExistingImages = $existing && $existing->images()->exists();
+
+        if ($imageUrls === [] && ! $hasExistingImages) {
+            throw new \InvalidArgumentException('Skipped: no product images in CSV');
+        }
+
         $categoryId = null;
         $categories = $data['categories'] ?? '';
         if ($categories) {
@@ -167,20 +191,6 @@ class ProductImportService
         $inStock = in_array($inStockValue, ['1', 'yes', 'true', 'instock', 'in stock'], true);
 
         $slug = Str::slug($name);
-        $wooId = $data['id'] ?? null;
-        $sku = $data['sku'] ?? null;
-
-        $existing = null;
-        if ($sku || $wooId) {
-            $existing = Product::query()->where(function ($q) use ($sku, $wooId) {
-                if ($sku) {
-                    $q->where('sku', $sku);
-                }
-                if ($wooId) {
-                    $q->orWhere('woocommerce_id', $wooId);
-                }
-            })->first();
-        }
 
         if ($existing) {
             $slug = $existing->slug;
@@ -212,13 +222,82 @@ class ProductImportService
 
         if ($existing) {
             $existing->update($attributes);
-
-            return 'updated';
+            $product = $existing->fresh();
+        } else {
+            $product = Product::create($attributes);
         }
 
-        Product::create($attributes);
+        if ($imageUrls !== []) {
+            $this->importImages($product, $imageUrls);
+        }
 
-        return 'created';
+        if (! $product->images()->exists()) {
+            throw new \InvalidArgumentException('Skipped: product has no images');
+        }
+
+        return $existing ? 'updated' : 'created';
+    }
+
+    protected function findExisting(?string $sku, ?string $wooId): ?Product
+    {
+        if (! $sku && ! $wooId) {
+            return null;
+        }
+
+        return Product::query()->where(function ($q) use ($sku, $wooId) {
+            if ($sku) {
+                $q->where('sku', $sku);
+            }
+            if ($wooId) {
+                $q->orWhere('woocommerce_id', $wooId);
+            }
+        })->first();
+    }
+
+    /** @return list<string> */
+    protected function parseImageUrls(string $value): array
+    {
+        if (trim($value) === '') {
+            return [];
+        }
+
+        $urls = [];
+        foreach (preg_split('/\s*,\s*/', $value) ?: [] as $url) {
+            $url = trim($url);
+            if ($url === '') {
+                continue;
+            }
+            if (! str_starts_with($url, 'http://') && ! str_starts_with($url, 'https://')) {
+                continue;
+            }
+            $urls[] = $url;
+        }
+
+        return array_values(array_unique($urls));
+    }
+
+    protected function importImages(Product $product, array $urls): int
+    {
+        $saved = 0;
+        $sortOrder = (int) ($product->images()->max('sort_order') ?? 0);
+
+        foreach ($urls as $url) {
+            $path = $this->images->storeProductImageFromUrl($url, $product->id);
+            if (! $path) {
+                continue;
+            }
+
+            ProductImage::create([
+                'product_id' => $product->id,
+                'path' => $path,
+                'alt_text' => $product->name,
+                'sort_order' => ++$sortOrder,
+                'is_primary' => $product->images()->count() === 0,
+            ]);
+            $saved++;
+        }
+
+        return $saved;
     }
 
     protected function parsePrice(string $value): float

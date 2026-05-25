@@ -43,6 +43,95 @@ class ImageService
         }
     }
 
+    public function storeProductImageFromUrl(string $url, int $productId): ?string
+    {
+        try {
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 20,
+                    'user_agent' => 'UrbanFocus-ProductImport/1.0',
+                ],
+                'ssl' => [
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                ],
+            ]);
+
+            $contents = @file_get_contents($url, false, $context);
+            if ($contents === false || $contents === '') {
+                return null;
+            }
+
+            $extension = $this->extensionFromUrl($url);
+            if (! $this->looksLikeImage($contents)) {
+                return null;
+            }
+
+            if ($this->canConvertWebp() && @imagecreatefromstring($contents) !== false) {
+                $directory = 'products/'.$productId;
+                $baseName = (string) Str::uuid();
+                $webpPath = $directory.'/'.$baseName.'.webp';
+
+                if ($this->storeBinaryAsWebp($contents, $webpPath, $directory, $baseName)) {
+                    return $webpPath;
+                }
+            }
+
+            $path = 'products/'.$productId.'/'.Str::uuid().'.'.$extension;
+            $this->storeBytes($path, $contents);
+
+            return $path;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    protected function extensionFromUrl(string $url): string
+    {
+        $path = parse_url($url, PHP_URL_PATH) ?: '';
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        return in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? $extension : 'jpg';
+    }
+
+    protected function looksLikeImage(string $contents): bool
+    {
+        if (@getimagesizefromstring($contents) !== false) {
+            return true;
+        }
+
+        return str_starts_with($contents, "\xFF\xD8\xFF")
+            || str_starts_with($contents, "\x89PNG")
+            || str_starts_with($contents, 'GIF')
+            || str_starts_with($contents, 'RIFF');
+    }
+
+    protected function storeBinaryAsWebp(string $contents, string $path, string $directory, string $baseName): bool
+    {
+        $image = @imagecreatefromstring($contents);
+        if ($image === false) {
+            return false;
+        }
+
+        imagepalettetotruecolor($image);
+        imagealphablending($image, true);
+        imagesavealpha($image, true);
+
+        ob_start();
+        $saved = imagewebp($image, null, 82);
+        $webpData = ob_get_clean();
+        imagedestroy($image);
+
+        if (! $saved || $webpData === false) {
+            return false;
+        }
+
+        $this->storeBytes($path, $webpData);
+        $this->storeThumbnail($webpData, $directory.'/'.$baseName.'_thumb.webp');
+
+        return true;
+    }
+
     protected function canConvertWebp(): bool
     {
         return function_exists('imagewebp') && function_exists('imagecreatefromstring');

@@ -58,6 +58,10 @@ class CatalogController extends Controller
             $message .= " Skipped {$result['skipped']} empty rows.";
         }
 
+        if (($result['skippedNoImage'] ?? 0) > 0) {
+            $message .= " Skipped {$result['skippedNoImage']} without images.";
+        }
+
         if (! empty($result['errors'])) {
             return back()->with('warning', $message.' Errors: '.implode(' | ', array_slice($result['errors'], 0, 8)));
         }
