@@ -81,9 +81,9 @@ body {
 }
 .site-logo--footer img,
 .site-logo--footer .footer-logo {
-    height: 40px;
+    height: 28px;
     width: auto;
-    max-width: 100%;
+    max-width: 220px;
     display: block;
 }
 .site-logo--stacked img {
@@ -259,9 +259,11 @@ body {
 .trust-item { text-align: center; padding: 1rem; }
 .trust-item strong { display: block; color: var(--uf-navy); }
 
-.site-footer { background: var(--uf-navy); }
-.footer-links a { color: rgba(255,255,255,0.7); text-decoration: none; }
-.footer-links a:hover { color: #fff; }
+.site-footer { background: var(--uf-navy); color: rgba(255,255,255,0.7); }
+.footer-links a,
+.footer-links .footer-address-link { color: rgba(255,255,255,0.7); text-decoration: none; }
+.footer-links a:hover,
+.footer-links .footer-address-link:hover { color: #fff; }
 .footer-text,
 .footer-bottom-links a,
 .footer-bottom .footer-text { color: rgba(255,255,255,0.7); }

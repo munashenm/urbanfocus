@@ -17,7 +17,7 @@
     @else
         <li class="{{ $class ?? '' }}">
             @if($showLabel ?? true)<strong class="d-block text-white mb-1">Address</strong>@endif
-            <span class="footer-text">{!! implode('<br>', array_map('e', $lines)) !!}</span>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query={{ urlencode(implode(', ', $lines)) }}" class="footer-address-link">{!! implode('<br>', array_map('e', $lines)) !!}</a>
         </li>
     @endif
 @endif
