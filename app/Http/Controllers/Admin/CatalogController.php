@@ -87,9 +87,23 @@ class CatalogController extends Controller
 
     public function removeNonIt(ProductCleanupService $cleanup): RedirectResponse
     {
-        $result = $cleanup->removeNonItProducts();
+        try {
+            @set_time_limit(0);
 
-        return back()->with('success', "Removed {$result['products_deleted']} non-IT product(s), deleted {$result['categories_deleted']} categor(ies), {$result['images_removed']} image(s).");
+            $result = $cleanup->removeNonItProducts();
+
+            $message = "Removed {$result['products_deleted']} non-IT product(s), deleted {$result['categories_deleted']} categor(ies), {$result['images_removed']} image(s).";
+
+            if (! empty($result['errors'])) {
+                return back()->with('warning', $message.' Some items failed: '.implode(' | ', array_slice($result['errors'], 0, 5)));
+            }
+
+            return back()->with('success', $message);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Cleanup failed: '.$e->getMessage());
+        }
     }
 
     public function export(ProductExportService $exportService): StreamedResponse

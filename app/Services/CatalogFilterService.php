@@ -65,11 +65,22 @@ class CatalogFilterService
     public function isCategoryExcluded(Category $category): bool
     {
         $current = $category;
+        $seen = [];
 
         while ($current) {
+            if (in_array($current->id, $seen, true)) {
+                break;
+            }
+            $seen[] = $current->id;
+
             if ($this->isExcludedName($current->name)) {
                 return true;
             }
+
+            if (! $current->relationLoaded('parent') && $current->parent_id) {
+                $current->load('parent');
+            }
+
             $current = $current->parent;
         }
 

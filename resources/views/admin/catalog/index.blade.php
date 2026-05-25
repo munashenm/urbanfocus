@@ -49,7 +49,7 @@
     <div class="col-lg-6">
         <div class="card h-100 border-warning"><div class="card-body">
             <h2 class="h5 fw-bold text-warning">Remove Non-IT Products</h2>
-            <p class="small text-muted">Deletes products in excluded categories (lady shavers, dictionaries, bathroom accessories, stationery, homeware, etc.) and removes empty category folders. IT &amp; software products are kept.</p>
+            <p class="small text-muted">Deletes products in excluded categories (lady shavers, dictionaries, bathroom accessories, stationery, homeware, etc.) and removes empty category folders. IT &amp; software products are kept. Large catalogs may take several minutes — if this times out, use <code>deploy/cleanup-non-it.php</code> in <code>public_html</code> instead.</p>
             <form action="{{ route('admin.catalog.remove-non-it') }}" method="POST" onsubmit="return confirm('Remove all non-IT products from the catalog?')">
                 @csrf
                 <button type="submit" class="btn btn-sm btn-outline-warning">Remove Non-IT Products</button>
