@@ -62,6 +62,10 @@ class CatalogController extends Controller
             $message .= " Skipped {$result['skippedNoImage']} without images.";
         }
 
+        if (($result['skippedNonIt'] ?? 0) > 0) {
+            $message .= " Skipped {$result['skippedNonIt']} non-IT categories.";
+        }
+
         if (! empty($result['errors'])) {
             return back()->with('warning', $message.' Errors: '.implode(' | ', array_slice($result['errors'], 0, 8)));
         }
@@ -79,6 +83,13 @@ class CatalogController extends Controller
         \Illuminate\Support\Facades\Cache::forget('sitemap.xml');
 
         return back()->with('success', "Deleted {$result['deleted']} products. You can now import a fresh CSV.");
+    }
+
+    public function removeNonIt(ProductCleanupService $cleanup): RedirectResponse
+    {
+        $result = $cleanup->removeNonItProducts();
+
+        return back()->with('success', "Removed {$result['products_deleted']} non-IT product(s), deleted {$result['categories_deleted']} categor(ies), {$result['images_removed']} image(s).");
     }
 
     public function export(ProductExportService $exportService): StreamedResponse

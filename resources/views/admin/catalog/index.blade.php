@@ -20,7 +20,7 @@
             <ul class="small text-muted">
                 <li>Required columns: <strong>Name</strong>, <strong>Images</strong> (full image URLs)</li>
                 <li>Recommended: SKU, Categories, Regular price, Stock, Published</li>
-                <li>Rows without images are skipped — existing products keep updating if they already have photos</li>
+                <li>Rows without images or in non-IT categories are skipped</li>
                 <li>Matches existing products by SKU or WooCommerce ID</li>
             </ul>
             <form action="{{ route('admin.catalog.import') }}" method="POST" enctype="multipart/form-data">
@@ -43,6 +43,17 @@
                 <a href="{{ route('admin.catalog.export') }}" class="btn btn-outline-primary">Export Urban Focus CSV</a>
                 <a href="{{ route('admin.catalog.export.woocommerce') }}" class="btn btn-outline-secondary">Export WooCommerce CSV</a>
             </div>
+        </div></div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100 border-warning"><div class="card-body">
+            <h2 class="h5 fw-bold text-warning">Remove Non-IT Products</h2>
+            <p class="small text-muted">Deletes products in excluded categories (lady shavers, dictionaries, bathroom accessories, stationery, homeware, etc.) and removes empty category folders. IT &amp; software products are kept.</p>
+            <form action="{{ route('admin.catalog.remove-non-it') }}" method="POST" onsubmit="return confirm('Remove all non-IT products from the catalog?')">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-outline-warning">Remove Non-IT Products</button>
+            </form>
         </div></div>
     </div>
 

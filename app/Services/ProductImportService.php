@@ -15,6 +15,7 @@ class ProductImportService
     public function __construct(
         protected ImageService $images,
         protected ProductPricingService $pricing,
+        protected CatalogFilterService $catalogFilter,
     ) {}
 
     protected array $headerMap = [
@@ -88,6 +89,7 @@ class ProductImportService
         $updated = 0;
         $skipped = 0;
         $skippedNoImage = 0;
+        $skippedNonIt = 0;
         $errors = [];
         $rowNumber = 1;
 
@@ -113,7 +115,11 @@ class ProductImportService
                     });
                 } catch (\InvalidArgumentException $e) {
                     if (str_starts_with($e->getMessage(), 'Skipped:')) {
-                        $skippedNoImage++;
+                        if (str_contains($e->getMessage(), 'non-IT')) {
+                            $skippedNonIt++;
+                        } else {
+                            $skippedNoImage++;
+                        }
 
                         continue;
                     }
@@ -133,7 +139,7 @@ class ProductImportService
 
         fclose($handle);
 
-        return compact('imported', 'updated', 'skipped', 'skippedNoImage', 'errors');
+        return compact('imported', 'updated', 'skipped', 'skippedNoImage', 'skippedNonIt', 'errors');
     }
 
     protected function normalizeImportData(array $data): array
@@ -244,6 +250,10 @@ class ProductImportService
 
         if ($name === '') {
             throw new \InvalidArgumentException('Product name is required');
+        }
+
+        if ($this->catalogFilter->isExcludedImportRow($data)) {
+            throw new \InvalidArgumentException('Skipped: non-IT category');
         }
 
         $wooId = $data['id'] ?? null;

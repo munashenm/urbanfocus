@@ -65,6 +65,10 @@ if (! empty($result['errors'])) {
     }
 }
 
+if (($result['skippedNonIt'] ?? 0) > 0) {
+    echo "\nSkipped non-IT: {$result['skippedNonIt']}\n";
+}
+
 try {
     $kernel->call('cache:clear');
     echo "\nCache cleared.\n";
