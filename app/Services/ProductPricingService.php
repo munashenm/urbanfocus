@@ -21,7 +21,11 @@ class ProductPricingService
             return round($markedUp, 2);
         }
 
-        $rounded = (int) (round($markedUp / $roundTo) * $roundTo);
+        $mode = config('pricing.round_mode', 'up');
+
+        $rounded = $mode === 'nearest'
+            ? (int) (round($markedUp / $roundTo) * $roundTo)
+            : (int) (ceil($markedUp / $roundTo) * $roundTo);
 
         return (float) max($rounded, $roundTo);
     }

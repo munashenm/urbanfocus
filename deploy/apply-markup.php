@@ -4,9 +4,9 @@
  * Apply markup + price rounding to all products (cPanel)
  *
  * Uses PRICE_MARKUP_PERCENT and PRICE_ROUND_TO from urbanfocus/.env
- * Default: 40% markup, round to nearest R100
+ * Default: 40% markup, round UP to next R100 (never below marked-up price)
  *
- * 1. Set in .env: PRICE_MARKUP_PERCENT=40 and PRICE_ROUND_TO=100
+ * 1. Set in .env: PRICE_MARKUP_PERCENT=40, PRICE_ROUND_TO=100, PRICE_ROUND_MODE=up
  * 2. Copy to public_html/apply-markup.php and set APPLY_KEY
  * 3. Visit: https://www.urbanfocus.co.za/apply-markup.php?key=YOUR_SECRET
  * 4. DELETE the file when done — safe to re-run (uses stored cost_price when set)
@@ -32,8 +32,9 @@ $kernel->bootstrap();
 
 $markup = config('pricing.markup_percent', 40);
 $roundTo = config('pricing.round_to', 100);
+$mode = config('pricing.round_mode', 'up');
 
-echo "Apply pricing: {$markup}% markup, round to nearest R{$roundTo}\n";
+echo "Apply pricing: {$markup}% markup, round {$mode} to R{$roundTo}\n";
 echo str_repeat('-', 40)."\n";
 
 $pricing = $app->make(App\Services\ProductPricingService::class);
@@ -41,6 +42,8 @@ $result = $pricing->applyToAllProducts();
 
 echo "Updated: {$result['updated']}\n";
 echo "Skipped (no cost/price): {$result['skipped']}\n";
-echo "\nExample: R100 cost → R".number_format($pricing->retailPrice(100), 0)."\n";
-echo "Example: R250 cost → R".number_format($pricing->retailPrice(250), 0)."\n";
+echo "\nExamples (cost → retail):\n";
+echo "  R100 → R".number_format($pricing->retailPrice(100), 0)."\n";
+echo "  R250 → R".number_format($pricing->retailPrice(250), 0)."\n";
+echo "  R500 → R".number_format($pricing->retailPrice(500), 0)."\n";
 echo "\nDELETE public_html/apply-markup.php now.\n";
