@@ -7,8 +7,9 @@
  *
  * 1. Git pull latest code
  * 2. Copy to public_html/cleanup-non-it.php and set CLEANUP_KEY
- * 3. Visit: https://www.urbanfocus.co.za/cleanup-non-it.php?key=YOUR_SECRET
- * 4. DELETE this file when done
+ * 3. Preview: https://www.urbanfocus.co.za/cleanup-non-it.php?key=YOUR_SECRET&preview=1
+ * 4. Run:      https://www.urbanfocus.co.za/cleanup-non-it.php?key=YOUR_SECRET
+ * 5. DELETE this file when done
  */
 
 declare(strict_types=1);
@@ -31,11 +32,56 @@ $app = require_once $laravelRoot.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
+$cleanup = $app->make(App\Services\ProductCleanupService::class);
+
+if (isset($_GET['preview'])) {
+    echo "Non-IT cleanup preview\n";
+    echo str_repeat('-', 40)."\n";
+
+    try {
+        $preview = $cleanup->previewNonItCleanup();
+
+        echo "Blocklist terms loaded: {$preview['terms_loaded']}\n";
+        echo "Total products in catalog: {$preview['total_products']}\n";
+        echo "Excluded categories: ".count($preview['excluded_categories'])."\n";
+
+        if ($preview['excluded_categories'] !== []) {
+            echo "  ".implode(', ', array_slice($preview['excluded_categories'], 0, 20));
+            if (count($preview['excluded_categories']) > 20) {
+                echo ' …';
+            }
+            echo "\n";
+        }
+
+        echo "Products in excluded categories: {$preview['products_in_excluded_categories']}\n";
+        echo "Products matched by name (other categories): {$preview['products_by_name']}\n";
+
+        if ($preview['sample_products_by_name'] !== []) {
+            echo "\nSample name matches:\n";
+            foreach ($preview['sample_products_by_name'] as $name) {
+                echo "- {$name}\n";
+            }
+        }
+
+        if ($preview['terms_loaded'] === 0) {
+            echo "\nWARNING: No blocklist terms loaded. Run git pull and php artisan config:clear.\n";
+        }
+
+        if ($preview['products_in_excluded_categories'] === 0 && $preview['products_by_name'] === 0) {
+            echo "\nNothing left to remove — cleanup may have already completed.\n";
+        }
+    } catch (Throwable $e) {
+        echo 'FAILED: '.$e->getMessage()."\n";
+        echo $e->getFile().':'.$e->getLine()."\n";
+    }
+
+    exit;
+}
+
 echo "Non-IT catalog cleanup\n";
 echo str_repeat('-', 40)."\n";
 
 try {
-    $cleanup = $app->make(App\Services\ProductCleanupService::class);
     $result = $cleanup->removeNonItProducts();
 
     echo "Products deleted: {$result['products_deleted']}\n";
@@ -47,6 +93,10 @@ try {
         foreach (array_slice($result['errors'], 0, 10) as $error) {
             echo "- {$error}\n";
         }
+    }
+
+    if ($result['products_deleted'] === 0 && $result['categories_deleted'] === 0) {
+        echo "\nTip: run with &preview=1 to see what would match.\n";
     }
 } catch (Throwable $e) {
     echo 'FAILED: '.$e->getMessage()."\n";

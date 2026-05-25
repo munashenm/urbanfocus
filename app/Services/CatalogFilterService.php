@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Product;
 
 class CatalogFilterService
 {
@@ -10,6 +11,33 @@ class CatalogFilterService
     public function excludedTerms(): array
     {
         return config('catalog.excluded_category_terms', []);
+    }
+
+    /** @return list<string> */
+    public function excludedProductTerms(): array
+    {
+        return array_values(array_unique(array_merge(
+            $this->excludedTerms(),
+            config('catalog.excluded_product_terms', []),
+        )));
+    }
+
+    public function textMatchesExcludedTerms(string $text): bool
+    {
+        $text = strtolower(trim($text));
+
+        if ($text === '') {
+            return false;
+        }
+
+        foreach ($this->excludedProductTerms() as $term) {
+            $term = strtolower(trim($term));
+            if ($term !== '' && str_contains($text, $term)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function isExcludedName(string $name): bool
@@ -59,6 +87,15 @@ class CatalogFilterService
             return true;
         }
 
+        $productText = trim(implode(' ', array_filter([
+            $data['name'] ?? null,
+            $data['short_description'] ?? null,
+        ])));
+
+        if ($productText !== '' && $this->textMatchesExcludedTerms($productText)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -85,5 +122,28 @@ class CatalogFilterService
         }
 
         return false;
+    }
+
+    public function isProductNameExcluded(Product $product): bool
+    {
+        $text = trim(implode(' ', array_filter([
+            $product->name,
+            $product->short_description,
+        ])));
+
+        return $this->textMatchesExcludedTerms($text);
+    }
+
+    public function isProductExcluded(Product $product): bool
+    {
+        $category = $product->relationLoaded('category')
+            ? $product->category
+            : $product->category()->first();
+
+        if ($category && $this->isCategoryExcluded($category)) {
+            return true;
+        }
+
+        return $this->isProductNameExcluded($product);
     }
 }

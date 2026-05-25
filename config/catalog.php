@@ -38,4 +38,31 @@ return [
         'home & living',
         'household',
     ],
+    /*
+    | Extra terms matched against product name and short description.
+    | Category terms above are always checked on products too.
+    */
+    'excluded_product_terms' => [
+        'lady shaver',
+        'electric shaver',
+        'shaver',
+        'dictionary',
+        'dictionaries',
+        'shoe rack',
+        'shoe racks',
+        'bathroom accessor',
+        'vacuum sealer',
+        'counterbook',
+        'counter book',
+        'a4 counterbook',
+        'exercise book',
+        'hard cover book',
+        'soft cover book',
+        'mop bucket',
+        'ironing board',
+        'clothes horse',
+        'laundry basket',
+        'food sealer',
+        'vacuum bag',
+    ],
 ];

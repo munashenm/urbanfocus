@@ -34,6 +34,57 @@ class ProductCleanupService
         return ['deleted' => $deleted, 'images_removed' => $imagesRemoved];
     }
 
+    /**
+     * @return array{
+     *     terms_loaded: int,
+     *     total_products: int,
+     *     excluded_categories: list<string>,
+     *     products_in_excluded_categories: int,
+     *     products_by_name: int,
+     *     sample_products_by_name: list<string>
+     * }
+     */
+    public function previewNonItCleanup(): array
+    {
+        $excludedCategories = Category::query()
+            ->get()
+            ->filter(fn (Category $category) => $this->catalogFilter->isCategoryExcluded($category));
+
+        $excludedCategoryIds = $excludedCategories->pluck('id')->all();
+
+        $productsInExcludedCategories = $excludedCategoryIds === []
+            ? 0
+            : Product::query()->whereIn('category_id', $excludedCategoryIds)->count();
+
+        $productsByName = 0;
+        $sampleProductsByName = [];
+
+        foreach (Product::query()->select(['id', 'name', 'short_description', 'category_id'])->lazyById(100) as $product) {
+            if (in_array($product->category_id, $excludedCategoryIds, true)) {
+                continue;
+            }
+
+            if (! $this->catalogFilter->isProductNameExcluded($product)) {
+                continue;
+            }
+
+            $productsByName++;
+
+            if (count($sampleProductsByName) < 15) {
+                $sampleProductsByName[] = $product->name;
+            }
+        }
+
+        return [
+            'terms_loaded' => count($this->catalogFilter->excludedProductTerms()),
+            'total_products' => Product::query()->count(),
+            'excluded_categories' => $excludedCategories->pluck('name')->values()->all(),
+            'products_in_excluded_categories' => $productsInExcludedCategories,
+            'products_by_name' => $productsByName,
+            'sample_products_by_name' => $sampleProductsByName,
+        ];
+    }
+
     /** @return array{products_deleted: int, categories_deleted: int, images_removed: int, errors: array<int, string>} */
     public function removeNonItProducts(): array
     {
@@ -64,6 +115,23 @@ class ProductCleanupService
                         'message' => $e->getMessage(),
                     ]);
                 }
+            }
+        }
+
+        foreach (Product::with('images')->lazyById(25) as $product) {
+            if (! $this->catalogFilter->isProductNameExcluded($product)) {
+                continue;
+            }
+
+            try {
+                $imagesRemoved += $this->safelyDeleteProduct($product);
+                $productsDeleted++;
+            } catch (\Throwable $e) {
+                $errors[] = ($product->sku ?: $product->name).': '.$e->getMessage();
+                Log::warning('Non-IT product delete failed', [
+                    'product_id' => $product->id,
+                    'message' => $e->getMessage(),
+                ]);
             }
         }
 
