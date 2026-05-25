@@ -90,13 +90,40 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        $this->deleteProduct($product);
+
+        return redirect()->route('admin.products.index')->with('success', 'Product deleted.');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:products,id',
+        ]);
+
+        $deleted = 0;
+
+        Product::query()
+            ->whereIn('id', $validated['ids'])
+            ->with('images')
+            ->each(function (Product $product) use (&$deleted) {
+                $this->deleteProduct($product);
+                $deleted++;
+            });
+
+        return redirect()
+            ->route('admin.products.index', $request->only(['q', 'merchant_issue', 'page']))
+            ->with('success', "{$deleted} product(s) deleted.");
+    }
+
+    protected function deleteProduct(Product $product): void
+    {
         foreach ($product->images as $image) {
             $this->images->delete($image->path);
         }
 
         $product->delete();
-
-        return redirect()->route('admin.products.index')->with('success', 'Product deleted.');
     }
 
     protected function validateProduct(Request $request, ?int $id = null): array

@@ -13,7 +13,10 @@ class CategoryController extends Controller
 {
     public function index(): View
     {
-        $categories = Category::with('parent')->orderBy('sort_order')->paginate(20);
+        $categories = Category::with('parent')
+            ->withCount('products')
+            ->orderBy('sort_order')
+            ->paginate(20);
 
         return view('admin.categories.index', compact('categories'));
     }
@@ -55,6 +58,20 @@ class CategoryController extends Controller
         $category->delete();
 
         return redirect()->route('admin.categories.index')->with('success', 'Category deleted.');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:categories,id',
+        ]);
+
+        $deleted = Category::whereIn('id', $validated['ids'])->delete();
+
+        return redirect()
+            ->route('admin.categories.index', $request->only('page'))
+            ->with('success', "{$deleted} categor".($deleted === 1 ? 'y' : 'ies').' deleted. Products in those categories are now uncategorized.');
     }
 
     protected function validateCategory(Request $request, ?int $id = null): array

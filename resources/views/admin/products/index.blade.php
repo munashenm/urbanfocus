@@ -24,40 +24,65 @@
     <div class="alert alert-info small py-2">Showing active products with feed issue: <strong>{{ $merchantIssueLabels[request('merchant_issue')] ?? request('merchant_issue') }}</strong></div>
 @endif
 
+<form id="bulk-products-form" method="POST" action="{{ route('admin.products.bulk-destroy') }}" onsubmit="return confirm('Delete the selected products? This cannot be undone.')">
+    @csrf
+    @include('partials.admin-bulk-bar', ['deleteLabel' => 'Delete selected products'])
+</form>
+
 <div class="card">
     <div class="table-responsive">
-        <table class="table mb-0">
-            <thead><tr><th>Name</th><th>SKU</th><th>Price</th><th>Stock</th><th>Feed</th><th>Status</th><th></th></tr></thead>
+        <table class="table mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th style="width:2.5rem">
+                        <input type="checkbox" class="form-check-input" id="bulk-select-all" aria-label="Select all products on this page">
+                    </th>
+                    <th>Name</th>
+                    <th>SKU</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Feed</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
             <tbody>
-                @foreach($products as $product)
+                @forelse($products as $product)
                     @php $feedIssues = $product->is_active ? $product->googleMerchantIssues() : []; @endphp
                     <tr>
-                        <td>{{ $product->name }}</td>
-                        <td>{{ $product->sku }}</td>
-                        <td>R {{ number_format($product->effective_price, 2) }}</td>
-                        <td>{{ $product->stock_quantity }}</td>
                         <td>
-                            @if($feedIssues === [])
-                                <span class="badge bg-success">Eligible</span>
-                            @else
-                                @foreach($feedIssues as $issue)
-                                    <span class="badge bg-warning text-dark" title="{{ $merchantIssueLabels[$issue] ?? $issue }}">{{ $merchantIssueLabels[$issue] ?? $issue }}</span>
-                                @endforeach
-                            @endif
+                            <input type="checkbox" class="form-check-input bulk-select" form="bulk-products-form" name="ids[]" value="{{ $product->id }}" aria-label="Select {{ $product->name }}">
                         </td>
-                        <td>@if($product->is_active)<span class="badge bg-success">Active</span>@else<span class="badge bg-secondary">Inactive</span>@endif</td>
-                        <td class="text-end">
-                            <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                            <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this product?')">
-                                @csrf @method('DELETE')
-                                <button class="btn btn-sm btn-outline-danger">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                @endforeach
+                            <td>{{ $product->name }}</td>
+                            <td>{{ $product->sku }}</td>
+                            <td>R {{ number_format($product->effective_price, 2) }}</td>
+                            <td>{{ $product->stock_quantity }}</td>
+                            <td>
+                                @if($feedIssues === [])
+                                    <span class="badge bg-success">Eligible</span>
+                                @else
+                                    @foreach($feedIssues as $issue)
+                                        <span class="badge bg-warning text-dark" title="{{ $merchantIssueLabels[$issue] ?? $issue }}">{{ $merchantIssueLabels[$issue] ?? $issue }}</span>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>@if($product->is_active)<span class="badge bg-success">Active</span>@else<span class="badge bg-secondary">Inactive</span>@endif</td>
+                            <td class="text-end text-nowrap">
+                                <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this product?')">
+                                    @csrf @method('DELETE')
+                                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" class="text-muted text-center py-4">No products found.</td></tr>
+                    @endforelse
             </tbody>
         </table>
     </div>
 </div>
+
 <div class="mt-3">{{ $products->links() }}</div>
+<p class="small text-muted mt-2">Bulk select applies to the current page only ({{ $products->count() }} of {{ $products->total() }} shown).</p>
 @endsection
