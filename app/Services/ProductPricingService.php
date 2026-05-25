@@ -13,7 +13,7 @@ class ProductPricingService
         }
 
         $markup = config('pricing.markup_percent', 40);
-        $roundTo = max(1, (int) config('pricing.round_to', 100));
+        $roundTo = max(1, (int) config('pricing.round_to', 50));
 
         $markedUp = $costPrice * (1 + ($markup / 100));
 

@@ -4,9 +4,9 @@
  * Apply markup + price rounding to all products (cPanel)
  *
  * Uses PRICE_MARKUP_PERCENT and PRICE_ROUND_TO from urbanfocus/.env
- * Default: 40% markup, round UP to next R100 (never below marked-up price)
+ * Default: 40% markup, round UP to next R50 (never below marked-up price)
  *
- * 1. Set in .env: PRICE_MARKUP_PERCENT=40, PRICE_ROUND_TO=100, PRICE_ROUND_MODE=up
+ * 1. Set in .env: PRICE_MARKUP_PERCENT=40, PRICE_ROUND_TO=50, PRICE_ROUND_MODE=up
  * 2. Copy to public_html/apply-markup.php and set APPLY_KEY
  * 3. Visit: https://www.urbanfocus.co.za/apply-markup.php?key=YOUR_SECRET
  * 4. DELETE the file when done — safe to re-run (uses stored cost_price when set)
@@ -31,7 +31,7 @@ $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
 $markup = config('pricing.markup_percent', 40);
-$roundTo = config('pricing.round_to', 100);
+$roundTo = config('pricing.round_to', 50);
 $mode = config('pricing.round_mode', 'up');
 
 echo "Apply pricing: {$markup}% markup, round {$mode} to R{$roundTo}\n";
