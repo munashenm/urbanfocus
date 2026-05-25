@@ -3,7 +3,7 @@
 /**
  * Bulk CSV product import (cPanel — no time limit)
  *
- * For large files (e.g. distributor exports with thousands of rows + image downloads).
+ * For large files (e.g. Pinnacle/Esquire distributor exports with thousands of rows + image downloads).
  *
  * 1. Git pull latest code
  * 2. Upload your CSV to: urbanfocus/storage/imports/products.csv

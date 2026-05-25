@@ -139,6 +139,37 @@ class CatalogFilterService
 
     public function isExcludedImportRow(array $data): bool
     {
+        $treeRoot = $this->pinnacleTreeRoot($data['category_tree'] ?? '');
+
+        if ($treeRoot !== null || ($data['import_source'] ?? '') === 'pinnacle') {
+            if ($treeRoot === null) {
+                return true;
+            }
+
+            if (in_array($treeRoot, config('catalog.excluded_pinnacle_roots', []), true)) {
+                return true;
+            }
+
+            if (! $this->isPinnacleItRoot($treeRoot)) {
+                return true;
+            }
+
+            if (! empty($data['categories']) && $this->isExcludedCategoryPath($data['categories'])) {
+                return true;
+            }
+
+            $productText = trim(implode(' ', array_filter([
+                $data['name'] ?? null,
+                $data['short_description'] ?? null,
+            ])));
+
+            if ($productText !== '' && $this->textMatchesExcludedTerms($productText)) {
+                return true;
+            }
+
+            return false;
+        }
+
         $categoryHead = trim($data['category_head'] ?? '');
 
         if ($categoryHead !== '' && ! $this->isItCategoryHead($categoryHead)) {
@@ -178,6 +209,22 @@ class CatalogFilterService
         }
 
         return false;
+    }
+
+    public function pinnacleTreeRoot(string $tree): ?string
+    {
+        $tree = strtolower(trim($tree));
+
+        if ($tree === '') {
+            return null;
+        }
+
+        return explode('/', $tree)[0] ?: null;
+    }
+
+    public function isPinnacleItRoot(string $root): bool
+    {
+        return in_array(strtolower(trim($root)), config('catalog.pinnacle_category_roots', []), true);
     }
 
     public function isItCategoryExceptionName(string $name): bool

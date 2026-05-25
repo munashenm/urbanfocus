@@ -248,4 +248,21 @@ return [
         'pencil, retail',
         'tweety pencil',
     ],
+
+    /*
+    | Pinnacle distributor CSV feeds (category_tree slash paths).
+    | Roots listed here are treated as IT; others are skipped on import.
+    */
+    'pinnacle_category_roots' => [
+        'computing',
+        'security',
+        'networking',
+        'point-of-sale',
+        'enterprise',
+        'infrastructure',
+    ],
+
+    'excluded_pinnacle_roots' => [
+        'on-promo',
+    ],
 ];

@@ -68,6 +68,18 @@ class ProductImportService
         'meta: _yoast_wpseo_metadesc' => 'meta_description',
         'meta title' => 'meta_title',
         'meta description' => 'meta_description',
+        // Pinnacle distributor feed
+        'stockcode' => 'sku',
+        'prodname' => 'name',
+        'prodimg' => 'images',
+        'prodpriceexclvat' => 'regular_price',
+        'prodqty' => 'stock',
+        'category_tree' => 'category_tree',
+        'barcodeean' => 'barcode',
+        'barcodeupc' => 'barcode_upc',
+        'topcat' => 'top_cat',
+        'lastupdated' => 'last_updated',
+        'prodexternalurl' => 'external_url',
     ];
 
     public function import(UploadedFile $file): array
@@ -100,6 +112,12 @@ class ProductImportService
     public function previewFromPath(string $path, int $sampleLimit = 12): array
     {
         return $this->processCsv($path, dryRun: true, sampleLimit: $sampleLimit);
+    }
+
+    /** @param array<string, mixed> $data */
+    public function normalizeImportRow(array $data): array
+    {
+        return $this->normalizeImportData($data);
     }
 
     protected function processCsv(string $path, bool $dryRun, ?callable $onProgress = null, int $sampleLimit = 12): array
@@ -504,6 +522,10 @@ class ProductImportService
 
     protected function normalizeImportData(array $data): array
     {
+        if ($this->isPinnacleRow($data)) {
+            $data = $this->normalizePinnacleRow($data);
+        }
+
         if (! empty($data['sku'])) {
             $data['sku'] = $this->normalizeSku($data['sku']);
         }
@@ -545,6 +567,76 @@ class ProductImportService
         }
 
         return $data;
+    }
+
+    protected function isPinnacleRow(array $data): bool
+    {
+        return trim($data['category_tree'] ?? '') !== '';
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function normalizePinnacleRow(array $data): array
+    {
+        $data['import_source'] = 'pinnacle';
+
+        if (trim($data['barcode'] ?? '') === '') {
+            $barcode = trim($data['barcode_upc'] ?? '');
+            $data['barcode'] = preg_replace('/\D/', '', $barcode) ?: $barcode;
+        } else {
+            $data['barcode'] = preg_replace('/\D/', '', $data['barcode']) ?: $data['barcode'];
+        }
+
+        if (trim($data['categories'] ?? '') === '' && trim($data['category_tree'] ?? '') !== '') {
+            $data['categories'] = $this->formatPinnacleCategoryTree($data['category_tree']);
+            $root = $this->catalogFilter->pinnacleTreeRoot($data['category_tree']);
+            $data['category_head'] = $root ? ucwords(str_replace('-', ' ', $root)) : '';
+        }
+
+        if (trim($data['short_description'] ?? '') === '') {
+            $data['short_description'] = $this->buildPinnacleShortDescription($data);
+        }
+
+        if (! isset($data['in_stock']) || trim((string) $data['in_stock']) === '') {
+            $qty = (int) preg_replace('/\D/', '', (string) ($data['stock'] ?? '0'));
+            $data['in_stock'] = $qty > 0 ? '1' : '0';
+        }
+
+        if (! isset($data['published']) || trim((string) $data['published']) === '') {
+            $data['published'] = '1';
+        }
+
+        return $data;
+    }
+
+    protected function formatPinnacleCategoryTree(string $tree): string
+    {
+        $parts = array_values(array_filter(array_map('trim', explode('/', strtolower($tree)))));
+
+        return implode(' > ', array_map(
+            fn (string $segment) => ucwords(str_replace('-', ' ', $segment)),
+            $parts
+        ));
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function buildPinnacleShortDescription(array $data): string
+    {
+        $parts = [];
+
+        if ($topCat = trim($data['top_cat'] ?? '')) {
+            $parts[] = $topCat;
+        }
+
+        for ($i = 1; $i <= 6; $i++) {
+            $option = trim($data["highlight_feature_{$i}_option"] ?? '');
+            $value = trim($data["highlight_feature_{$i}_value"] ?? '');
+
+            if ($option !== '' && $value !== '') {
+                $parts[] = $option.': '.$value;
+            }
+        }
+
+        return implode('. ', $parts);
     }
 
     protected function normalizeSku(string $sku): string

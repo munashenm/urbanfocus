@@ -20,6 +20,8 @@ class ProductImportServiceTest extends TestCase
             'catalog.it_category_exceptions' => ['Cable Clips'],
             'catalog.excluded_category_terms' => ['men shaver', 'pencil case'],
             'catalog.excluded_product_terms' => [],
+            'catalog.pinnacle_category_roots' => ['computing', 'security', 'networking'],
+            'catalog.excluded_pinnacle_roots' => ['on-promo'],
             'pricing.markup_percent' => 40,
             'pricing.round_to' => 50,
             'pricing.round_mode' => 'up',
@@ -99,5 +101,47 @@ class ProductImportServiceTest extends TestCase
         $this->assertSame('create', $result['action']);
         $this->assertSame(75.0, $result['cost_price']);
         $this->assertSame(150.0, $result['retail_price']);
+    }
+
+    public function test_accepts_pinnacle_computing_row(): void
+    {
+        $data = $this->import->normalizeImportRow([
+            'sku' => 'SDCZ50-032G-B35',
+            'name' => 'Sandisk Cruzer Blade 32GB USB-A Flash Drive',
+            'brand' => 'Sandisk',
+            'category_tree' => 'computing/storage/flash',
+            'images' => 'https://www.pinnacle.co.za/media/catalog/product/usb.jpg',
+            'regular_price' => '138.45',
+            'stock' => '3274',
+            'barcode' => '619659069193',
+            'top_cat' => 'FLASH DRIVE',
+            'highlight_feature_1_option' => 'Storage Capacity',
+            'highlight_feature_1_value' => '32GB',
+        ]);
+
+        $this->assertSame('Computing > Storage > Flash', $data['categories']);
+        $this->assertSame('pinnacle', $data['import_source']);
+        $this->assertStringContainsString('32GB', $data['short_description']);
+
+        $result = $this->import->evaluateRow($data);
+
+        $this->assertSame('create', $result['action']);
+        $this->assertSame(138.45, $result['cost_price']);
+        $this->assertSame(200.0, $result['retail_price']);
+    }
+
+    public function test_skips_pinnacle_on_promo_root(): void
+    {
+        $data = $this->import->normalizeImportRow([
+            'name' => 'Promo Bundle',
+            'category_tree' => 'on-promo/specials',
+            'images' => 'https://example.com/promo.jpg',
+            'regular_price' => '100',
+        ]);
+
+        $result = $this->import->evaluateRow($data);
+
+        $this->assertSame('skip', $result['action']);
+        $this->assertSame('non_it', $result['reason']);
     }
 }

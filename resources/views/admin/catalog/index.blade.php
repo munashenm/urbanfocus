@@ -7,7 +7,7 @@
     <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Import Products (CSV)</h2>
-            <p class="small text-muted">Supports WooCommerce exports and Esquire/distributor CSVs. Only <strong>IT products with images and a cost price</strong> are imported.</p>
+            <p class="small text-muted">Supports WooCommerce, Esquire, and <strong>Pinnacle</strong> CSV feeds. Only <strong>IT products with images and a cost price</strong> are imported.</p>
 
             <div class="alert alert-info small mb-3">
                 <strong>Pricing policy:</strong>
@@ -25,9 +25,10 @@
             </div>
 
             <ul class="small text-muted mb-3">
-                <li>Required: <strong>Name</strong>, <strong>Image URL(s)</strong>, <strong>Price/Cost</strong></li>
-                <li>Recommended: SKU, CategoryHead + Category (or Categories), Stock, Brand</li>
-                <li>Skipped automatically: non-IT rows, missing images, zero price, failed image downloads</li>
+                <li><strong>Pinnacle:</strong> StockCode, ProdName, ProdImg, ProdPriceExclVAT, ProdQty, category_tree, BarcodeEAN</li>
+                <li><strong>Esquire:</strong> ProductName, ProductCode, CategoryHead, Category, Image, Price</li>
+                <li>Required: name, image URL(s), cost/price — skipped if missing</li>
+                <li>Pinnacle cost (<code>ProdPriceExclVAT</code>) → retail with {{ $importPricing['markup_percent'] }}% markup, rounded to R{{ $importPricing['round_to'] }}</li>
                 <li>Matches existing products by SKU or WooCommerce ID</li>
             </ul>
 
