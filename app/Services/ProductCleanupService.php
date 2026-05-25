@@ -71,7 +71,12 @@ class ProductCleanupService
 
         Cache::forget('sitemap.xml');
 
-        return compact('productsDeleted', 'categoriesDeleted', 'imagesRemoved', 'errors');
+        return [
+            'products_deleted' => $productsDeleted,
+            'categories_deleted' => $categoriesDeleted,
+            'images_removed' => $imagesRemoved,
+            'errors' => $errors,
+        ];
     }
 
     protected function safelyDeleteProduct(Product $product): int
