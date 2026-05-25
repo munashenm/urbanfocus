@@ -263,20 +263,27 @@ class ProductImportService
         return $result;
     }
 
-    /** @return array{markup_percent: float, round_to: int, round_mode: string, example: array{cost: float, retail: float}} */
+    /** @return array{markup_percent: float, round_to: int, round_mode: string, low_cost_threshold: float, example: array{cost: float, retail: float}, low_cost_example: array{cost: float, retail: float}} */
     public function pricingPolicy(): array
     {
         $markup = (float) config('pricing.markup_percent', 40);
         $roundTo = (int) config('pricing.round_to', 50);
+        $threshold = (float) config('pricing.low_cost_threshold', 20);
         $exampleCost = 100.0;
+        $lowCostExample = max(1.0, $threshold > 0 ? $threshold - 1 : 4.0);
 
         return [
             'markup_percent' => $markup,
             'round_to' => $roundTo,
             'round_mode' => (string) config('pricing.round_mode', 'up'),
+            'low_cost_threshold' => $threshold,
             'example' => [
                 'cost' => $exampleCost,
                 'retail' => $this->pricing->retailPrice($exampleCost),
+            ],
+            'low_cost_example' => [
+                'cost' => $lowCostExample,
+                'retail' => $this->pricing->retailPrice($lowCostExample),
             ],
         ];
     }

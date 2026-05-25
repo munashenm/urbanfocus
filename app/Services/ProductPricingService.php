@@ -14,14 +14,20 @@ class ProductPricingService
 
         $markup = config('pricing.markup_percent', 40);
         $roundTo = max(1, (int) config('pricing.round_to', 50));
+        $threshold = (float) config('pricing.low_cost_threshold', 20);
 
         $markedUp = $costPrice * (1 + ($markup / 100));
+        $mode = config('pricing.round_mode', 'up');
+
+        if ($threshold > 0 && $costPrice < $threshold) {
+            return $mode === 'nearest'
+                ? round($markedUp, 2)
+                : (float) (ceil($markedUp * 100) / 100);
+        }
 
         if ($roundTo <= 1) {
             return round($markedUp, 2);
         }
-
-        $mode = config('pricing.round_mode', 'up');
 
         $rounded = $mode === 'nearest'
             ? (int) (round($markedUp / $roundTo) * $roundTo)

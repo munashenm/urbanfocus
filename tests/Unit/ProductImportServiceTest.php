@@ -25,6 +25,7 @@ class ProductImportServiceTest extends TestCase
             'pricing.markup_percent' => 40,
             'pricing.round_to' => 50,
             'pricing.round_mode' => 'up',
+            'pricing.low_cost_threshold' => 20,
         ]);
 
         $this->import = new ProductImportService(
@@ -168,6 +169,6 @@ class ProductImportServiceTest extends TestCase
 
         $this->assertSame('create', $result['action']);
         $this->assertSame(4.0, $result['cost_price']);
-        $this->assertSame(50.0, $result['retail_price']);
+        $this->assertSame(5.6, $result['retail_price']);
     }
 }

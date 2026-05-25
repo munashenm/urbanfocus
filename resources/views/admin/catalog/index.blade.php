@@ -11,8 +11,15 @@
 
             <div class="alert alert-info small mb-3">
                 <strong>Pricing policy:</strong>
-                CSV price = cost → retail = {{ $importPricing['markup_percent'] }}% markup, rounded {{ $importPricing['round_mode'] === 'up' ? 'up' : 'to nearest' }} to R{{ $importPricing['round_to'] }}.
-                Example: R{{ number_format($importPricing['example']['cost'], 0) }} cost → R{{ number_format($importPricing['example']['retail'], 0) }} retail.
+                CSV price = cost → {{ $importPricing['markup_percent'] }}% markup.
+                @if($importPricing['low_cost_threshold'] > 0)
+                    Cost under R{{ number_format($importPricing['low_cost_threshold'], 0) }}: markup only (e.g. R{{ number_format($importPricing['low_cost_example']['cost'], 0) }} → R{{ number_format($importPricing['low_cost_example']['retail'], 2) }}).
+                    R{{ number_format($importPricing['low_cost_threshold'], 0) }} and above: rounded {{ $importPricing['round_mode'] === 'up' ? 'up' : 'to nearest' }} to R{{ $importPricing['round_to'] }}
+                    (e.g. R{{ number_format($importPricing['example']['cost'], 0) }} → R{{ number_format($importPricing['example']['retail'], 0) }}).
+                @else
+                    Rounded {{ $importPricing['round_mode'] === 'up' ? 'up' : 'to nearest' }} to R{{ $importPricing['round_to'] }}
+                    (e.g. R{{ number_format($importPricing['example']['cost'], 0) }} → R{{ number_format($importPricing['example']['retail'], 0) }}).
+                @endif
             </div>
 
             <div class="alert alert-light border small mb-3">
@@ -28,7 +35,7 @@
                 <li><strong>Pinnacle:</strong> StockCode, ProdName, ProdImg, ProdPriceExclVAT, ProdQty, category_tree, BarcodeEAN</li>
                 <li><strong>Esquire:</strong> ProductName, ProductCode, CategoryHead, Category, Image, Price (Data Export CSV)</li>
                 <li>Required: name, image URL(s), cost/price — skipped if missing</li>
-                <li>Pinnacle cost (<code>ProdPriceExclVAT</code>) → retail with {{ $importPricing['markup_percent'] }}% markup, rounded to R{{ $importPricing['round_to'] }}</li>
+                <li>Cost under R{{ number_format($importPricing['low_cost_threshold'], 0) }}: markup only; R{{ number_format($importPricing['low_cost_threshold'], 0) }}+: rounded to R{{ $importPricing['round_to'] }}</li>
                 <li>Matches existing products by SKU or WooCommerce ID</li>
             </ul>
 
