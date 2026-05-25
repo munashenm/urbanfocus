@@ -35,6 +35,24 @@
         </div>
 
         <div class="col-lg-4">
+            @if($product->exists)
+                @php $feedIssues = $product->is_active ? $product->googleMerchantIssues() : ['inactive']; @endphp
+                <div class="card mb-4 border-{{ $feedIssues === [] ? 'success' : 'warning' }}"><div class="card-body">
+                    <h3 class="h6 fw-bold mb-2">Google Merchant Feed</h3>
+                    @if($feedIssues === [])
+                        <span class="badge bg-success">Eligible for feed</span>
+                    @else
+                        <p class="small text-muted mb-2">Fix these before the product appears in Google Shopping:</p>
+                        @foreach($feedIssues as $issue)
+                            @if($issue === 'inactive')
+                                <span class="badge bg-secondary">Inactive product</span>
+                            @else
+                                <span class="badge bg-warning text-dark">{{ \App\Models\Product::googleMerchantIssueLabels()[$issue] ?? $issue }}</span>
+                            @endif
+                        @endforeach
+                    @endif
+                </div></div>
+            @endif
             <div class="card mb-4"><div class="card-body">
                 <div class="mb-3"><label class="form-label">Category</label>
                     <select name="category_id" class="form-select">

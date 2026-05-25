@@ -209,7 +209,7 @@ class Product extends Model
             $issues[] = 'no_description';
         }
 
-        if ((float) $this->price <= 0) {
+        if ($this->effective_price <= 0) {
             $issues[] = 'no_price';
         }
 
@@ -227,6 +227,43 @@ class Product extends Model
     public function isGoogleMerchantEligible(): bool
     {
         return $this->is_active && $this->googleMerchantIssues() === [];
+    }
+
+    /** @return array<string, string> */
+    public static function googleMerchantIssueLabels(): array
+    {
+        return [
+            'no_image' => 'Missing image',
+            'no_description' => 'Missing description',
+            'no_price' => 'Missing price',
+            'no_brand' => 'Missing brand',
+            'no_identifier' => 'Missing SKU/GTIN',
+        ];
+    }
+
+    public function scopeMerchantIssue($query, string $issue)
+    {
+        return match ($issue) {
+            'no_image' => $query->whereDoesntHave('images'),
+            'no_description' => $query->whereRaw(
+                "CHAR_LENGTH(TRIM(COALESCE(short_description, ''))) + CHAR_LENGTH(TRIM(COALESCE(description, ''))) < 10"
+            ),
+            'no_price' => $query->where('price', '<=', 0)
+                ->where(function ($q) {
+                    $q->whereNull('sale_price')->orWhere('sale_price', '<=', 0);
+                }),
+            'no_brand' => $query->where(function ($q) {
+                $q->whereNull('brand')->orWhere('brand', '');
+            }),
+            'no_identifier' => $query->where(function ($q) {
+                $q->where(function ($q2) {
+                    $q2->whereNull('sku')->orWhere('sku', '');
+                })->where(function ($q2) {
+                    $q2->whereNull('barcode')->orWhere('barcode', '');
+                });
+            }),
+            default => $query,
+        };
     }
 
     public function deliveryEstimate(): string

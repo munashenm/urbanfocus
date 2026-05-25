@@ -48,12 +48,61 @@
 
     <div class="col-lg-6">
         <div class="card h-100 border-warning"><div class="card-body">
-            <h2 class="h5 fw-bold text-warning">Remove Non-IT Products</h2>
-            <p class="small text-muted">Deletes products in excluded categories (lady shavers, dictionaries, bathroom accessories, stationery, homeware, etc.) and removes empty category folders. IT &amp; software products are kept. Large catalogs may take several minutes — if this times out, use <code>deploy/cleanup-non-it.php</code> in <code>public_html</code> instead.</p>
-            <form action="{{ route('admin.catalog.remove-non-it') }}" method="POST" onsubmit="return confirm('Remove all non-IT products from the catalog?')">
+            <h2 class="h5 fw-bold text-warning">Remove Non-IT Catalog</h2>
+            <p class="small text-muted">Permanently deletes non-IT products <strong>and</strong> their categories (lady shavers, dictionaries, bathroom accessories, stationery, homeware, etc.). IT categories with mixed stock are kept — only matching products are removed. Large catalogs may take several minutes — use <code>deploy/cleanup-non-it.php</code> in <code>public_html</code> if this times out.</p>
+
+            <div class="border rounded p-3 mb-3 bg-light small">
+                <div class="row g-2 text-center mb-3">
+                    <div class="col-4">
+                        <div class="fw-bold">{{ number_format($nonItPreview['total_products']) }}</div>
+                        <div class="text-muted">Total products</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold text-warning">{{ number_format($nonItPreview['products_to_delete']) }}</div>
+                        <div class="text-muted">To remove</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold text-warning">{{ number_format($nonItPreview['categories_to_delete']) }}</div>
+                        <div class="text-muted">Categories</div>
+                    </div>
+                </div>
+
+                @if($nonItPreview['terms_loaded'] === 0)
+                    <div class="alert alert-danger py-2 mb-2">No blocklist terms loaded. Run <code>php artisan config:clear</code> after deploying.</div>
+                @else
+                    <p class="text-muted mb-2">{{ $nonItPreview['terms_loaded'] }} product blocklist terms · {{ $nonItPreview['it_heads_loaded'] }} IT category heads</p>
+                @endif
+
+                @if($nonItPreview['excluded_categories'] !== [])
+                    <p class="fw-semibold mb-1">Sample categories:</p>
+                    <ul class="mb-2 ps-3">
+                        @foreach(array_slice($nonItPreview['excluded_categories'], 0, 8) as $name)
+                            <li>{{ $name }}</li>
+                        @endforeach
+                        @if(count($nonItPreview['excluded_categories']) > 8)
+                            <li class="text-muted">… and {{ count($nonItPreview['excluded_categories']) - 8 }} more</li>
+                        @endif
+                    </ul>
+                @endif
+
+                @if($nonItPreview['sample_products'] !== [])
+                    <p class="fw-semibold mb-1">Sample products:</p>
+                    <ul class="mb-0 ps-3">
+                        @foreach($nonItPreview['sample_products'] as $name)
+                            <li>{{ $name }}</li>
+                        @endforeach
+                    </ul>
+                @elseif($nonItPreview['products_to_delete'] === 0)
+                    <p class="text-success mb-0">No non-IT products detected — catalog looks clean.</p>
+                @endif
+            </div>
+
+            @if($nonItPreview['products_to_delete'] > 0 || $nonItPreview['categories_to_delete'] > 0)
+            <form action="{{ route('admin.catalog.remove-non-it') }}" method="POST" onsubmit="return confirm('Permanently delete {{ number_format($nonItPreview['products_to_delete']) }} non-IT product(s) and {{ number_format($nonItPreview['categories_to_delete']) }} categor(ies)?')">
                 @csrf
-                <button type="submit" class="btn btn-sm btn-outline-warning">Remove Non-IT Products</button>
+                <button type="submit" class="btn btn-sm btn-outline-warning">Remove Non-IT Products &amp; Categories</button>
             </form>
+            @endif
         </div></div>
     </div>
 
@@ -102,10 +151,33 @@
                 <ul class="small text-muted mb-3">
                     @foreach($feedStats['issues'] as $issue => $count)
                         @if($count > 0)
-                            <li>{{ str_replace('_', ' ', ucfirst($issue)) }}: {{ $count }} product(s)</li>
+                            <li>
+                                <a href="{{ route('admin.products.index', ['merchant_issue' => $issue]) }}">{{ $merchantIssueLabels[$issue] ?? str_replace('_', ' ', ucfirst($issue)) }}</a>: {{ $count }} product(s)
+                            </li>
                         @endif
                     @endforeach
                 </ul>
+
+                @if($ineligibleSample !== [])
+                    <p class="small fw-semibold mb-1">Sample ineligible products:</p>
+                    <ul class="small text-muted mb-3 ps-3">
+                        @foreach($ineligibleSample as $item)
+                            <li>{{ $item['name'] }} <span class="text-danger">({{ implode(', ', array_map(fn ($k) => $merchantIssueLabels[$k] ?? $k, $item['issues'])) }})</span></li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                <a href="{{ route('admin.catalog.export-ineligible') }}" class="btn btn-sm btn-outline-secondary me-2">Export Ineligible CSV</a>
+                <form action="{{ route('admin.catalog.bulk-fix-merchant') }}" method="POST" class="d-inline" onsubmit="return confirm('Copy product names into missing short descriptions?')">
+                    @csrf
+                    <input type="hidden" name="action" value="fill_descriptions">
+                    <button type="submit" class="btn btn-sm btn-outline-primary me-2">Auto-fill Descriptions</button>
+                </form>
+                <form action="{{ route('admin.catalog.bulk-fix-merchant') }}" method="POST" class="d-inline" onsubmit="return confirm('Generate UF-{id} SKUs for products missing identifiers?')">
+                    @csrf
+                    <input type="hidden" name="action" value="fill_sku">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Generate Missing SKUs</button>
+                </form>
             @endif
 
             <p class="small mb-2"><strong>Setup checklist (in Merchant Center):</strong></p>
@@ -113,6 +185,7 @@
                 <li>Verify domain in Google Search Console</li>
                 <li>Add feed URL below (scheduled fetch daily)</li>
                 <li>Set business info, shipping &amp; returns for South Africa</li>
+                <li>Return policy: <a href="{{ config('google-merchant.return_policy_url') ?: route('returns') }}" target="_blank">{{ config('google-merchant.return_policy_url') ?: route('returns') }}</a></li>
                 <li>Link PayFast checkout and ensure prices match the feed</li>
             </ol>
         </div></div>

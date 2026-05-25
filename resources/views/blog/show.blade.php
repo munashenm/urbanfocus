@@ -55,6 +55,10 @@
     "@type": "Article",
     "headline": {{ json_encode($article->title) }},
     "datePublished": "{{ $article->published_at?->toAtomString() }}",
+    @if($article->updated_at)
+    "dateModified": "{{ $article->updated_at->toAtomString() }}",
+    @endif
+    "mainEntityOfPage": {{ json_encode(route('blog.show', $article)) }},
     "author": { "@type": "Organization", "name": "Urban Focus" },
     "publisher": { "@type": "Organization", "name": "Urban Focus", "logo": { "@type": "ImageObject", "url": "{{ asset('images/logo-stacked.png') }}" } }
 }

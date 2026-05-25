@@ -78,7 +78,7 @@
                 @if($product->isAvailable())
                     <form action="{{ route('cart.add', $product) }}" method="POST" class="d-flex gap-2 align-items-center">
                         @csrf
-                        <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" class="form-control" style="width:80px">
+                        <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" class="form-control product-qty-input">
                         <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
                     </form>
                 @else
@@ -165,8 +165,9 @@
             <span class="small {{ $product->isAvailable() ? 'text-success' : 'text-danger' }}">{{ $product->isAvailable() ? 'In Stock' : 'Out of Stock' }}</span>
         </div>
         @if($product->isAvailable())
-            <form action="{{ route('cart.add', $product) }}" method="POST" class="d-flex gap-2">
+            <form action="{{ route('cart.add', $product) }}" method="POST" class="d-flex align-items-center gap-2">
                 @csrf
+                <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" class="form-control form-control-sm product-qty-input" aria-label="Quantity">
                 <button type="submit" class="btn btn-primary">Add to Cart</button>
             </form>
         @else
@@ -177,6 +178,7 @@
 @endsection
 
 @push('scripts')
+<script>document.body.classList.add('has-mobile-buy-bar');</script>
 <script src="{{ asset('js/product-gallery.js') }}" defer></script>
 @endpush
 

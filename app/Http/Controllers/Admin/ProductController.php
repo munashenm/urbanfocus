@@ -18,16 +18,23 @@ class ProductController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Product::with('category')->latest();
+        $query = Product::with(['category', 'images'])->latest();
 
         if ($search = $request->get('q')) {
-            $query->where('name', 'like', "%{$search}%")
-                ->orWhere('sku', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%");
+            });
         }
 
-        $products = $query->paginate(20);
+        if ($issue = $request->get('merchant_issue')) {
+            $query->where('is_active', true)->merchantIssue($issue);
+        }
 
-        return view('admin.products.index', compact('products'));
+        $products = $query->paginate(20)->withQueryString();
+        $merchantIssueLabels = Product::googleMerchantIssueLabels();
+
+        return view('admin.products.index', compact('products', 'merchantIssueLabels'));
     }
 
     public function create(): View

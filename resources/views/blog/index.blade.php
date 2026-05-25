@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'IT Insights & Guides | Urban Focus Blog')
+@section('meta_description', 'Buying guides, product news and IT industry updates from Urban Focus — your South African IT hardware and software partner.')
 
 @section('content')
 <div class="container py-4">
@@ -21,7 +22,11 @@
         </div>
         <div class="mt-4">{{ $articles->links() }}</div>
     @else
-        <p class="text-muted">Articles coming soon.</p>
+        <div class="text-center py-5">
+            <p class="text-muted mb-3">Articles coming soon — we're preparing guides on hardware, networking and software licensing.</p>
+            <a href="{{ route('shop.index') }}" class="btn btn-primary me-2">Browse Products</a>
+            <a href="{{ route('contact') }}" class="btn btn-outline-primary">Contact Us</a>
+        </div>
     @endif
 </div>
 @endsection

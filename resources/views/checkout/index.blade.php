@@ -5,7 +5,25 @@
 
 @section('content')
 <div class="container py-4">
+    <nav aria-label="Checkout progress" class="mb-4">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{{ route('cart.index') }}">Cart</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Checkout</li>
+            <li class="breadcrumb-item text-muted">Payment</li>
+        </ol>
+    </nav>
     <h1 class="h2 fw-bold mb-4">Checkout</h1>
+
+    @php
+        $authUser = auth()->user();
+        $defaultFirst = old('billing_first_name');
+        $defaultLast = old('billing_last_name');
+        if (! $defaultFirst && $authUser?->name) {
+            $nameParts = preg_split('/\s+/', trim($authUser->name), 2);
+            $defaultFirst = $nameParts[0] ?? '';
+            $defaultLast = $nameParts[1] ?? '';
+        }
+    @endphp
 
     <form action="{{ route('checkout.store') }}" method="POST">
         @csrf
@@ -16,12 +34,13 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">First Name *</label>
-                            <input type="text" name="billing_first_name" class="form-control @error('billing_first_name') is-invalid @enderror" value="{{ old('billing_first_name', auth()->user()?->name) }}" required>
+                            <input type="text" name="billing_first_name" class="form-control @error('billing_first_name') is-invalid @enderror" value="{{ $defaultFirst }}" required>
                             @error('billing_first_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Last Name *</label>
-                            <input type="text" name="billing_last_name" class="form-control" value="{{ old('billing_last_name') }}" required>
+                            <input type="text" name="billing_last_name" class="form-control @error('billing_last_name') is-invalid @enderror" value="{{ $defaultLast }}" required>
+                            @error('billing_last_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
                             <label class="form-label">Company</label>
@@ -113,7 +132,7 @@
             </div>
 
             <div class="col-lg-5">
-                <div class="checkout-card sticky-top" style="top:80px">
+                <div class="checkout-card sticky-top">
                     <h2 class="h5 fw-bold mb-3">Order Summary</h2>
                     @php $cart = app(\App\Services\CartService::class); @endphp
                     @foreach($cart->items() as $item)
@@ -132,7 +151,8 @@
                     </div>
                     <p class="small text-muted d-none mb-2" id="checkout-shipping-note">Courier cost to be confirmed for manual quote orders.</p>
                     <div class="d-flex justify-content-between mb-2">
-                        <span>VAT ({{ $vatRate }}%)</span><span id="checkout-vat">—</span>
+                        <span>@if($pricesIncludeVat ?? true)VAT included ({{ $vatRate }}%)@else VAT ({{ $vatRate }}%) @endif</span>
+                        <span id="checkout-vat">—</span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between h5 mb-0">
@@ -149,6 +169,7 @@
 {!! json_encode([
     'subtotal' => $subtotal,
     'vatRate' => $vatRate,
+    'pricesIncludeVat' => $pricesIncludeVat ?? true,
     'flatRate' => (float) config('shipping.flat_rate'),
     'freeThreshold' => (float) config('shipping.free_threshold'),
     'csrfToken' => csrf_token(),

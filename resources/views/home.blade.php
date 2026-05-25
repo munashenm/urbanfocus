@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('title', 'Urban Focus — South Africa\'s Trusted IT Distributor')
+@section('meta_description', 'Shop IT hardware, networking, components and software licensing from Urban Focus. Nationwide delivery, VAT invoices and professional support across South Africa.')
+@section('og_image', asset('images/logo-stacked.png'))
 
 @section('content')
 {{-- Hero carousel --}}

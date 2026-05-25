@@ -34,8 +34,9 @@ class CheckoutController extends Controller
         $subtotal = $this->cart->subtotal();
         $shippingMethods = $this->shipping->availableMethods($subtotal);
         $vatRate = config('app.vat_rate', 15);
+        $pricesIncludeVat = config('app.prices_include_vat', true);
 
-        return view('checkout.index', compact('subtotal', 'shippingMethods', 'vatRate'));
+        return view('checkout.index', compact('subtotal', 'shippingMethods', 'vatRate', 'pricesIncludeVat'));
     }
 
     public function validateCoupon(Request $request): JsonResponse
@@ -128,10 +129,10 @@ class CheckoutController extends Controller
         $discountedSubtotal = max(0, $subtotal - $discountAmount);
         $shippingData = $this->shipping->calculate($discountedSubtotal, $validated['shipping_method']);
         $shippingCost = $shippingData['cost'];
-        $taxAmount = round(($discountedSubtotal + $shippingCost) * (config('app.vat_rate', 15) / 100), 2);
-        $total = $discountedSubtotal + $shippingCost + $taxAmount;
+        [$taxAmount, $total] = $this->calculateTaxAndTotal($discountedSubtotal, $shippingCost);
+        $deferStock = $validated['payment_method'] === 'payfast';
 
-        $order = DB::transaction(function () use ($validated, $subtotal, $discountAmount, $shippingData, $shippingCost, $taxAmount, $total, $coupon) {
+        $order = DB::transaction(function () use ($validated, $subtotal, $discountAmount, $shippingData, $shippingCost, $taxAmount, $total, $deferStock) {
             $order = Order::create([
                 'order_number' => Order::generateOrderNumber(),
                 'user_id' => auth()->id(),
@@ -177,7 +178,7 @@ class CheckoutController extends Controller
                     'line_total' => $item['line_total'],
                 ]);
 
-                if ($item['product']->manage_stock) {
+                if (! $deferStock && $item['product']->manage_stock) {
                     $item['product']->decrement('stock_quantity', $item['quantity']);
                 }
             }
@@ -191,6 +192,8 @@ class CheckoutController extends Controller
 
         $this->cart->clear();
 
+        session(['checkout_order_id' => $order->id]);
+
         Mail::to($order->customer_email)->send(new OrderConfirmation($order));
         Mail::to(config('app.email'))->send(new NewOrderNotification($order));
 
@@ -201,8 +204,16 @@ class CheckoutController extends Controller
         return redirect()->route('checkout.success', $order)->with('success', 'Order placed. Please complete EFT payment using the reference on the confirmation page.');
     }
 
-    public function payfastRedirect(Order $order): View
+    public function payfastRedirect(Order $order): View|RedirectResponse
     {
+        if (session('checkout_order_id') !== $order->id) {
+            abort(403);
+        }
+
+        if ($order->payment_status === 'paid') {
+            return redirect()->route('checkout.success', $order);
+        }
+
         $paymentData = $this->payfast->buildPaymentData($order);
 
         return view('checkout.payfast-redirect', [
@@ -217,8 +228,11 @@ class CheckoutController extends Controller
         $orderNumber = $request->get('m_payment_id');
         $order = Order::where('order_number', $orderNumber)->firstOrFail();
 
-        return redirect()->route('checkout.success', $order)
-            ->with('success', 'Payment received. Thank you for your order.');
+        $message = $request->get('payment_status') === 'COMPLETE'
+            ? 'Payment received. Thank you for your order.'
+            : 'Your order has been received. We will confirm payment once PayFast completes processing.';
+
+        return redirect()->route('checkout.success', $order)->with('success', $message);
     }
 
     public function payfastCancel(): RedirectResponse
@@ -240,7 +254,17 @@ class CheckoutController extends Controller
 
         $order = Order::where('order_number', $data['m_payment_id'] ?? '')->first();
 
-        if ($order && $data['payment_status'] === 'COMPLETE') {
+        if ($order && $data['payment_status'] === 'COMPLETE' && $order->payment_status !== 'paid') {
+            $order->load('items.product');
+
+            foreach ($order->items as $orderItem) {
+                $product = $orderItem->product;
+
+                if ($product && $product->manage_stock) {
+                    $product->decrement('stock_quantity', $orderItem->quantity);
+                }
+            }
+
             $order->update([
                 'payment_status' => 'paid',
                 'status' => 'processing',
@@ -255,5 +279,23 @@ class CheckoutController extends Controller
         $order->load('items');
 
         return view('checkout.success', compact('order'));
+    }
+
+    /** @return array{0: float, 1: float} [taxAmount, total] */
+    protected function calculateTaxAndTotal(float $discountedSubtotal, float $shippingCost): array
+    {
+        $vatRate = config('app.vat_rate', 15);
+
+        if (config('app.prices_include_vat', true)) {
+            $total = $discountedSubtotal + $shippingCost;
+            $taxAmount = round($total * ($vatRate / (100 + $vatRate)), 2);
+
+            return [$taxAmount, $total];
+        }
+
+        $taxable = $discountedSubtotal + $shippingCost;
+        $taxAmount = round($taxable * ($vatRate / 100), 2);
+
+        return [$taxAmount, $taxable + $taxAmount];
     }
 }

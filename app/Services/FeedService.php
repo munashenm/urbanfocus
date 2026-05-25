@@ -96,6 +96,16 @@ class FeedService
         }
 
         $this->appendShipping($item, $ns);
+        $this->appendReturnPolicy($item, $ns);
+    }
+
+    protected function appendReturnPolicy(\SimpleXMLElement $item, string $ns): void
+    {
+        $label = config('google-merchant.return_policy_label');
+
+        if ($label) {
+            $this->addGoogleChild($item, 'return_policy_label', $label, $ns);
+        }
     }
 
     protected function appendShipping(\SimpleXMLElement $item, string $ns): void

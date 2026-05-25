@@ -100,8 +100,15 @@
 
 <div class="mobile-search-bar d-lg-none border-bottom bg-white sticky-top" style="top:56px;z-index:1025">
     <div class="container py-2">
-        <form action="{{ route('shop.index') }}" method="GET" role="search">
-            <input class="form-control form-control-sm search-input" type="search" name="q" placeholder="Search products, SKU, brands..." value="{{ request('q') }}" aria-label="Search">
+        <form action="{{ route('shop.index') }}" method="GET" role="search" id="mobileSearchForm">
+            <div class="position-relative">
+                <input class="form-control form-control-sm search-input" type="search" name="q" id="mobileSearchInput"
+                       placeholder="Search products, SKU, brands..." value="{{ request('q') }}" aria-label="Search"
+                       autocomplete="off"
+                       data-suggest-url="{{ route('search.suggest') }}"
+                       data-placeholder-img="{{ asset('images/product-placeholder.svg') }}">
+                <div id="mobileSearchSuggestions" class="search-suggestions d-none"></div>
+            </div>
         </form>
     </div>
 </div>

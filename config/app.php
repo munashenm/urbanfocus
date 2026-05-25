@@ -24,5 +24,7 @@ return [
     'email' => env('BUSINESS_EMAIL', 'sales@urbanfocus.co.za'),
     'address' => env('BUSINESS_ADDRESS', 'South Africa'),
     'vat_rate' => (float) env('VAT_RATE', 15),
+    'prices_include_vat' => (bool) env('PRICES_INCLUDE_VAT', true),
+    'google_site_verification' => env('GOOGLE_SITE_VERIFICATION'),
     'api_key' => env('API_KEY'),
 ];

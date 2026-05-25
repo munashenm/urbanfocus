@@ -6,9 +6,18 @@
 @section('content')
 <div class="container py-5 text-center">
     <div class="checkout-card mx-auto" style="max-width:600px">
-        <div class="text-success mb-3" style="font-size:3rem">&#10003;</div>
-        <h1 class="h2 fw-bold">Thank You!</h1>
-        <p class="text-muted">Your order <strong>{{ $order->order_number }}</strong> has been received.</p>
+        @if($order->payment_method === 'payfast' && $order->payment_status !== 'paid')
+            <div class="text-warning mb-3" style="font-size:3rem">&#9203;</div>
+            <h1 class="h2 fw-bold">Order Received</h1>
+            <p class="text-muted">Your order <strong>{{ $order->order_number }}</strong> is awaiting payment confirmation from PayFast.</p>
+            @if(session('success'))
+                <div class="alert alert-info text-start mt-3 small">{{ session('success') }}</div>
+            @endif
+        @else
+            <div class="text-success mb-3" style="font-size:3rem">&#10003;</div>
+            <h1 class="h2 fw-bold">Thank You!</h1>
+            <p class="text-muted">Your order <strong>{{ $order->order_number }}</strong> has been received.</p>
+        @endif
 
         @if($order->payment_method === 'eft')
             <div class="alert alert-info text-start mt-4">

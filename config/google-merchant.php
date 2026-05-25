@@ -11,7 +11,9 @@ return [
         'price' => env('GOOGLE_MERCHANT_SHIPPING_PRICE', null), // null = use config('shipping.flat_rate')
     ],
 
-    'return_policy_url' => env('GOOGLE_MERCHANT_RETURN_URL', null), // defaults to shipping-returns route
+    'return_policy_url' => env('GOOGLE_MERCHANT_RETURN_URL', null), // defaults to returns route
+
+    'return_policy_label' => env('GOOGLE_MERCHANT_RETURN_LABEL', '30 Day Returns'),
 
     'title_max_length' => 150,
     'description_max_length' => 5000,

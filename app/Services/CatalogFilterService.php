@@ -4,9 +4,22 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Support\Collection;
 
 class CatalogFilterService
 {
+    /** @return list<string> */
+    public function itCategoryHeads(): array
+    {
+        return config('catalog.it_category_heads', []);
+    }
+
+    /** @return list<string> */
+    public function itCategoryExceptions(): array
+    {
+        return config('catalog.it_category_exceptions', []);
+    }
+
     /** @return list<string> */
     public function excludedTerms(): array
     {
@@ -58,6 +71,58 @@ class CatalogFilterService
         return false;
     }
 
+    public function isItCategoryHead(string $name): bool
+    {
+        $name = strtolower(trim($name));
+
+        foreach ($this->itCategoryHeads() as $head) {
+            if (strtolower(trim($head)) === $name) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function isItCategoryException(Category $category): bool
+    {
+        $name = strtolower(trim($category->name));
+
+        foreach ($this->itCategoryExceptions() as $exception) {
+            if (strtolower(trim($exception)) === $name) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function resolveRootCategory(Category $category): Category
+    {
+        $current = $category;
+        $seen = [];
+
+        while ($current->parent_id) {
+            if (in_array($current->id, $seen, true)) {
+                break;
+            }
+
+            $seen[] = $current->id;
+
+            if (! $current->relationLoaded('parent')) {
+                $current->load('parent');
+            }
+
+            $current = $current->parent;
+
+            if (! $current) {
+                break;
+            }
+        }
+
+        return $current;
+    }
+
     public function isExcludedCategoryPath(string $path): bool
     {
         foreach (preg_split('/\s*>\s*/', $path) ?: [] as $segment) {
@@ -71,6 +136,12 @@ class CatalogFilterService
 
     public function isExcludedImportRow(array $data): bool
     {
+        $categoryHead = trim($data['category_head'] ?? '');
+
+        if ($categoryHead !== '' && ! $this->isItCategoryHead($categoryHead)) {
+            return true;
+        }
+
         $segments = array_filter([
             $data['category_head'] ?? null,
             $data['category'] ?? null,
@@ -96,11 +167,35 @@ class CatalogFilterService
             return true;
         }
 
+        if ($categoryHead === '' && trim($data['category'] ?? '') !== '') {
+            $categoryName = trim($data['category']);
+            if (! $this->isItCategoryExceptionName($categoryName) && ! $this->isItCategoryHead($categoryName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function isItCategoryExceptionName(string $name): bool
+    {
+        $name = strtolower(trim($name));
+
+        foreach ($this->itCategoryExceptions() as $exception) {
+            if (strtolower(trim($exception)) === $name) {
+                return true;
+            }
+        }
+
         return false;
     }
 
     public function isCategoryExcluded(Category $category): bool
     {
+        if ($this->isItCategoryException($category)) {
+            return false;
+        }
+
         $current = $category;
         $seen = [];
 
@@ -108,6 +203,7 @@ class CatalogFilterService
             if (in_array($current->id, $seen, true)) {
                 break;
             }
+
             $seen[] = $current->id;
 
             if ($this->isExcludedName($current->name)) {
@@ -121,7 +217,13 @@ class CatalogFilterService
             $current = $current->parent;
         }
 
-        return false;
+        $root = $this->resolveRootCategory($category);
+
+        if ($this->isItCategoryHead($root->name)) {
+            return false;
+        }
+
+        return true;
     }
 
     public function isProductNameExcluded(Product $product): bool
@@ -145,5 +247,25 @@ class CatalogFilterService
         }
 
         return $this->isProductNameExcluded($product);
+    }
+
+    /** @return list<int> */
+    public function collectExcludedCategoryIds(): array
+    {
+        return Category::query()
+            ->get()
+            ->filter(fn (Category $category) => $this->isCategoryExcluded($category))
+            ->pluck('id')
+            ->values()
+            ->all();
+    }
+
+    /** @return Collection<int, Category> */
+    public function collectExcludedCategories(): Collection
+    {
+        return Category::query()
+            ->get()
+            ->filter(fn (Category $category) => $this->isCategoryExcluded($category))
+            ->values();
     }
 }

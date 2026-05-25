@@ -3,8 +3,6 @@
 /**
  * Remove non-IT products and categories (cPanel)
  *
- * Use this if Admin → Remove Non-IT Products times out (500 error).
- *
  * 1. Git pull latest code
  * 2. Copy to public_html/cleanup-non-it.php and set CLEANUP_KEY
  * 3. Preview: https://www.urbanfocus.co.za/cleanup-non-it.php?key=YOUR_SECRET&preview=1
@@ -43,22 +41,22 @@ if (isset($_GET['preview'])) {
 
         echo "Blocklist terms loaded: {$preview['terms_loaded']}\n";
         echo "Total products in catalog: {$preview['total_products']}\n";
-        echo "Excluded categories: ".count($preview['excluded_categories'])."\n";
+        echo "Non-IT products to delete: {$preview['products_to_delete']}\n";
+        echo "Non-IT categories to delete: {$preview['categories_to_delete']}\n";
 
         if ($preview['excluded_categories'] !== []) {
-            echo "  ".implode(', ', array_slice($preview['excluded_categories'], 0, 20));
-            if (count($preview['excluded_categories']) > 20) {
-                echo ' …';
+            echo "\nCategories:\n";
+            foreach (array_slice($preview['excluded_categories'], 0, 25) as $name) {
+                echo "- {$name}\n";
             }
-            echo "\n";
+            if (count($preview['excluded_categories']) > 25) {
+                echo '… and '.(count($preview['excluded_categories']) - 25)." more\n";
+            }
         }
 
-        echo "Products in excluded categories: {$preview['products_in_excluded_categories']}\n";
-        echo "Products matched by name (other categories): {$preview['products_by_name']}\n";
-
-        if ($preview['sample_products_by_name'] !== []) {
-            echo "\nSample name matches:\n";
-            foreach ($preview['sample_products_by_name'] as $name) {
+        if ($preview['sample_products'] !== []) {
+            echo "\nSample products:\n";
+            foreach ($preview['sample_products'] as $name) {
                 echo "- {$name}\n";
             }
         }
@@ -67,7 +65,7 @@ if (isset($_GET['preview'])) {
             echo "\nWARNING: No blocklist terms loaded. Run git pull and php artisan config:clear.\n";
         }
 
-        if ($preview['products_in_excluded_categories'] === 0 && $preview['products_by_name'] === 0) {
+        if ($preview['products_to_delete'] === 0 && $preview['categories_to_delete'] === 0) {
             echo "\nNothing left to remove — cleanup may have already completed.\n";
         }
     } catch (Throwable $e) {

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -39,49 +40,37 @@ class ProductCleanupService
      *     terms_loaded: int,
      *     total_products: int,
      *     excluded_categories: list<string>,
-     *     products_in_excluded_categories: int,
-     *     products_by_name: int,
-     *     sample_products_by_name: list<string>
+     *     products_to_delete: int,
+     *     categories_to_delete: int,
+     *     sample_products: list<string>
      * }
      */
     public function previewNonItCleanup(): array
     {
-        $excludedCategories = Category::query()
-            ->get()
-            ->filter(fn (Category $category) => $this->catalogFilter->isCategoryExcluded($category));
+        $excludedCategories = $this->catalogFilter->collectExcludedCategories();
+        $productsToDelete = 0;
+        $sampleProducts = [];
 
-        $excludedCategoryIds = $excludedCategories->pluck('id')->all();
-
-        $productsInExcludedCategories = $excludedCategoryIds === []
-            ? 0
-            : Product::query()->whereIn('category_id', $excludedCategoryIds)->count();
-
-        $productsByName = 0;
-        $sampleProductsByName = [];
-
-        foreach (Product::query()->select(['id', 'name', 'short_description', 'category_id'])->lazyById(100) as $product) {
-            if (in_array($product->category_id, $excludedCategoryIds, true)) {
+        foreach (Product::query()->with('category')->lazyById(100) as $product) {
+            if (! $this->catalogFilter->isProductExcluded($product)) {
                 continue;
             }
 
-            if (! $this->catalogFilter->isProductNameExcluded($product)) {
-                continue;
-            }
+            $productsToDelete++;
 
-            $productsByName++;
-
-            if (count($sampleProductsByName) < 15) {
-                $sampleProductsByName[] = $product->name;
+            if (count($sampleProducts) < 15) {
+                $sampleProducts[] = $product->name;
             }
         }
 
         return [
             'terms_loaded' => count($this->catalogFilter->excludedProductTerms()),
+            'it_heads_loaded' => count($this->catalogFilter->itCategoryHeads()),
             'total_products' => Product::query()->count(),
             'excluded_categories' => $excludedCategories->pluck('name')->values()->all(),
-            'products_in_excluded_categories' => $productsInExcludedCategories,
-            'products_by_name' => $productsByName,
-            'sample_products_by_name' => $sampleProductsByName,
+            'products_to_delete' => $productsToDelete,
+            'categories_to_delete' => $excludedCategories->count(),
+            'sample_products' => $sampleProducts,
         ];
     }
 
@@ -92,50 +81,28 @@ class ProductCleanupService
 
         $productsDeleted = 0;
         $imagesRemoved = 0;
-        $categoriesDeleted = 0;
         $errors = [];
 
-        $excludedCategoryIds = Category::query()
-            ->get()
-            ->filter(fn (Category $category) => $this->catalogFilter->isCategoryExcluded($category))
-            ->pluck('id')
-            ->all();
+        $excludedCategoryIds = $this->catalogFilter->collectExcludedCategoryIds();
 
-        if ($excludedCategoryIds !== []) {
-            $query = Product::with('images')->whereIn('category_id', $excludedCategoryIds);
-
-            foreach ($query->lazyById(25) as $product) {
-                try {
-                    $imagesRemoved += $this->safelyDeleteProduct($product);
-                    $productsDeleted++;
-                } catch (\Throwable $e) {
-                    $errors[] = ($product->sku ?: $product->name).': '.$e->getMessage();
-                    Log::warning('Non-IT product delete failed', [
-                        'product_id' => $product->id,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
-            }
-        }
-
-        foreach (Product::with('images')->lazyById(25) as $product) {
-            if (! $this->catalogFilter->isProductNameExcluded($product)) {
+        // 1. Delete every non-IT product (blocked category or blocked name).
+        foreach (Product::with(['images', 'category'])->lazyById(25) as $product) {
+            if (! $this->catalogFilter->isProductExcluded($product)) {
                 continue;
             }
 
-            try {
-                $imagesRemoved += $this->safelyDeleteProduct($product);
-                $productsDeleted++;
-            } catch (\Throwable $e) {
-                $errors[] = ($product->sku ?: $product->name).': '.$e->getMessage();
-                Log::warning('Non-IT product delete failed', [
-                    'product_id' => $product->id,
-                    'message' => $e->getMessage(),
-                ]);
+            $this->deleteProductSafely($product, $productsDeleted, $imagesRemoved, $errors);
+        }
+
+        // 2. Remove any products still assigned to excluded categories.
+        if ($excludedCategoryIds !== []) {
+            foreach (Product::with('images')->whereIn('category_id', $excludedCategoryIds)->lazyById(25) as $product) {
+                $this->deleteProductSafely($product, $productsDeleted, $imagesRemoved, $errors);
             }
         }
 
-        $categoriesDeleted = $this->deleteExcludedCategories();
+        // 3. Delete excluded categories once they are empty (deepest first).
+        $categoriesDeleted = $this->deleteExcludedCategories($excludedCategoryIds);
 
         Cache::forget('sitemap.xml');
 
@@ -145,6 +112,25 @@ class ProductCleanupService
             'images_removed' => $imagesRemoved,
             'errors' => $errors,
         ];
+    }
+
+    /** @param array<int, string> $errors */
+    protected function deleteProductSafely(Product $product, int &$productsDeleted, int &$imagesRemoved, array &$errors): void
+    {
+        if (! Product::whereKey($product->id)->exists()) {
+            return;
+        }
+
+        try {
+            $imagesRemoved += $this->safelyDeleteProduct($product);
+            $productsDeleted++;
+        } catch (\Throwable $e) {
+            $errors[] = ($product->sku ?: $product->name).': '.$e->getMessage();
+            Log::warning('Non-IT product delete failed', [
+                'product_id' => $product->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     protected function safelyDeleteProduct(Product $product): int
@@ -170,25 +156,37 @@ class ProductCleanupService
         return $imagesRemoved;
     }
 
-    protected function deleteExcludedCategories(): int
+    /** @param list<int> $excludedCategoryIds */
+    protected function deleteExcludedCategories(array $excludedCategoryIds): int
     {
+        if ($excludedCategoryIds === []) {
+            return 0;
+        }
+
         $deleted = 0;
         $passes = 0;
 
-        while ($passes < 10) {
+        while ($passes < 20) {
             $passes++;
             $removedThisPass = 0;
 
+            /** @var Collection<int, Category> $categories */
             $categories = Category::query()
+                ->with('parent')
+                ->whereIn('id', $excludedCategoryIds)
                 ->get()
                 ->sortByDesc(fn (Category $category) => $this->categoryDepth($category));
 
             foreach ($categories as $category) {
-                if (! $this->catalogFilter->isCategoryExcluded($category)) {
+                if (! Category::whereKey($category->id)->exists()) {
                     continue;
                 }
 
-                if ($category->products()->exists() || $category->children()->exists()) {
+                if ($category->products()->exists()) {
+                    continue;
+                }
+
+                if ($category->children()->exists()) {
                     continue;
                 }
 
@@ -215,11 +213,20 @@ class ProductCleanupService
     protected function categoryDepth(Category $category): int
     {
         $depth = 0;
-        $current = $category->parent;
+        $current = $category;
 
-        while ($current) {
-            $depth++;
+        while ($current->parent_id) {
+            if (! $current->relationLoaded('parent')) {
+                $current->load('parent');
+            }
+
             $current = $current->parent;
+
+            if (! $current) {
+                break;
+            }
+
+            $depth++;
         }
 
         return $depth;

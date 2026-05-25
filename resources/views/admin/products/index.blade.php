@@ -3,25 +3,48 @@
 @section('page_title', 'Products')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <form class="d-flex" method="GET">
-        <input type="search" name="q" class="form-control form-control-sm me-2" placeholder="Search..." value="{{ request('q') }}">
-        <button class="btn btn-sm btn-outline-secondary">Search</button>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <form class="d-flex flex-wrap gap-2" method="GET">
+        <input type="search" name="q" class="form-control form-control-sm" placeholder="Search..." value="{{ request('q') }}" style="min-width:180px">
+        <select name="merchant_issue" class="form-select form-select-sm" style="min-width:180px" onchange="this.form.submit()">
+            <option value="">All products</option>
+            @foreach($merchantIssueLabels as $key => $label)
+                <option value="{{ $key }}" @selected(request('merchant_issue') === $key)>Feed: {{ $label }}</option>
+            @endforeach
+        </select>
+        <button class="btn btn-sm btn-outline-secondary">Filter</button>
+        @if(request('merchant_issue') || request('q'))
+            <a href="{{ route('admin.products.index') }}" class="btn btn-sm btn-link">Clear</a>
+        @endif
     </form>
     <a href="{{ route('admin.products.create') }}" class="btn btn-primary btn-sm">Add Product</a>
 </div>
 
+@if(request('merchant_issue'))
+    <div class="alert alert-info small py-2">Showing active products with feed issue: <strong>{{ $merchantIssueLabels[request('merchant_issue')] ?? request('merchant_issue') }}</strong></div>
+@endif
+
 <div class="card">
     <div class="table-responsive">
         <table class="table mb-0">
-            <thead><tr><th>Name</th><th>SKU</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>SKU</th><th>Price</th><th>Stock</th><th>Feed</th><th>Status</th><th></th></tr></thead>
             <tbody>
                 @foreach($products as $product)
+                    @php $feedIssues = $product->is_active ? $product->googleMerchantIssues() : []; @endphp
                     <tr>
                         <td>{{ $product->name }}</td>
                         <td>{{ $product->sku }}</td>
                         <td>R {{ number_format($product->effective_price, 2) }}</td>
                         <td>{{ $product->stock_quantity }}</td>
+                        <td>
+                            @if($feedIssues === [])
+                                <span class="badge bg-success">Eligible</span>
+                            @else
+                                @foreach($feedIssues as $issue)
+                                    <span class="badge bg-warning text-dark" title="{{ $merchantIssueLabels[$issue] ?? $issue }}">{{ $merchantIssueLabels[$issue] ?? $issue }}</span>
+                                @endforeach
+                            @endif
+                        </td>
                         <td>@if($product->is_active)<span class="badge bg-success">Active</span>@else<span class="badge bg-secondary">Inactive</span>@endif</td>
                         <td class="text-end">
                             <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-outline-primary">Edit</a>

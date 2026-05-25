@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use App\Models\Setting;
 use App\Services\GoogleMerchantService;
 use App\Services\ProductCleanupService;
@@ -16,10 +17,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CatalogController extends Controller
 {
-    public function index(GoogleMerchantService $merchant): View
+    public function index(GoogleMerchantService $merchant, ProductCleanupService $cleanup): View
     {
         $apiKey = Setting::get('api_key') ?: config('app.api_key');
         $feedStats = $merchant->feedStats();
+        $nonItPreview = $cleanup->previewNonItCleanup();
+        $merchantIssueLabels = Product::googleMerchantIssueLabels();
+        $ineligibleSample = $merchant->ineligibleProducts(10);
 
         $feeds = [
             ['name' => 'Google Merchant Center', 'url' => route('feeds.google'), 'format' => 'XML'],
@@ -32,7 +36,7 @@ class CatalogController extends Controller
             ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
         ];
 
-        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats'));
+        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'merchantIssueLabels', 'ineligibleSample'));
     }
 
     public function import(Request $request, ProductImportService $importService): RedirectResponse
@@ -92,7 +96,7 @@ class CatalogController extends Controller
 
             $result = $cleanup->removeNonItProducts();
 
-            $message = "Removed {$result['products_deleted']} non-IT product(s), deleted {$result['categories_deleted']} categor(ies), {$result['images_removed']} image(s).";
+            $message = "Removed {$result['products_deleted']} non-IT product(s) and {$result['categories_deleted']} non-IT categor(ies). {$result['images_removed']} image(s) deleted.";
 
             if (! empty($result['errors'])) {
                 return back()->with('warning', $message.' Some items failed: '.implode(' | ', array_slice($result['errors'], 0, 5)));
@@ -122,5 +126,33 @@ class CatalogController extends Controller
         Setting::set('api_key', $key, 'api');
 
         return back()->with('success', 'API key regenerated. Update any integrations using the new key.');
+    }
+
+    public function exportIneligible(GoogleMerchantService $merchant): StreamedResponse
+    {
+        return $merchant->exportIneligibleCsv();
+    }
+
+    public function bulkFixMerchant(Request $request, GoogleMerchantService $merchant): RedirectResponse
+    {
+        $request->validate([
+            'action' => 'required|in:fill_descriptions,fill_sku',
+        ]);
+
+        $count = match ($request->action) {
+            'fill_descriptions' => $merchant->bulkFillDescriptions(),
+            'fill_sku' => $merchant->bulkFillSkuFromId(),
+        };
+
+        $label = match ($request->action) {
+            'fill_descriptions' => 'descriptions',
+            'fill_sku' => 'SKUs',
+        };
+
+        if ($count === 0) {
+            return back()->with('warning', "No products needed {$label} updates.");
+        }
+
+        return back()->with('success', "Updated {$count} product {$label} for Google Merchant eligibility.");
     }
 }

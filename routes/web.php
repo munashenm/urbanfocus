@@ -123,6 +123,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('catalog/remove-non-it', [AdminCatalogController::class, 'removeNonIt'])->name('catalog.remove-non-it');
     Route::get('catalog/export', [AdminCatalogController::class, 'export'])->name('catalog.export');
     Route::get('catalog/export/woocommerce', [AdminCatalogController::class, 'exportWooCommerce'])->name('catalog.export.woocommerce');
+    Route::get('catalog/export/ineligible', [AdminCatalogController::class, 'exportIneligible'])->name('catalog.export-ineligible');
+    Route::post('catalog/bulk-fix-merchant', [AdminCatalogController::class, 'bulkFixMerchant'])->name('catalog.bulk-fix-merchant');
     Route::post('catalog/api-key', [AdminCatalogController::class, 'regenerateApiKey'])->name('catalog.api-key');
     Route::get('import', fn () => redirect()->route('admin.catalog.index'))->name('import.index');
     Route::post('import', [AdminCatalogController::class, 'import'])->name('import.store');

@@ -7,10 +7,10 @@
     const vatRate = data.vatRate;
     const flatRate = data.flatRate;
     const freeThreshold = data.freeThreshold;
+    const pricesIncludeVat = data.pricesIncludeVat !== false;
 
     const discountRow = document.getElementById('checkout-discount-row');
     const discountValue = document.getElementById('checkout-discount');
-    const shippingRow = document.getElementById('checkout-shipping-row');
     const shippingValue = document.getElementById('checkout-shipping');
     const shippingNote = document.getElementById('checkout-shipping-note');
     const vatValue = document.getElementById('checkout-vat');
@@ -18,6 +18,7 @@
     const couponInput = document.querySelector('[name="coupon_code"]');
     const couponFeedback = document.getElementById('coupon-feedback');
     const applyBtn = document.getElementById('apply-coupon-btn');
+    const submitBtn = document.querySelector('form[action*="checkout"] button[type="submit"]');
 
     let discountAmount = 0;
 
@@ -38,13 +39,23 @@
         return discountedSubtotal >= freeThreshold ? 0 : flatRate;
     }
 
+    function calculateTaxAndTotal(discountedSubtotal, ship) {
+        if (pricesIncludeVat) {
+            const total = discountedSubtotal + ship;
+            const vat = Math.round(total * (vatRate / (100 + vatRate)) * 100) / 100;
+            return { vat: vat, total: total };
+        }
+
+        const taxable = discountedSubtotal + ship;
+        const vat = Math.round(taxable * (vatRate / 100) * 100) / 100;
+        return { vat: vat, total: taxable + vat };
+    }
+
     function updateTotals() {
         const method = selectedShippingMethod();
         const discountedSubtotal = Math.max(0, subtotal - discountAmount);
         const ship = shippingCost(method, discountedSubtotal);
-        const taxable = discountedSubtotal + ship;
-        const vat = Math.round(taxable * (vatRate / 100) * 100) / 100;
-        const total = discountedSubtotal + ship + vat;
+        const amounts = calculateTaxAndTotal(discountedSubtotal, ship);
 
         if (discountAmount > 0) {
             discountRow.classList.remove('d-none');
@@ -55,8 +66,8 @@
 
         shippingValue.textContent = ship > 0 ? formatMoney(ship) : 'Free';
         shippingNote.classList.toggle('d-none', method !== 'manual_quote');
-        vatValue.textContent = formatMoney(vat);
-        totalValue.textContent = formatMoney(total);
+        vatValue.textContent = formatMoney(amounts.vat);
+        totalValue.textContent = formatMoney(amounts.total);
     }
 
     document.querySelectorAll('[name="shipping_method"]').forEach(function (input) {
@@ -112,6 +123,13 @@
                 .finally(function () {
                     applyBtn.disabled = false;
                 });
+        });
+    }
+
+    if (submitBtn) {
+        submitBtn.closest('form')?.addEventListener('submit', function () {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Placing order…';
         });
     }
 
