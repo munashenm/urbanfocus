@@ -3,7 +3,7 @@
         <div class="row g-4">
             <div class="col-lg-4">
                 <a href="{{ route('home') }}" class="site-logo site-logo--footer d-inline-block mb-3">
-                    <img src="{{ asset('images/logo-stacked.png') }}" alt="Urban Focus" width="160" height="72">
+                    <img src="{{ asset('images/logo-footer.svg') }}" alt="Urban Focus — IT Equipment, Software, Solutions" width="220" height="80" class="footer-logo" loading="lazy">
                 </a>
                 <p class="text-white-50 mb-3">South African supplier of IT hardware, networking, components and software licensing. Professional support and nationwide delivery.</p>
                 @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-2'])

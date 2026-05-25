@@ -79,8 +79,12 @@ body {
     width: auto;
     display: block;
 }
-.site-logo--footer img {
-    height: 72px;
+.site-logo--footer img,
+.site-logo--footer .footer-logo {
+    height: 80px;
+    width: auto;
+    max-width: 100%;
+    display: block;
 }
 .site-logo--stacked img {
     height: 100px;

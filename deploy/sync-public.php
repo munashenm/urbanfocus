@@ -72,7 +72,7 @@ $total += copyDirectory($sourcePublic.'/images', $targetPublic.'/images');
 $total += copyDirectory($sourcePublic.'/css', $targetPublic.'/css');
 $total += copyDirectory($sourcePublic.'/js', $targetPublic.'/js');
 
-foreach (['favicon.png', 'robots.txt'] as $file) {
+foreach (['favicon.svg', 'favicon.png', 'robots.txt'] as $file) {
     $src = $sourcePublic.'/'.$file;
     if (file_exists($src)) {
         copy($src, $targetPublic.'/'.$file);

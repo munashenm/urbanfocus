@@ -35,7 +35,8 @@
     @else
         <meta name="twitter:image" content="{{ asset('images/logo-stacked.png') }}">
     @endif
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="{{ asset('images/favicon.png') }}">
     <meta name="theme-color" content="#0a1628">
     <link rel="preconnect" href="https://fonts.googleapis.com">

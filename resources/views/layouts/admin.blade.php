@@ -7,14 +7,15 @@
     <title>@yield('title', 'Admin') - Urban Focus</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ asset('css/admin.css') }}" rel="stylesheet">
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png" sizes="32x32">
 </head>
 <body class="admin-body">
     <div class="d-flex">
         <aside class="admin-sidebar">
             <div class="admin-brand">
                 <a href="{{ route('admin.dashboard') }}" class="d-flex align-items-center gap-2 text-white text-decoration-none">
-                    <img src="{{ asset('images/favicon.png') }}" alt="" width="32" height="32" style="border-radius:6px">
+                    <img src="{{ asset('favicon.svg') }}" alt="" width="32" height="32" style="border-radius:6px">
                     <span>Urban Focus</span>
                 </a>
             </div>
