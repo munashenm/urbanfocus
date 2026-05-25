@@ -7,30 +7,61 @@
     <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Import Products (CSV)</h2>
-            <p class="small text-muted">Supports WooCommerce exports and distributor CSVs (ProductName, ProductCode, Category, Image, etc.). UTF-8 with comma or semicolon delimiters.</p>
+            <p class="small text-muted">Supports WooCommerce exports and Esquire/distributor CSVs. Only <strong>IT products with images and a cost price</strong> are imported.</p>
+
+            <div class="alert alert-info small mb-3">
+                <strong>Pricing policy:</strong>
+                CSV price = cost → retail = {{ $importPricing['markup_percent'] }}% markup, rounded {{ $importPricing['round_mode'] === 'up' ? 'up' : 'to nearest' }} to R{{ $importPricing['round_to'] }}.
+                Example: R{{ number_format($importPricing['example']['cost'], 0) }} cost → R{{ number_format($importPricing['example']['retail'], 0) }} retail.
+            </div>
 
             <div class="alert alert-light border small mb-3">
                 <strong>Large imports (1000+ products):</strong>
                 <ol class="mb-0 ps-3 mt-2">
                     <li>Upload CSV to <code>urbanfocus/storage/imports/products.csv</code> via File Manager</li>
+                    <li>Preview: <code>import-csv.php?key=…&amp;preview=1</code></li>
                     <li>Run <code>deploy/import-csv.php</code> from <code>public_html</code> (no browser timeout)</li>
                 </ol>
             </div>
 
-            <ul class="small text-muted">
-                <li>Required columns: <strong>Name</strong>, <strong>Images</strong> (full image URLs)</li>
-                <li>Recommended: SKU, Categories, Regular price, Stock, Published</li>
-                <li>Rows without images or in non-IT categories are skipped</li>
+            <ul class="small text-muted mb-3">
+                <li>Required: <strong>Name</strong>, <strong>Image URL(s)</strong>, <strong>Price/Cost</strong></li>
+                <li>Recommended: SKU, CategoryHead + Category (or Categories), Stock, Brand</li>
+                <li>Skipped automatically: non-IT rows, missing images, zero price, failed image downloads</li>
                 <li>Matches existing products by SKU or WooCommerce ID</li>
             </ul>
-            <form action="{{ route('admin.catalog.import') }}" method="POST" enctype="multipart/form-data">
+
+            @if(session('import_preview'))
+                @php $preview = session('import_preview'); @endphp
+                <div class="alert alert-secondary small mb-3">
+                    <strong>Import preview</strong> ({{ $preview['total_rows'] ?? 0 }} data rows scanned)<br>
+                    Would create: <strong>{{ $preview['would_create'] ?? 0 }}</strong>,
+                    update: <strong>{{ $preview['would_update'] ?? 0 }}</strong>,
+                    skip non-IT: {{ $preview['skippedNonIt'] ?? 0 }},
+                    skip no image: {{ $preview['skippedNoImage'] ?? 0 }},
+                    skip no price: {{ $preview['skippedNoPrice'] ?? 0 }}
+                    @if(!empty($preview['samples']['import']))
+                        <p class="mb-1 mt-2 fw-semibold">Sample imports (cost → retail):</p>
+                        <ul class="mb-0 ps-3">
+                            @foreach($preview['samples']['import'] as $sample)
+                                <li>{{ $sample['name'] }} — R{{ number_format($sample['cost'], 2) }} → R{{ number_format($sample['retail'], 2) }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            @endif
+
+            <form action="{{ route('admin.catalog.import') }}" method="POST" enctype="multipart/form-data" class="mb-2">
                 @csrf
                 <div class="mb-3">
                     <label class="form-label">CSV File</label>
                     <input type="file" name="csv_file" class="form-control @error('csv_file') is-invalid @enderror" accept=".csv,.txt" required>
                     @error('csv_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <button type="submit" class="btn btn-primary">Import CSV</button>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" formaction="{{ route('admin.catalog.import-preview') }}" formmethod="POST" class="btn btn-outline-secondary">Preview Import</button>
+                    <button type="submit" class="btn btn-primary">Import CSV</button>
+                </div>
             </form>
         </div></div>
     </div>

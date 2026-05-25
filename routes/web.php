@@ -119,6 +119,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
     Route::get('catalog', [AdminCatalogController::class, 'index'])->name('catalog.index');
     Route::post('catalog/import', [AdminCatalogController::class, 'import'])->name('catalog.import');
+    Route::post('catalog/import/preview', [AdminCatalogController::class, 'importPreview'])->name('catalog.import-preview');
     Route::post('catalog/clear-products', [AdminCatalogController::class, 'clearProducts'])->name('catalog.clear-products');
     Route::post('catalog/remove-non-it', [AdminCatalogController::class, 'removeNonIt'])->name('catalog.remove-non-it');
     Route::get('catalog/export', [AdminCatalogController::class, 'export'])->name('catalog.export');

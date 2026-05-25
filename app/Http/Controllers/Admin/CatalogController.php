@@ -24,6 +24,7 @@ class CatalogController extends Controller
         $nonItPreview = $cleanup->previewNonItCleanup();
         $merchantIssueLabels = Product::googleMerchantIssueLabels();
         $ineligibleSample = $merchant->ineligibleProducts(10);
+        $importPricing = app(ProductImportService::class)->pricingPolicy();
 
         $feeds = [
             ['name' => 'Google Merchant Center', 'url' => route('feeds.google'), 'format' => 'XML'],
@@ -36,7 +37,7 @@ class CatalogController extends Controller
             ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
         ];
 
-        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'merchantIssueLabels', 'ineligibleSample'));
+        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing'));
     }
 
     public function import(Request $request, ProductImportService $importService): RedirectResponse
@@ -56,6 +57,38 @@ class CatalogController extends Controller
             return back()->with('error', 'Import failed: '.$e->getMessage());
         }
 
+        $message = $this->formatImportMessage($result);
+
+        if (! empty($result['errors'])) {
+            return back()->with('warning', $message);
+        }
+
+        return back()->with('success', $message);
+    }
+
+    public function importPreview(Request $request, ProductImportService $importService): RedirectResponse
+    {
+        $request->validate([
+            'csv_file' => 'required|file|max:20480',
+        ]);
+
+        $extension = strtolower($request->file('csv_file')->getClientOriginalExtension());
+        if (! in_array($extension, ['csv', 'txt', ''], true)) {
+            return back()->with('error', 'Please upload a .csv file.');
+        }
+
+        try {
+            $preview = $importService->preview($request->file('csv_file'));
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Preview failed: '.$e->getMessage());
+        }
+
+        return back()->with('import_preview', $preview);
+    }
+
+    /** @param array<string, mixed> $result */
+    protected function formatImportMessage(array $result): string
+    {
         $message = "Imported {$result['imported']} new, updated {$result['updated']}.";
 
         if ($result['skipped'] > 0) {
@@ -66,15 +99,23 @@ class CatalogController extends Controller
             $message .= " Skipped {$result['skippedNoImage']} without images.";
         }
 
+        if (($result['skippedNoPrice'] ?? 0) > 0) {
+            $message .= " Skipped {$result['skippedNoPrice']} without cost/price.";
+        }
+
+        if (($result['skippedImageFailed'] ?? 0) > 0) {
+            $message .= " Skipped {$result['skippedImageFailed']} with failed image downloads.";
+        }
+
         if (($result['skippedNonIt'] ?? 0) > 0) {
-            $message .= " Skipped {$result['skippedNonIt']} non-IT categories.";
+            $message .= " Skipped {$result['skippedNonIt']} non-IT rows.";
         }
 
         if (! empty($result['errors'])) {
-            return back()->with('warning', $message.' Errors: '.implode(' | ', array_slice($result['errors'], 0, 8)));
+            return $message.' Errors: '.implode(' | ', array_slice($result['errors'], 0, 8));
         }
 
-        return back()->with('success', $message);
+        return $message;
     }
 
     public function clearProducts(Request $request, ProductCleanupService $cleanup): RedirectResponse

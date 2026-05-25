@@ -22,19 +22,34 @@ class ProductImportService
         'id' => 'id',
         'sku' => 'sku',
         'productcode' => 'sku',
+        'code' => 'sku',
         'name' => 'name',
         'productname' => 'name',
         'categories' => 'categories',
         'category' => 'category',
         'categoryhead' => 'category_head',
+        'category head' => 'category_head',
         'images' => 'images',
         'image' => 'images',
+        'image url' => 'images',
+        'imageurl' => 'images',
+        'product image' => 'images',
+        'productimage' => 'images',
+        'picture' => 'images',
+        'thumbnail' => 'images',
         'regular price' => 'regular_price',
         'price' => 'regular_price',
+        'list price' => 'list_price',
+        'listprice' => 'list_price',
+        'cost price' => 'cost_price',
+        'costprice' => 'cost_price',
+        'wholesale price' => 'cost_price',
         'sale price' => 'sale_price',
         'stock' => 'stock',
         'stock quantity' => 'stock',
         'availableqty' => 'stock',
+        'qty' => 'stock',
+        'quantity' => 'stock',
         'in stock?' => 'in_stock',
         'published' => 'published',
         'short description' => 'short_description',
@@ -42,8 +57,10 @@ class ProductImportService
         'description' => 'description',
         'productdescription' => 'description',
         'brand' => 'brand',
+        'manufacturer' => 'brand',
         'barcode' => 'barcode',
         'gtin' => 'barcode',
+        'ean' => 'barcode',
         'google product category' => 'google_product_category',
         'weight (kg)' => 'weight',
         'masskg' => 'weight',
@@ -64,7 +81,28 @@ class ProductImportService
         return $this->importFromPath($path);
     }
 
+    public function preview(UploadedFile $file): array
+    {
+        $path = $file->getRealPath();
+
+        if ($path === false) {
+            throw new \RuntimeException('Could not read the uploaded CSV file.');
+        }
+
+        return $this->previewFromPath($path);
+    }
+
     public function importFromPath(string $path, ?callable $onProgress = null): array
+    {
+        return $this->processCsv($path, dryRun: false, onProgress: $onProgress);
+    }
+
+    public function previewFromPath(string $path, int $sampleLimit = 12): array
+    {
+        return $this->processCsv($path, dryRun: true, sampleLimit: $sampleLimit);
+    }
+
+    protected function processCsv(string $path, bool $dryRun, ?callable $onProgress = null, int $sampleLimit = 12): array
     {
         $handle = fopen($path, 'r');
 
@@ -89,11 +127,16 @@ class ProductImportService
         $updated = 0;
         $skipped = 0;
         $skippedNoImage = 0;
+        $skippedNoPrice = 0;
+        $skippedImageFailed = 0;
         $skippedNonIt = 0;
         $errors = [];
+        $samples = ['import' => [], 'skipped' => []];
         $rowNumber = 1;
 
-        SocialPostingService::$suppress = true;
+        if (! $dryRun) {
+            SocialPostingService::$suppress = true;
+        }
 
         try {
             while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
@@ -107,19 +150,57 @@ class ProductImportService
 
                 $row = $this->normalizeRow($row, count($headers));
                 $data = $this->normalizeImportData($this->mapRow($headers, $row));
+                $evaluation = $this->evaluateRow($data);
+
+                if ($evaluation['action'] === 'skip') {
+                    $this->incrementSkipCounter(
+                        $evaluation['reason'],
+                        $skippedNonIt,
+                        $skippedNoImage,
+                        $skippedNoPrice,
+                        $skippedImageFailed
+                    );
+                    $this->pushSample($samples['skipped'], $evaluation['name'], $evaluation['reason'], $sampleLimit);
+
+                    continue;
+                }
+
+                if ($evaluation['action'] === 'error') {
+                    $errors[] = ($data['name'] ?? "Row {$rowNumber}").': '.$evaluation['message'];
+
+                    continue;
+                }
+
+                if ($dryRun) {
+                    $evaluation['action'] === 'create' ? $imported++ : $updated++;
+                    $this->pushSample(
+                        $samples['import'],
+                        $evaluation['name'],
+                        $evaluation['action'],
+                        $sampleLimit,
+                        $evaluation['cost_price'],
+                        $evaluation['retail_price']
+                    );
+
+                    continue;
+                }
 
                 try {
-                    DB::transaction(function () use ($data, &$imported, &$updated) {
-                        $result = $this->importRow($data);
+                    DB::transaction(function () use ($data, $evaluation, &$imported, &$updated, &$skippedImageFailed, &$skippedNoImage, $samples, $sampleLimit) {
+                        $result = $this->importRow($data, $evaluation);
                         $result === 'created' ? $imported++ : $updated++;
                     });
                 } catch (\InvalidArgumentException $e) {
                     if (str_starts_with($e->getMessage(), 'Skipped:')) {
-                        if (str_contains($e->getMessage(), 'non-IT')) {
-                            $skippedNonIt++;
-                        } else {
-                            $skippedNoImage++;
-                        }
+                        $reason = $this->reasonFromSkipMessage($e->getMessage());
+                        $this->incrementSkipCounter(
+                            $reason,
+                            $skippedNonIt,
+                            $skippedNoImage,
+                            $skippedNoPrice,
+                            $skippedImageFailed
+                        );
+                        $this->pushSample($samples['skipped'], $data['name'] ?? 'Unknown', $reason, $sampleLimit);
 
                         continue;
                     }
@@ -134,12 +215,291 @@ class ProductImportService
                 }
             }
         } finally {
-            SocialPostingService::$suppress = false;
+            if (! $dryRun) {
+                SocialPostingService::$suppress = false;
+            }
         }
 
         fclose($handle);
 
-        return compact('imported', 'updated', 'skipped', 'skippedNoImage', 'skippedNonIt', 'errors');
+        $result = compact(
+            'imported',
+            'updated',
+            'skipped',
+            'skippedNoImage',
+            'skippedNoPrice',
+            'skippedImageFailed',
+            'skippedNonIt',
+            'errors'
+        );
+
+        if ($dryRun) {
+            $result['total_rows'] = max(0, $rowNumber - 1);
+            $result['would_create'] = $imported;
+            $result['would_update'] = $updated;
+            $result['pricing'] = $this->pricingPolicy();
+            $result['samples'] = $samples;
+            unset($result['imported'], $result['updated']);
+        }
+
+        return $result;
+    }
+
+    /** @return array{markup_percent: float, round_to: int, round_mode: string, example: array{cost: float, retail: float}} */
+    public function pricingPolicy(): array
+    {
+        $markup = (float) config('pricing.markup_percent', 40);
+        $roundTo = (int) config('pricing.round_to', 50);
+        $exampleCost = 100.0;
+
+        return [
+            'markup_percent' => $markup,
+            'round_to' => $roundTo,
+            'round_mode' => (string) config('pricing.round_mode', 'up'),
+            'example' => [
+                'cost' => $exampleCost,
+                'retail' => $this->pricing->retailPrice($exampleCost),
+            ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *     action: 'create'|'update'|'skip'|'error',
+     *     reason?: string,
+     *     message?: string,
+     *     name?: string,
+     *     cost_price?: float,
+     *     retail_price?: float,
+     *     existing?: Product|null
+     * }
+     */
+    public function evaluateRow(array $data): array
+    {
+        $name = trim($data['name'] ?? '');
+
+        if ($name === '') {
+            return ['action' => 'error', 'message' => 'Product name is required'];
+        }
+
+        if ($this->catalogFilter->isExcludedImportRow($data)) {
+            return ['action' => 'skip', 'reason' => 'non_it', 'name' => $name];
+        }
+
+        $categories = trim($data['categories'] ?? '');
+        if ($categories !== '' && $this->catalogFilter->isExcludedCategoryPath($categories)) {
+            return ['action' => 'skip', 'reason' => 'non_it', 'name' => $name];
+        }
+
+        $sku = $data['sku'] ?? null;
+        $wooId = $data['id'] ?? null;
+        $existing = $this->findExisting($sku, $wooId);
+        $imageUrls = $this->parseImageUrls($data['images'] ?? '');
+        $hasExistingImages = $existing && $existing->images()->exists();
+
+        if ($imageUrls === [] && ! $hasExistingImages) {
+            return ['action' => 'skip', 'reason' => 'no_image', 'name' => $name];
+        }
+
+        $costPrice = $this->resolveCostPrice($data);
+        if ($costPrice <= 0) {
+            return ['action' => 'skip', 'reason' => 'no_price', 'name' => $name];
+        }
+
+        $retailPrice = $this->pricing->retailPrice($costPrice);
+        if ($retailPrice <= 0) {
+            return ['action' => 'skip', 'reason' => 'no_price', 'name' => $name];
+        }
+
+        return [
+            'action' => $existing ? 'update' : 'create',
+            'name' => $name,
+            'cost_price' => $costPrice,
+            'retail_price' => $retailPrice,
+            'existing' => $existing,
+        ];
+    }
+
+    protected function importRow(array $data, ?array $evaluation = null): string
+    {
+        $evaluation ??= $this->evaluateRow($data);
+
+        if ($evaluation['action'] === 'skip' || $evaluation['action'] === 'error') {
+            throw new \InvalidArgumentException('Skipped: '.$evaluation['reason']);
+        }
+
+        $name = $evaluation['name'];
+        $existing = $evaluation['existing'];
+        $wooId = $data['id'] ?? null;
+        $sku = $data['sku'] ?? null;
+        $imageUrls = $this->parseImageUrls($data['images'] ?? '');
+        $categoryId = $this->resolveCategoryId($data['categories'] ?? '');
+
+        $costPrice = $evaluation['cost_price'];
+        $regularPrice = $evaluation['retail_price'];
+        $saleCost = round($this->parsePrice($data['sale_price'] ?? ''), 2);
+        $salePrice = $saleCost > 0 ? $this->pricing->retailPrice($saleCost) : 0.0;
+        $stockQty = (int) preg_replace('/\D/', '', $data['stock'] ?? '0');
+        $inStockValue = strtolower($data['in_stock'] ?? '1');
+        $inStock = in_array($inStockValue, ['1', 'yes', 'true', 'instock', 'in stock'], true);
+
+        $slug = Str::slug($name);
+
+        if ($existing) {
+            $slug = $existing->slug;
+        } elseif (Product::where('slug', $slug)->exists()) {
+            $slug = $slug.'-'.Str::random(4);
+        }
+
+        $attributes = [
+            'category_id' => $categoryId,
+            'name' => $name,
+            'slug' => $slug,
+            'sku' => $sku ?: $existing?->sku,
+            'short_description' => strip_tags($data['short_description'] ?? ''),
+            'description' => $data['description'] ?? '',
+            'cost_price' => $costPrice,
+            'price' => $regularPrice,
+            'sale_price' => $salePrice > 0 && $salePrice < $regularPrice ? $salePrice : null,
+            'stock_quantity' => $stockQty,
+            'manage_stock' => true,
+            'in_stock' => $inStock || $stockQty > 0,
+            'brand' => $data['brand'] ?? null,
+            'barcode' => $data['barcode'] ?? null,
+            'google_product_category' => $data['google_product_category'] ?? null,
+            'weight' => isset($data['weight']) && $data['weight'] !== '' ? round($this->parsePrice($data['weight']), 2) : null,
+            'meta_title' => $data['meta_title'] ?? null,
+            'meta_description' => $data['meta_description'] ?? null,
+            'meta_keywords' => $data['meta_keywords'] ?? null,
+            'is_active' => in_array(strtolower($data['published'] ?? '1'), ['1', 'yes', 'true', 'publish'], true),
+            'woocommerce_id' => $wooId ?: ($existing?->woocommerce_id ?? $slug),
+        ];
+
+        if ($existing) {
+            $existing->update($attributes);
+            $product = $existing->fresh();
+        } else {
+            $product = Product::create($attributes);
+        }
+
+        if ($imageUrls !== []) {
+            $saved = $this->importImages($product, $imageUrls);
+
+            if ($saved === 0 && ! $product->images()->exists()) {
+                throw new \InvalidArgumentException('Skipped: image download failed');
+            }
+        }
+
+        if (! $product->images()->exists()) {
+            throw new \InvalidArgumentException('Skipped: product has no images');
+        }
+
+        return $existing ? 'updated' : 'created';
+    }
+
+    protected function resolveCostPrice(array $data): float
+    {
+        foreach (['regular_price', 'cost_price', 'list_price'] as $field) {
+            $price = round($this->parsePrice($data[$field] ?? ''), 2);
+
+            if ($price > 0) {
+                return $price;
+            }
+        }
+
+        return 0.0;
+    }
+
+    protected function resolveCategoryId(string $categories): ?int
+    {
+        $parts = array_values(array_filter(array_map('trim', preg_split('/\s*>\s*/', $categories) ?: [])));
+
+        if ($parts === []) {
+            return null;
+        }
+
+        if ($this->catalogFilter->isExcludedCategoryPath($categories)) {
+            return null;
+        }
+
+        $parentId = null;
+        $category = null;
+        $slugPrefix = '';
+
+        foreach ($parts as $part) {
+            if ($this->catalogFilter->isExcludedName($part)) {
+                return null;
+            }
+
+            $slug = Str::slug($slugPrefix.$part);
+            $category = Category::firstOrCreate(
+                ['slug' => $slug],
+                ['name' => $part, 'is_active' => true, 'parent_id' => $parentId]
+            );
+
+            if ($category->parent_id !== $parentId) {
+                $category->update(['parent_id' => $parentId]);
+            }
+
+            if ($this->catalogFilter->isCategoryExcluded($category)) {
+                return null;
+            }
+
+            $parentId = $category->id;
+            $slugPrefix = $slug.'-';
+        }
+
+        return $category?->id;
+    }
+
+    protected function incrementSkipCounter(
+        string $reason,
+        int &$skippedNonIt,
+        int &$skippedNoImage,
+        int &$skippedNoPrice,
+        int &$skippedImageFailed
+    ): void {
+        match ($reason) {
+            'non_it' => $skippedNonIt++,
+            'no_image', 'no_images' => $skippedNoImage++,
+            'no_price' => $skippedNoPrice++,
+            'image_failed' => $skippedImageFailed++,
+            default => $skippedNoImage++,
+        };
+    }
+
+    protected function reasonFromSkipMessage(string $message): string
+    {
+        return match (true) {
+            str_contains($message, 'non-IT') => 'non_it',
+            str_contains($message, 'no product images') => 'no_image',
+            str_contains($message, 'image download failed') => 'image_failed',
+            str_contains($message, 'no images') => 'no_image',
+            default => 'no_image',
+        };
+    }
+
+    /** @param list<array<string, mixed>> $bucket */
+    protected function pushSample(
+        array &$bucket,
+        string $name,
+        string $label,
+        int $limit,
+        ?float $cost = null,
+        ?float $retail = null
+    ): void {
+        if (count($bucket) >= $limit) {
+            return;
+        }
+
+        $entry = ['name' => $name, 'label' => $label];
+
+        if ($cost !== null) {
+            $entry['cost'] = $cost;
+            $entry['retail'] = $retail;
+        }
+
+        $bucket[] = $entry;
     }
 
     protected function normalizeImportData(array $data): array
@@ -244,118 +604,6 @@ class ProductImportService
         return count(array_filter(array_map('trim', $row))) === 0;
     }
 
-    protected function importRow(array $data): string
-    {
-        $name = trim($data['name'] ?? '');
-
-        if ($name === '') {
-            throw new \InvalidArgumentException('Product name is required');
-        }
-
-        if ($this->catalogFilter->isExcludedImportRow($data)) {
-            throw new \InvalidArgumentException('Skipped: non-IT category');
-        }
-
-        $wooId = $data['id'] ?? null;
-        $sku = $data['sku'] ?? null;
-        $existing = $this->findExisting($sku, $wooId);
-        $imageUrls = $this->parseImageUrls($data['images'] ?? '');
-        $hasExistingImages = $existing && $existing->images()->exists();
-
-        if ($imageUrls === [] && ! $hasExistingImages) {
-            throw new \InvalidArgumentException('Skipped: no product images in CSV');
-        }
-
-        $categoryId = $this->resolveCategoryId($data['categories'] ?? '');
-
-        $costPrice = round($this->parsePrice($data['regular_price'] ?? '0'), 2);
-        $regularPrice = $this->pricing->retailPrice($costPrice);
-        $saleCost = round($this->parsePrice($data['sale_price'] ?? ''), 2);
-        $salePrice = $saleCost > 0 ? $this->pricing->retailPrice($saleCost) : 0.0;
-        $stockQty = (int) preg_replace('/\D/', '', $data['stock'] ?? '0');
-        $inStockValue = strtolower($data['in_stock'] ?? '1');
-        $inStock = in_array($inStockValue, ['1', 'yes', 'true', 'instock', 'in stock'], true);
-
-        $slug = Str::slug($name);
-
-        if ($existing) {
-            $slug = $existing->slug;
-        } elseif (Product::where('slug', $slug)->exists()) {
-            $slug = $slug.'-'.Str::random(4);
-        }
-
-        $attributes = [
-            'category_id' => $categoryId,
-            'name' => $name,
-            'slug' => $slug,
-            'sku' => $sku ?: $existing?->sku,
-            'short_description' => strip_tags($data['short_description'] ?? ''),
-            'description' => $data['description'] ?? '',
-            'cost_price' => $costPrice > 0 ? $costPrice : null,
-            'price' => $regularPrice,
-            'sale_price' => $salePrice > 0 && $salePrice < $regularPrice ? $salePrice : null,
-            'stock_quantity' => $stockQty,
-            'manage_stock' => true,
-            'in_stock' => $inStock || $stockQty > 0,
-            'brand' => $data['brand'] ?? null,
-            'barcode' => $data['barcode'] ?? null,
-            'google_product_category' => $data['google_product_category'] ?? null,
-            'weight' => isset($data['weight']) && $data['weight'] !== '' ? round($this->parsePrice($data['weight']), 2) : null,
-            'meta_title' => $data['meta_title'] ?? null,
-            'meta_description' => $data['meta_description'] ?? null,
-            'meta_keywords' => $data['meta_keywords'] ?? null,
-            'is_active' => in_array(strtolower($data['published'] ?? '1'), ['1', 'yes', 'true', 'publish'], true),
-            'woocommerce_id' => $wooId ?: ($existing?->woocommerce_id ?? $slug),
-        ];
-
-        if ($existing) {
-            $existing->update($attributes);
-            $product = $existing->fresh();
-        } else {
-            $product = Product::create($attributes);
-        }
-
-        if ($imageUrls !== []) {
-            $this->importImages($product, $imageUrls);
-        }
-
-        if (! $product->images()->exists()) {
-            throw new \InvalidArgumentException('Skipped: product has no images');
-        }
-
-        return $existing ? 'updated' : 'created';
-    }
-
-    protected function resolveCategoryId(string $categories): ?int
-    {
-        $parts = array_values(array_filter(array_map('trim', preg_split('/\s*>\s*/', $categories) ?: [])));
-
-        if ($parts === []) {
-            return null;
-        }
-
-        $parentId = null;
-        $category = null;
-        $slugPrefix = '';
-
-        foreach ($parts as $part) {
-            $slug = Str::slug($slugPrefix.$part);
-            $category = Category::firstOrCreate(
-                ['slug' => $slug],
-                ['name' => $part, 'is_active' => true, 'parent_id' => $parentId]
-            );
-
-            if ($category->parent_id !== $parentId) {
-                $category->update(['parent_id' => $parentId]);
-            }
-
-            $parentId = $category->id;
-            $slugPrefix = $slug.'-';
-        }
-
-        return $category?->id;
-    }
-
     protected function findExisting(?string $sku, ?string $wooId): ?Product
     {
         if (! $sku && ! $wooId) {
@@ -380,7 +628,7 @@ class ProductImportService
         }
 
         $urls = [];
-        foreach (preg_split('/\s*,\s*/', $value) ?: [] as $url) {
+        foreach (preg_split('/\s*[|,]\s*/', $value) ?: [] as $url) {
             $url = trim($url);
             if ($url === '') {
                 continue;

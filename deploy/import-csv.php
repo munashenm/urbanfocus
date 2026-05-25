@@ -8,11 +8,11 @@
  * 1. Git pull latest code
  * 2. Upload your CSV to: urbanfocus/storage/imports/products.csv
  * 3. Copy this file to public_html/import-csv.php and set IMPORT_KEY
- * 4. Visit: https://www.urbanfocus.co.za/import-csv.php?key=YOUR_SECRET
- * 5. DELETE public_html/import-csv.php when done
+ * 4. Preview: https://www.urbanfocus.co.za/import-csv.php?key=YOUR_SECRET&preview=1
+ * 5. Run:    https://www.urbanfocus.co.za/import-csv.php?key=YOUR_SECRET
+ * 6. DELETE public_html/import-csv.php when done
  *
- * Supports WooCommerce CSV and Esquire-style exports (ProductName, ProductCode, Category, Image, etc.)
- * Rows without images are skipped automatically.
+ * Rules: IT products only, must have image URL(s) and cost price. Retail = markup + rounding from config/pricing.php
  */
 
 declare(strict_types=1);
@@ -46,6 +46,32 @@ $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
 $import = $app->make(App\Services\ProductImportService::class);
+$pricing = $import->pricingPolicy();
+
+echo "Pricing: {$pricing['markup_percent']}% markup, round {$pricing['round_mode']} to R{$pricing['round_to']}\n";
+echo "Example: R{$pricing['example']['cost']} cost → R{$pricing['example']['retail']} retail\n\n";
+
+if (isset($_GET['preview'])) {
+    $result = $import->previewFromPath($csvPath);
+
+    echo "PREVIEW (no changes made)\n";
+    echo "Rows scanned: {$result['total_rows']}\n";
+    echo "Would create: {$result['would_create']}\n";
+    echo "Would update: {$result['would_update']}\n";
+    echo "Skip empty: {$result['skipped']}\n";
+    echo "Skip non-IT: {$result['skippedNonIt']}\n";
+    echo "Skip no image: {$result['skippedNoImage']}\n";
+    echo "Skip no price: {$result['skippedNoPrice']}\n";
+
+    if (! empty($result['samples']['import'])) {
+        echo "\nSample imports (cost → retail):\n";
+        foreach ($result['samples']['import'] as $sample) {
+            echo '- '.$sample['name'].' — R'.number_format($sample['cost'], 2).' → R'.number_format($sample['retail'], 2)."\n";
+        }
+    }
+
+    exit;
+}
 
 $result = $import->importFromPath($csvPath, function ($imported, $updated, $skippedNoImage, $row) {
     echo "Progress row {$row}: imported {$imported}, updated {$updated}, skipped (no image) {$skippedNoImage}\n";
@@ -57,16 +83,15 @@ echo "Imported: {$result['imported']}\n";
 echo "Updated: {$result['updated']}\n";
 echo "Skipped empty rows: {$result['skipped']}\n";
 echo "Skipped without images: {$result['skippedNoImage']}\n";
+echo "Skipped without price: {$result['skippedNoPrice']}\n";
+echo "Skipped image download failed: {$result['skippedImageFailed']}\n";
+echo "Skipped non-IT: {$result['skippedNonIt']}\n";
 
 if (! empty($result['errors'])) {
     echo "\nErrors (first 20):\n";
     foreach (array_slice($result['errors'], 0, 20) as $error) {
         echo "- {$error}\n";
     }
-}
-
-if (($result['skippedNonIt'] ?? 0) > 0) {
-    echo "\nSkipped non-IT: {$result['skippedNonIt']}\n";
 }
 
 try {
