@@ -12,7 +12,10 @@ use Illuminate\Support\Str;
 
 class ProductImportService
 {
-    public function __construct(protected ImageService $images) {}
+    public function __construct(
+        protected ImageService $images,
+        protected ProductPricingService $pricing,
+    ) {}
 
     protected array $headerMap = [
         'id' => 'id',
@@ -255,8 +258,10 @@ class ProductImportService
 
         $categoryId = $this->resolveCategoryId($data['categories'] ?? '');
 
-        $regularPrice = round($this->parsePrice($data['regular_price'] ?? '0'), 2);
-        $salePrice = round($this->parsePrice($data['sale_price'] ?? ''), 2);
+        $costPrice = round($this->parsePrice($data['regular_price'] ?? '0'), 2);
+        $regularPrice = $this->pricing->retailPrice($costPrice);
+        $saleCost = round($this->parsePrice($data['sale_price'] ?? ''), 2);
+        $salePrice = $saleCost > 0 ? $this->pricing->retailPrice($saleCost) : 0.0;
         $stockQty = (int) preg_replace('/\D/', '', $data['stock'] ?? '0');
         $inStockValue = strtolower($data['in_stock'] ?? '1');
         $inStock = in_array($inStockValue, ['1', 'yes', 'true', 'instock', 'in stock'], true);
@@ -276,8 +281,9 @@ class ProductImportService
             'sku' => $sku ?: $existing?->sku,
             'short_description' => strip_tags($data['short_description'] ?? ''),
             'description' => $data['description'] ?? '',
+            'cost_price' => $costPrice > 0 ? $costPrice : null,
             'price' => $regularPrice,
-            'sale_price' => $salePrice > 0 ? $salePrice : null,
+            'sale_price' => $salePrice > 0 && $salePrice < $regularPrice ? $salePrice : null,
             'stock_quantity' => $stockQty,
             'manage_stock' => true,
             'in_stock' => $inStock || $stockQty > 0,
