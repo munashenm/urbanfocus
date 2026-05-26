@@ -6,6 +6,21 @@ use App\Models\Product;
 
 class ProductPricingService
 {
+    public function vatRate(): float
+    {
+        return (float) config('app.vat_rate', 15);
+    }
+
+    /** Dealer/cost price ex-VAT → VAT-inclusive acquisition cost. */
+    public function costWithVat(float $exVatCost): float
+    {
+        if ($exVatCost <= 0) {
+            return 0.0;
+        }
+
+        return round($exVatCost * (1 + ($this->vatRate() / 100)), 2);
+    }
+
     public function retailPrice(float $costPrice): float
     {
         if ($costPrice <= 0) {
@@ -34,6 +49,22 @@ class ProductPricingService
             : (int) (ceil($markedUp / $roundTo) * $roundTo);
 
         return (float) max($rounded, $roundTo);
+    }
+
+    /** @param 'scoop'|null $importSource */
+    public function importCostPrice(float $supplierCost, ?string $importSource = null): float
+    {
+        if ($importSource === 'scoop' && config('pricing.scoop_prices_ex_vat', true)) {
+            return $this->costWithVat($supplierCost);
+        }
+
+        return round($supplierCost, 2);
+    }
+
+    /** @param 'scoop'|null $importSource */
+    public function retailPriceForImport(float $supplierCost, ?string $importSource = null): float
+    {
+        return $this->retailPrice($this->importCostPrice($supplierCost, $importSource));
     }
 
     public function applyToProduct(Product $product): bool

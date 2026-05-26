@@ -279,12 +279,15 @@ class ProductImportService
         $threshold = (float) config('pricing.low_cost_threshold', 20);
         $exampleCost = 100.0;
         $lowCostExample = max(1.0, $threshold > 0 ? $threshold - 1 : 4.0);
+        $scoopExampleExVat = 475.0;
 
         return [
             'markup_percent' => $markup,
             'round_to' => $roundTo,
             'round_mode' => (string) config('pricing.round_mode', 'up'),
             'low_cost_threshold' => $threshold,
+            'vat_rate' => (float) config('app.vat_rate', 15),
+            'scoop_prices_ex_vat' => (bool) config('pricing.scoop_prices_ex_vat', true),
             'example' => [
                 'cost' => $exampleCost,
                 'retail' => $this->pricing->retailPrice($exampleCost),
@@ -292,6 +295,11 @@ class ProductImportService
             'low_cost_example' => [
                 'cost' => $lowCostExample,
                 'retail' => $this->pricing->retailPrice($lowCostExample),
+            ],
+            'scoop_example' => [
+                'dealer_ex_vat' => $scoopExampleExVat,
+                'cost_inc_vat' => $this->pricing->importCostPrice($scoopExampleExVat, 'scoop'),
+                'retail' => $this->pricing->retailPriceForImport($scoopExampleExVat, 'scoop'),
             ],
         ];
     }
@@ -341,7 +349,9 @@ class ProductImportService
             return ['action' => 'skip', 'reason' => 'no_price', 'name' => $name];
         }
 
-        $retailPrice = $this->pricing->retailPrice($costPrice);
+        $importSource = $data['import_source'] ?? null;
+        $storedCost = $this->pricing->importCostPrice($costPrice, $importSource);
+        $retailPrice = $this->pricing->retailPriceForImport($costPrice, $importSource);
         if ($retailPrice <= 0) {
             return ['action' => 'skip', 'reason' => 'no_price', 'name' => $name];
         }
@@ -349,7 +359,7 @@ class ProductImportService
         return [
             'action' => $existing ? 'update' : 'create',
             'name' => $name,
-            'cost_price' => $costPrice,
+            'cost_price' => $storedCost,
             'retail_price' => $retailPrice,
             'existing' => $existing,
         ];
@@ -373,7 +383,10 @@ class ProductImportService
         $costPrice = $evaluation['cost_price'];
         $regularPrice = $evaluation['retail_price'];
         $saleCost = round($this->parsePrice($data['sale_price'] ?? ''), 2);
-        $salePrice = $saleCost > 0 ? $this->pricing->retailPrice($saleCost) : 0.0;
+        $importSource = $data['import_source'] ?? null;
+        $salePrice = $saleCost > 0
+            ? $this->pricing->retailPriceForImport($saleCost, $importSource)
+            : 0.0;
         $stockQty = (int) preg_replace('/\D/', '', $data['stock'] ?? '0');
         $inStockValue = strtolower($data['in_stock'] ?? '1');
         $inStock = in_array($inStockValue, ['1', 'yes', 'true', 'instock', 'in stock'], true);

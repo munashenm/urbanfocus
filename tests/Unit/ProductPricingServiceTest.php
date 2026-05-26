@@ -40,4 +40,12 @@ class ProductPricingServiceTest extends TestCase
         $this->assertSame(50.0, $this->pricing->retailPrice(20.0));
         $this->assertSame(28.0, $this->pricing->retailPrice(19.99));
     }
+
+    public function test_scoop_import_adds_vat_before_markup_and_rounding(): void
+    {
+        config(['app.vat_rate' => 15, 'pricing.scoop_prices_ex_vat' => true]);
+
+        $this->assertSame(546.25, $this->pricing->importCostPrice(475.0, 'scoop'));
+        $this->assertSame(800.0, $this->pricing->retailPriceForImport(475.0, 'scoop'));
+    }
 }

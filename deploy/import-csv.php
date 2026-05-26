@@ -56,7 +56,12 @@ $import = $app->make(App\Services\ProductImportService::class);
 $pricing = $import->pricingPolicy();
 
 echo "Pricing: {$pricing['markup_percent']}% markup, round {$pricing['round_mode']} to R{$pricing['round_to']}\n";
-echo "Example: R{$pricing['example']['cost']} cost → R{$pricing['example']['retail']} retail\n\n";
+echo "Example: R{$pricing['example']['cost']} cost → R{$pricing['example']['retail']} retail\n";
+if (! empty($pricing['scoop_example'])) {
+    $scoop = $pricing['scoop_example'];
+    echo "Scoop: R{$scoop['dealer_ex_vat']} dealer ex-VAT → R{$scoop['cost_inc_vat']} inc-VAT → R{$scoop['retail']} retail\n";
+}
+echo "\n";
 
 if (isset($_GET['preview'])) {
     $result = $import->previewFromPath($csvPath);

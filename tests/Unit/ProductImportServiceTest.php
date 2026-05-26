@@ -216,8 +216,8 @@ class ProductImportServiceTest extends TestCase
         $result = $this->import->evaluateRow($data);
 
         $this->assertSame('create', $result['action']);
-        $this->assertSame(475.0, $result['cost_price']);
-        $this->assertSame(700.0, $result['retail_price']);
+        $this->assertSame(546.25, $result['cost_price']);
+        $this->assertSame(800.0, $result['retail_price']);
     }
 
     public function test_skips_scoop_row_without_image(): void
