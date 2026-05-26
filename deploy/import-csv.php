@@ -13,7 +13,11 @@
  * 5. Run:    https://www.urbanfocus.co.za/import-csv.php?key=YOUR_SECRET
  * 6. DELETE public_html/import-csv.php when done
  *
- * Rules: IT products only, must have image URL(s) and cost price. Retail = markup + rounding from config/pricing.php
+ * Rules: IT products only (except Scoop/Astrum distributor feeds — all Scoop rows import).
+ * Must have image URL(s) and cost/dealer price. Retail = markup + rounding from config/pricing.php
+ *
+ * Scoop import:
+ *   Upload scoop_pricelist.csv then preview/run with &file=scoop_pricelist.csv
  */
 
 declare(strict_types=1);
@@ -38,7 +42,7 @@ echo "Urban Focus bulk CSV import\n";
 echo str_repeat('-', 40)."\n";
 
 if (! file_exists($csvPath)) {
-    exit("CSV not found.\nUpload your file to:\n  urbanfocus/storage/imports/products.csv\n");
+    exit("CSV not found.\nUpload your file to:\n  urbanfocus/storage/imports/{$csvFile}\n");
 }
 
 echo 'File: '.$csvPath.' ('.number_format(filesize($csvPath))." bytes)\n\n";

@@ -139,7 +139,11 @@ class CatalogFilterService
 
     public function isExcludedImportRow(array $data): bool
     {
-        if (in_array($data['import_source'] ?? '', ['astrum', 'scoop'], true)) {
+        if (($data['import_source'] ?? '') === 'scoop') {
+            return false;
+        }
+
+        if (($data['import_source'] ?? '') === 'astrum') {
             $categories = trim($data['categories'] ?? '');
             if ($categories !== '' && $this->isExcludedCategoryPath($categories)) {
                 return true;

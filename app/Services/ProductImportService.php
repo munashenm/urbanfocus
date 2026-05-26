@@ -319,9 +319,11 @@ class ProductImportService
             return ['action' => 'skip', 'reason' => 'non_it', 'name' => $name];
         }
 
-        $categories = trim($data['categories'] ?? '');
-        if ($categories !== '' && $this->catalogFilter->isExcludedCategoryPath($categories)) {
-            return ['action' => 'skip', 'reason' => 'non_it', 'name' => $name];
+        if (($data['import_source'] ?? '') !== 'scoop') {
+            $categories = trim($data['categories'] ?? '');
+            if ($categories !== '' && $this->catalogFilter->isExcludedCategoryPath($categories)) {
+                return ['action' => 'skip', 'reason' => 'non_it', 'name' => $name];
+            }
         }
 
         $sku = $data['sku'] ?? null;
@@ -366,7 +368,7 @@ class ProductImportService
         $wooId = $data['id'] ?? null;
         $sku = $data['sku'] ?? null;
         $imageUrls = $this->parseImageUrls($data['images'] ?? '');
-        $categoryId = $this->resolveCategoryId($data['categories'] ?? '');
+        $categoryId = $this->resolveCategoryId($data['categories'] ?? '', $data['import_source'] ?? null);
 
         $costPrice = $evaluation['cost_price'];
         $regularPrice = $evaluation['retail_price'];
@@ -441,13 +443,15 @@ class ProductImportService
         return 0.0;
     }
 
-    protected function resolveCategoryId(string $categories): ?int
+    protected function resolveCategoryId(string $categories, ?string $importSource = null): ?int
     {
         if (trim($categories) === '') {
             return null;
         }
 
-        if ($this->catalogFilter->isExcludedCategoryPath($categories)) {
+        $scoopImport = $importSource === 'scoop';
+
+        if (! $scoopImport && $this->catalogFilter->isExcludedCategoryPath($categories)) {
             return null;
         }
 
@@ -458,17 +462,17 @@ class ProductImportService
         if ($categoryId !== null) {
             $category = Category::find($categoryId);
 
-            if ($category && $this->catalogFilter->isCategoryExcluded($category)) {
+            if ($category && ! $scoopImport && $this->catalogFilter->isCategoryExcluded($category)) {
                 return null;
             }
 
             return $categoryId;
         }
 
-        return $this->resolveLegacyCategoryId($categories);
+        return $this->resolveLegacyCategoryId($categories, $scoopImport);
     }
 
-    protected function resolveLegacyCategoryId(string $categories): ?int
+    protected function resolveLegacyCategoryId(string $categories, bool $scoopImport = false): ?int
     {
         $parts = array_values(array_filter(array_map('trim', preg_split('/\s*>\s*/', $categories) ?: [])));
 
@@ -481,7 +485,7 @@ class ProductImportService
         $slugPrefix = '';
 
         foreach ($parts as $part) {
-            if ($this->catalogFilter->isExcludedName($part)) {
+            if (! $scoopImport && $this->catalogFilter->isExcludedName($part)) {
                 return null;
             }
 
@@ -495,7 +499,7 @@ class ProductImportService
                 $category->update(['parent_id' => $parentId]);
             }
 
-            if ($this->catalogFilter->isCategoryExcluded($category)) {
+            if (! $scoopImport && $this->catalogFilter->isCategoryExcluded($category)) {
                 return null;
             }
 

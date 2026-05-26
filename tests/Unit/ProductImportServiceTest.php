@@ -242,6 +242,26 @@ class ProductImportServiceTest extends TestCase
         $this->assertSame('no_image', $result['reason']);
     }
 
+    public function test_scoop_import_skips_non_it_filters(): void
+    {
+        config(['catalog.excluded_product_terms' => ['torch', 'flashlight']]);
+
+        $data = $this->import->normalizeImportRow([
+            'sku' => 'LED-TORCH',
+            'description' => 'Ubiquiti LED Torch Flashlight Accessory',
+            'cost_price' => '99',
+            'stock' => '10',
+            'brand' => 'Ubiquiti',
+            'images' => 'https://scoop.co.za/download/marketing/images/LED-TORCH.jpg',
+        ]);
+
+        $this->assertSame('scoop', $data['import_source']);
+
+        $result = $this->import->evaluateRow($data);
+
+        $this->assertSame('create', $result['action']);
+    }
+
     public function test_resolve_import_slug_avoids_soft_deleted_slug_collision(): void
     {
         $product = Product::create([
