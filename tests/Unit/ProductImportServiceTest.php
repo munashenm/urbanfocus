@@ -194,24 +194,48 @@ class ProductImportServiceTest extends TestCase
         $this->assertSame('no_image', $result['reason']);
     }
 
-    public function test_accepts_astrum_row_with_image_and_markup(): void
+    public function test_accepts_scoop_pricelist_row_with_image_and_markup(): void
     {
         $data = $this->import->normalizeImportRow([
-            'sku' => 'ACHW20PCBE',
-            'name' => 'WATZ20P 20W PD WALL CHARGER',
-            'regular_price' => '99',
-            'srp_price' => '199',
-            'stock' => '10',
-            'category' => 'Mobile Chargers',
-            'images' => 'https://example.com/charger.jpg',
+            'sku' => 'ACB-ISP',
+            'description' => 'Ubiquiti UISP airCube ISP WiFi Access Point',
+            'cost_price' => '475',
+            'list_price' => '650',
+            'stock' => '331',
+            'brand' => 'Ubiquiti',
+            'images' => 'https://scoop.co.za/download/marketing/images/ACB-ISP.jpg',
         ]);
 
-        $this->assertSame('UPS & Power > PDUs & Power Cables', $data['categories']);
+        $this->assertSame('scoop', $data['import_source']);
+        $this->assertSame('Ubiquiti UISP airCube ISP WiFi Access Point', $data['name']);
+        $this->assertSame('Networking > Wireless Access Points', $data['categories']);
 
         $result = $this->import->evaluateRow($data);
 
         $this->assertSame('create', $result['action']);
-        $this->assertSame(99.0, $result['cost_price']);
-        $this->assertSame(150.0, $result['retail_price']);
+        $this->assertSame(475.0, $result['cost_price']);
+        $this->assertSame(700.0, $result['retail_price']);
+    }
+
+    public function test_skips_scoop_row_without_image(): void
+    {
+        $data = $this->import->normalizeImportRow([
+            'sku' => 'ACB-ISP',
+            'description' => 'Ubiquiti UISP airCube ISP WiFi Access Point',
+            'cost_price' => '475',
+            'stock' => '331',
+            'brand' => 'Ubiquiti',
+            'images' => '',
+        ]);
+
+        $this->assertNotSame('scoop', $data['import_source'] ?? null);
+
+        $data['import_source'] = 'scoop';
+        $data['name'] = 'Ubiquiti UISP airCube ISP WiFi Access Point';
+
+        $result = $this->import->evaluateRow($data);
+
+        $this->assertSame('skip', $result['action']);
+        $this->assertSame('no_image', $result['reason']);
     }
 }

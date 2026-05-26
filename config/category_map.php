@@ -267,4 +267,19 @@ return [
         'Toner Cartridges' => 'printers/ink-toner',
         'USB Peripherals' => 'peripherals',
     ],
+
+    /*
+    | Scoop distributor brand → canonical path (fallback when name heuristics do not match).
+    */
+    'scoop_brands' => [
+        'Ubiquiti' => 'networking/access-points',
+        'MikroTik' => 'networking/routers-gateways',
+        'Reyee' => 'networking/access-points',
+        'Cudy' => 'networking/routers-gateways',
+        'Fanvil' => 'telephony-voip/ip-phones',
+        'Linkbasic' => 'peripherals/cables-adapters',
+        'Rackstuds' => 'networking/cabinets-racks',
+        'Locally Sourced' => 'networking',
+        'Scoop' => 'networking',
+    ],
 ];

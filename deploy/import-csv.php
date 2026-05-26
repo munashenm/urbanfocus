@@ -7,7 +7,7 @@
  *
  * 1. Git pull latest code
  * 2. Upload your CSV to: urbanfocus/storage/imports/products.csv
- *    (or astrum_products_level2.csv and use &file=astrum_products_level2.csv)
+ *    (or astrum_products_level2.csv / scoop_pricelist.csv with &file=...)
  * 3. Copy this file to public_html/import-csv.php and set IMPORT_KEY
  * 4. Preview: https://www.urbanfocus.co.za/import-csv.php?key=YOUR_SECRET&preview=1
  * 5. Run:    https://www.urbanfocus.co.za/import-csv.php?key=YOUR_SECRET

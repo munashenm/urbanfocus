@@ -83,6 +83,11 @@ class ProductImportService
         'prodexternalurl' => 'external_url',
         'srp price' => 'srp_price',
         'srp_price' => 'srp_price',
+        // Scoop distributor pricelist
+        'dealer price' => 'cost_price',
+        'retail price' => 'list_price',
+        'image url' => 'images',
+        'total stock' => 'stock',
     ];
 
     public function import(UploadedFile $file): array
@@ -557,6 +562,8 @@ class ProductImportService
     {
         if ($this->isPinnacleRow($data)) {
             $data = $this->normalizePinnacleRow($data);
+        } elseif ($this->isScoopRow($data)) {
+            $data = $this->normalizeScoopRow($data);
         } elseif ($this->isAstrumRow($data)) {
             $data = $this->normalizeAstrumRow($data);
         }
@@ -578,7 +585,7 @@ class ProductImportService
             }
         }
 
-        if (trim($data['categories'] ?? '') !== '') {
+        if (($data['import_source'] ?? '') === 'scoop' || trim($data['categories'] ?? '') !== '') {
             $data['categories'] = $this->categoryMapper->mapImportCategories($data);
         }
 
@@ -612,6 +619,57 @@ class ProductImportService
             if ($keywords !== []) {
                 $data['meta_keywords'] = Str::limit(implode(', ', $keywords), 255, '');
             }
+        }
+
+        return $data;
+    }
+
+    protected function isScoopRow(array $data): bool
+    {
+        if (trim($data['category_tree'] ?? '') !== '') {
+            return false;
+        }
+
+        if (($data['import_source'] ?? '') === 'scoop') {
+            return true;
+        }
+
+        if ($this->isAstrumRow($data)) {
+            return false;
+        }
+
+        $images = trim($data['images'] ?? '');
+
+        return trim($data['sku'] ?? '') !== ''
+            && (trim($data['name'] ?? '') !== '' || trim($data['description'] ?? '') !== '')
+            && round($this->parsePrice($data['cost_price'] ?? ''), 2) > 0
+            && $images !== ''
+            && str_contains(strtolower($images), 'scoop.co.za')
+            && trim($data['category'] ?? '') === ''
+            && trim($data['category_head'] ?? '') === ''
+            && trim($data['srp_price'] ?? '') === '';
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function normalizeScoopRow(array $data): array
+    {
+        $data['import_source'] = 'scoop';
+
+        if (trim($data['name'] ?? '') === '' && trim($data['description'] ?? '') !== '') {
+            $data['name'] = trim($data['description']);
+        }
+
+        if (trim($data['short_description'] ?? '') === '' && trim($data['name'] ?? '') !== '') {
+            $data['short_description'] = Str::limit(trim($data['name']), 255, '');
+        }
+
+        if (! isset($data['in_stock']) || trim((string) $data['in_stock']) === '') {
+            $qty = (int) preg_replace('/\D/', '', (string) ($data['stock'] ?? '0'));
+            $data['in_stock'] = $qty > 0 ? '1' : '0';
+        }
+
+        if (! isset($data['published']) || trim((string) $data['published']) === '') {
+            $data['published'] = '1';
         }
 
         return $data;

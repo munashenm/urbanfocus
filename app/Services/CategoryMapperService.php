@@ -13,6 +13,9 @@ class CategoryMapperService
     /** @var array<string, string>|null */
     protected ?array $astrumCategoryMap = null;
 
+    /** @var array<string, string>|null */
+    protected ?array $scoopBrandMap = null;
+
     /** @var list<array{prefix: string, path: string}>|null */
     protected ?array $pinnaclePaths = null;
 
@@ -28,6 +31,10 @@ class CategoryMapperService
 
         if (($data['import_source'] ?? '') === 'astrum') {
             return $this->pathFromAstrumCategory($data['category'] ?? '');
+        }
+
+        if (($data['import_source'] ?? '') === 'scoop') {
+            return $this->pathFromScoopProduct($data);
         }
 
         $head = trim($data['category_head'] ?? '');
@@ -122,6 +129,52 @@ class CategoryMapperService
         $slugPath ??= 'peripherals';
 
         return $this->displayPath($slugPath);
+    }
+
+    /** @param array<string, mixed> $data */
+    public function pathFromScoopProduct(array $data): string
+    {
+        $name = strtolower(trim($data['name'] ?? $data['description'] ?? ''));
+        $brand = trim($data['brand'] ?? '');
+
+        if ($name !== '') {
+            if (preg_match('/\b(phone|voip|sip|doorphone|intercom)\b/i', $name)) {
+                return $this->displayPath('telephony-voip/ip-phones');
+            }
+
+            if (preg_match('/\b(switch|sw\.)\b/i', $name)) {
+                return $this->displayPath('networking/network-switches');
+            }
+
+            if (preg_match('/\b(router|routerboard|hap|hex|cap\s|rb[0-9]|gateway)\b/i', $name)) {
+                return $this->displayPath('networking/routers-gateways');
+            }
+
+            if (preg_match('/\b(battery|ups)\b/i', $name)) {
+                return $this->displayPath('ups-power/pdus-cables');
+            }
+
+            if (preg_match('/\b(rack|cabinet|bracket|mount|tripod|stand off)\b/i', $name)) {
+                return $this->displayPath('networking/cabinets-racks');
+            }
+
+            if (preg_match('/\b(cable|patch|sfp|fibre|fiber|pigtail)\b/i', $name)) {
+                return $this->displayPath('peripherals/cables-adapters');
+            }
+        }
+
+        $slugPath = $this->scoopBrandMap()[$brand] ?? null;
+
+        if ($slugPath === null) {
+            foreach ($this->scoopBrandMap() as $known => $path) {
+                if (strcasecmp($known, $brand) === 0) {
+                    $slugPath = $path;
+                    break;
+                }
+            }
+        }
+
+        return $this->displayPath($slugPath ?? 'networking/access-points');
     }
 
     public function resolveCategoryId(string $categories): ?int
@@ -256,6 +309,12 @@ class CategoryMapperService
     protected function astrumCategoryMap(): array
     {
         return $this->astrumCategoryMap ??= config('category_map.astrum_categories', []);
+    }
+
+    /** @return array<string, string> */
+    protected function scoopBrandMap(): array
+    {
+        return $this->scoopBrandMap ??= config('category_map.scoop_brands', []);
     }
 
     /** @return list<array{prefix: string, path: string}> */
