@@ -69,4 +69,33 @@ return [
         'telephony-voip' => '📞',
         'ups-power' => '⚡',
     ],
+
+    /*
+    | Products shown in the homepage "Top Sellers" section must match one of these
+    | brand names (case-insensitive). Add aliases if your CSV uses alternate spellings.
+    */
+    'top_seller_brands' => [
+        'Dahua',
+        'TP-Link',
+        'Dell',
+        'Asustor',
+        'ASUS',
+        'Hikvision',
+        'D-Link',
+        'Goldtool',
+        'Intellinet',
+        'Ubiquiti',
+        'MikroTik',
+        'Cambium Networks',
+        'HP',
+        'Lenovo',
+        'Microsoft',
+        'Sophos',
+        'Huawei',
+        'Samsung',
+        'Logitech',
+        'LG',
+        'Yealink',
+        'Starlink',
+    ],
 ];

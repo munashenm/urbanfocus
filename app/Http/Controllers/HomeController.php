@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Article;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
@@ -29,11 +30,7 @@ class HomeController extends Controller
             return $q->latest()->take(8)->get();
         });
 
-        $topSellers = $this->remember('home.top_sellers', fn () => Product::with('images')
-            ->forStorefront()
-            ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
-            ->take(8)
-            ->get());
+        $topSellers = $this->remember('home.top_sellers', fn () => $this->topSellerProducts(8));
 
         $networkingProducts = $this->remember('home.networking', fn () => $this->categoryProducts('networking', 8));
 
@@ -92,6 +89,23 @@ class HomeController extends Controller
             ->forStorefront()
             ->whereIn('category_id', $ids)
             ->latest()
+            ->take($limit)
+            ->get();
+    }
+
+    protected function topSellerProducts(int $limit)
+    {
+        $brands = config('homepage.top_seller_brands', []);
+
+        $query = Product::with('images')->forStorefront();
+
+        if ($brands !== []) {
+            $normalized = array_map(fn (string $brand) => mb_strtolower(trim($brand)), $brands);
+            $query->whereIn(DB::raw('LOWER(TRIM(brand))'), $normalized);
+        }
+
+        return $query
+            ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
             ->take($limit)
             ->get();
     }

@@ -161,7 +161,7 @@
     <div class="container">
         @include('partials.section-header', [
             'title' => 'Top Sellers',
-            'subtitle' => 'Most popular products with Urban Focus customers.',
+            'subtitle' => 'Popular products from leading brands including Dahua, TP-Link, Dell, Hikvision, ASUS and more.',
             'url' => route('shop.index', ['sort' => 'popular']),
         ])
         <div class="row g-4">
