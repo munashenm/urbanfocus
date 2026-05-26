@@ -376,13 +376,7 @@ class ProductImportService
         $inStockValue = strtolower($data['in_stock'] ?? '1');
         $inStock = in_array($inStockValue, ['1', 'yes', 'true', 'instock', 'in stock'], true);
 
-        $slug = Str::slug($name);
-
-        if ($existing) {
-            $slug = $existing->slug;
-        } elseif (Product::where('slug', $slug)->exists()) {
-            $slug = $slug.'-'.Str::random(4);
-        }
+        $slug = $this->resolveImportSlug($name, $sku, $existing);
 
         $attributes = [
             'category_id' => $categoryId,
@@ -405,10 +399,14 @@ class ProductImportService
             'meta_description' => $data['meta_description'] ?? null,
             'meta_keywords' => $data['meta_keywords'] ?? null,
             'is_active' => in_array(strtolower($data['published'] ?? '1'), ['1', 'yes', 'true', 'publish'], true),
-            'woocommerce_id' => $wooId ?: ($existing?->woocommerce_id ?? $slug),
+            'woocommerce_id' => $wooId ?: ($existing?->woocommerce_id ?? ($sku ?: $slug)),
         ];
 
         if ($existing) {
+            if ($existing->trashed()) {
+                $existing->restore();
+            }
+
             $existing->update($attributes);
             $product = $existing->fresh();
         } else {
@@ -852,7 +850,7 @@ class ProductImportService
             return null;
         }
 
-        return Product::query()->where(function ($q) use ($sku, $wooId) {
+        return Product::withTrashed()->where(function ($q) use ($sku, $wooId) {
             if ($sku) {
                 $q->where('sku', $sku);
             }
@@ -860,6 +858,41 @@ class ProductImportService
                 $q->orWhere('woocommerce_id', $wooId);
             }
         })->first();
+    }
+
+    protected function resolveImportSlug(string $name, ?string $sku, ?Product $existing): string
+    {
+        if ($existing) {
+            return $existing->slug;
+        }
+
+        $base = Str::slug($name) ?: 'product';
+        $slug = $base;
+
+        if ($sku && $this->importSlugTaken($slug)) {
+            $skuSlug = Str::slug($this->normalizeSku($sku));
+
+            if ($skuSlug !== '') {
+                $slug = Str::limit($base.'-'.$skuSlug, 255, '');
+            }
+        }
+
+        $attempt = 0;
+
+        while ($this->importSlugTaken($slug)) {
+            $attempt++;
+            $suffix = $sku
+                ? Str::slug($this->normalizeSku($sku)).'-'.$attempt
+                : (string) $attempt;
+            $slug = Str::limit($base.'-'.$suffix, 255, '');
+        }
+
+        return $slug;
+    }
+
+    protected function importSlugTaken(string $slug): bool
+    {
+        return Product::withTrashed()->where('slug', $slug)->exists();
     }
 
     /** @return list<string> */

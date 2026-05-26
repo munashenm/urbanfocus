@@ -2,14 +2,17 @@
 
 namespace Tests\Unit;
 
+use App\Models\Product;
 use App\Services\CatalogFilterService;
 use App\Services\CategoryMapperService;
 use App\Services\ProductImportService;
 use App\Services\ProductPricingService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ProductImportServiceTest extends TestCase
 {
+    use RefreshDatabase;
     private ProductImportService $import;
 
     protected function setUp(): void
@@ -237,5 +240,23 @@ class ProductImportServiceTest extends TestCase
 
         $this->assertSame('skip', $result['action']);
         $this->assertSame('no_image', $result['reason']);
+    }
+
+    public function test_resolve_import_slug_avoids_soft_deleted_slug_collision(): void
+    {
+        $product = Product::create([
+            'name' => 'Manhattan iPad 2 Silicon Slip',
+            'slug' => 'manhattan-ipad-2-silicon-slip',
+            'sku' => '450256',
+            'price' => 150,
+        ]);
+        $product->delete();
+
+        $method = new \ReflectionMethod($this->import, 'resolveImportSlug');
+        $method->setAccessible(true);
+
+        $slug = $method->invoke($this->import, 'Manhattan iPad 2 Silicon Slip', '450287', null);
+
+        $this->assertSame('manhattan-ipad-2-silicon-slip-450287', $slug);
     }
 }
