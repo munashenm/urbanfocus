@@ -57,12 +57,6 @@
                     @include('partials.business-address', ['showLabel' => false, 'class' => 'mt-2'])
                 </ul>
                 <p class="footer-text small mb-0">{{ config('business.hours') }}</p>
-                @if(config('business.vat_number') || config('business.company_reg'))
-                    <p class="footer-text small mt-2 mb-0">
-                        @if(config('business.company_reg'))Reg: {{ config('business.company_reg') }}@endif
-                        @if(config('business.vat_number')) · VAT: {{ config('business.vat_number') }}@endif
-                    </p>
-                @endif
             </div>
         </div>
     </div>
