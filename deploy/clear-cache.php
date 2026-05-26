@@ -35,6 +35,17 @@ if ($deleted === 0) {
     echo "Already clear.\n";
 }
 
+echo "\n=== Delete generated sitemap files ===\n";
+$sitemapFiles = glob($laravelRoot.'/storage/app/sitemaps/*.xml') ?: [];
+foreach ($sitemapFiles as $file) {
+    if (@unlink($file)) {
+        echo "Deleted: ".basename($file)."\n";
+    }
+}
+if ($sitemapFiles === []) {
+    echo "No sitemap files.\n";
+}
+
 if (file_exists($laravelRoot.'/vendor/autoload.php')) {
     require $laravelRoot.'/vendor/autoload.php';
     $app = require_once $laravelRoot.'/bootstrap/app.php';
