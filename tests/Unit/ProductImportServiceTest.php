@@ -173,4 +173,45 @@ class ProductImportServiceTest extends TestCase
         $this->assertSame(4.0, $result['cost_price']);
         $this->assertSame(5.6, $result['retail_price']);
     }
+
+    public function test_skips_astrum_row_without_image(): void
+    {
+        $data = $this->import->normalizeImportRow([
+            'sku' => 'AMP180GB',
+            'name' => 'Mouse Pad with Rubber Base - MP180G (BLACK)',
+            'regular_price' => '13',
+            'srp_price' => '19',
+            'stock' => '100',
+            'category' => 'Cooling and Mousepad',
+        ]);
+
+        $this->assertSame('astrum', $data['import_source']);
+        $this->assertSame('Astrum', $data['brand']);
+
+        $result = $this->import->evaluateRow($data);
+
+        $this->assertSame('skip', $result['action']);
+        $this->assertSame('no_image', $result['reason']);
+    }
+
+    public function test_accepts_astrum_row_with_image_and_markup(): void
+    {
+        $data = $this->import->normalizeImportRow([
+            'sku' => 'ACHW20PCBE',
+            'name' => 'WATZ20P 20W PD WALL CHARGER',
+            'regular_price' => '99',
+            'srp_price' => '199',
+            'stock' => '10',
+            'category' => 'Mobile Chargers',
+            'images' => 'https://example.com/charger.jpg',
+        ]);
+
+        $this->assertSame('UPS & Power > PDUs & Power Cables', $data['categories']);
+
+        $result = $this->import->evaluateRow($data);
+
+        $this->assertSame('create', $result['action']);
+        $this->assertSame(99.0, $result['cost_price']);
+        $this->assertSame(150.0, $result['retail_price']);
+    }
 }

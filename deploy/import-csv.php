@@ -7,6 +7,7 @@
  *
  * 1. Git pull latest code
  * 2. Upload your CSV to: urbanfocus/storage/imports/products.csv
+ *    (or astrum_products_level2.csv and use &file=astrum_products_level2.csv)
  * 3. Copy this file to public_html/import-csv.php and set IMPORT_KEY
  * 4. Preview: https://www.urbanfocus.co.za/import-csv.php?key=YOUR_SECRET&preview=1
  * 5. Run:    https://www.urbanfocus.co.za/import-csv.php?key=YOUR_SECRET
@@ -25,7 +26,9 @@ if (($_GET['key'] ?? '') !== IMPORT_KEY) {
 }
 
 $laravelRoot = dirname(__DIR__).'/urbanfocus';
-$csvPath = $laravelRoot.'/storage/imports/products.csv';
+$csvFile = basename((string) ($_GET['file'] ?? 'products.csv'));
+$csvFile = preg_match('/^[a-zA-Z0-9._-]+\.csv$/', $csvFile) ? $csvFile : 'products.csv';
+$csvPath = $laravelRoot.'/storage/imports/'.$csvFile;
 
 header('Content-Type: text/plain; charset=utf-8');
 @set_time_limit(0);

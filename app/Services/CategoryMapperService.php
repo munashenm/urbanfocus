@@ -10,6 +10,9 @@ class CategoryMapperService
     /** @var array<string, string>|null */
     protected ?array $esquireHeadMap = null;
 
+    /** @var array<string, string>|null */
+    protected ?array $astrumCategoryMap = null;
+
     /** @var list<array{prefix: string, path: string}>|null */
     protected ?array $pinnaclePaths = null;
 
@@ -21,6 +24,10 @@ class CategoryMapperService
     {
         if (trim($data['category_tree'] ?? '') !== '') {
             return $this->pathFromPinnacleTree($data['category_tree']);
+        }
+
+        if (($data['import_source'] ?? '') === 'astrum') {
+            return $this->pathFromAstrumCategory($data['category'] ?? '');
         }
 
         $head = trim($data['category_head'] ?? '');
@@ -91,6 +98,30 @@ class CategoryMapperService
         }
 
         return $this->displayPath('peripherals');
+    }
+
+    public function pathFromAstrumCategory(string $category): string
+    {
+        $category = html_entity_decode(trim($category), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        if ($category === '') {
+            return $this->displayPath('peripherals');
+        }
+
+        $slugPath = $this->astrumCategoryMap()[$category] ?? null;
+
+        if ($slugPath === null) {
+            foreach ($this->astrumCategoryMap() as $known => $path) {
+                if (strcasecmp($known, $category) === 0) {
+                    $slugPath = $path;
+                    break;
+                }
+            }
+        }
+
+        $slugPath ??= 'peripherals';
+
+        return $this->displayPath($slugPath);
     }
 
     public function resolveCategoryId(string $categories): ?int
@@ -219,6 +250,12 @@ class CategoryMapperService
     protected function esquireHeadMap(): array
     {
         return $this->esquireHeadMap ??= config('category_map.esquire_heads', []);
+    }
+
+    /** @return array<string, string> */
+    protected function astrumCategoryMap(): array
+    {
+        return $this->astrumCategoryMap ??= config('category_map.astrum_categories', []);
     }
 
     /** @return list<array{prefix: string, path: string}> */

@@ -81,6 +81,8 @@ class ProductImportService
         'topcat' => 'top_cat',
         'lastupdated' => 'last_updated',
         'prodexternalurl' => 'external_url',
+        'srp price' => 'srp_price',
+        'srp_price' => 'srp_price',
     ];
 
     public function import(UploadedFile $file): array
@@ -555,6 +557,8 @@ class ProductImportService
     {
         if ($this->isPinnacleRow($data)) {
             $data = $this->normalizePinnacleRow($data);
+        } elseif ($this->isAstrumRow($data)) {
+            $data = $this->normalizeAstrumRow($data);
         }
 
         if (! empty($data['sku'])) {
@@ -608,6 +612,50 @@ class ProductImportService
             if ($keywords !== []) {
                 $data['meta_keywords'] = Str::limit(implode(', ', $keywords), 255, '');
             }
+        }
+
+        return $data;
+    }
+
+    protected function isAstrumRow(array $data): bool
+    {
+        if (trim($data['category_tree'] ?? '') !== '') {
+            return false;
+        }
+
+        if (($data['import_source'] ?? '') === 'astrum') {
+            return true;
+        }
+
+        return trim($data['sku'] ?? '') !== ''
+            && trim($data['name'] ?? '') !== ''
+            && trim($data['category'] ?? '') !== ''
+            && trim($data['images'] ?? '') === ''
+            && trim($data['category_head'] ?? '') === ''
+            && (trim($data['srp_price'] ?? '') !== '' || $this->resolveCostPrice($data) > 0);
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function normalizeAstrumRow(array $data): array
+    {
+        $data['import_source'] = 'astrum';
+        $data['category'] = html_entity_decode(trim($data['category'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        if (trim($data['brand'] ?? '') === '') {
+            $data['brand'] = 'Astrum';
+        }
+
+        if (trim($data['short_description'] ?? '') === '' && $data['category'] !== '') {
+            $data['short_description'] = 'Astrum '.$data['category'];
+        }
+
+        if (! isset($data['in_stock']) || trim((string) $data['in_stock']) === '') {
+            $qty = (int) preg_replace('/\D/', '', (string) ($data['stock'] ?? '0'));
+            $data['in_stock'] = $qty > 0 ? '1' : '0';
+        }
+
+        if (! isset($data['published']) || trim((string) $data['published']) === '') {
+            $data['published'] = '1';
         }
 
         return $data;

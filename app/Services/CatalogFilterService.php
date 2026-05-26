@@ -139,6 +139,24 @@ class CatalogFilterService
 
     public function isExcludedImportRow(array $data): bool
     {
+        if (($data['import_source'] ?? '') === 'astrum') {
+            $categories = trim($data['categories'] ?? '');
+            if ($categories !== '' && $this->isExcludedCategoryPath($categories)) {
+                return true;
+            }
+
+            $productText = trim(implode(' ', array_filter([
+                $data['name'] ?? null,
+                $data['short_description'] ?? null,
+            ])));
+
+            if ($productText !== '' && $this->textMatchesExcludedTerms($productText)) {
+                return true;
+            }
+
+            return false;
+        }
+
         $treeRoot = $this->pinnacleTreeRoot($data['category_tree'] ?? '');
 
         if ($treeRoot !== null || ($data['import_source'] ?? '') === 'pinnacle') {
