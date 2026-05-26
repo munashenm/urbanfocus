@@ -71,8 +71,8 @@ return [
     ],
 
     /*
-    | Products shown in the homepage "Top Sellers" section must match one of these
-    | brand names (case-insensitive). Add aliases if your CSV uses alternate spellings.
+    | Homepage "Top Sellers": products must match a brand below (case-insensitive)
+    | and sit in one of the categories listed under top_seller_categories.
     */
     'top_seller_brands' => [
         'Dahua',
@@ -80,6 +80,7 @@ return [
         'Dell',
         'Asustor',
         'ASUS',
+        'Asus',
         'Hikvision',
         'D-Link',
         'Goldtool',
@@ -97,5 +98,16 @@ return [
         'LG',
         'Yealink',
         'Starlink',
+    ],
+
+    'top_seller_categories' => [
+        'networking',
+        'cctv-security',
+        'servers',
+        'telephony-voip',
+        'laptops-notebooks',
+        'desktops',
+        'monitors-displays',
+        'ups-power',
     ],
 ];

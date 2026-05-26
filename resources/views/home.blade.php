@@ -161,8 +161,9 @@
     <div class="container">
         @include('partials.section-header', [
             'title' => 'Top Sellers',
-            'subtitle' => 'Popular products from leading brands including Dahua, TP-Link, Dell, Hikvision, ASUS and more.',
-            'url' => route('shop.index', ['sort' => 'popular']),
+            'subtitle' => 'Networking, security and IT products from leading brands like Dahua, TP-Link, Ubiquiti, Dell and Hikvision.',
+            'url' => route('shop.index', ['category' => 'networking', 'sort' => 'popular']),
+            'linkLabel' => 'View All',
         ])
         <div class="row g-4">
             @foreach($topSellers as $product)

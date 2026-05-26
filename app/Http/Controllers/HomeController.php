@@ -30,7 +30,7 @@ class HomeController extends Controller
             return $q->latest()->take(8)->get();
         });
 
-        $topSellers = $this->remember('home.top_sellers', fn () => $this->topSellerProducts(8));
+        $topSellers = $this->remember('home.top_sellers_v2', fn () => $this->topSellerProducts(8));
 
         $networkingProducts = $this->remember('home.networking', fn () => $this->categoryProducts('networking', 8));
 
@@ -96,6 +96,7 @@ class HomeController extends Controller
     protected function topSellerProducts(int $limit)
     {
         $brands = config('homepage.top_seller_brands', []);
+        $categorySlugs = config('homepage.top_seller_categories', []);
 
         $query = Product::with('images')->forStorefront();
 
@@ -104,10 +105,30 @@ class HomeController extends Controller
             $query->whereIn(DB::raw('LOWER(TRIM(brand))'), $normalized);
         }
 
+        $categoryIds = $this->categoryIdsForSlugs($categorySlugs);
+        if ($categoryIds !== []) {
+            $query->whereIn('category_id', $categoryIds);
+        }
+
         return $query
             ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
             ->take($limit)
             ->get();
+    }
+
+    /** @param list<string> $slugs */
+    protected function categoryIdsForSlugs(array $slugs): array
+    {
+        $ids = [];
+
+        foreach ($slugs as $slug) {
+            $category = Category::where('slug', $slug)->first();
+            if ($category) {
+                $ids = array_merge($ids, Category::descendantIds($category->id));
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 
     protected function remember(string $key, callable $callback, int $minutes = 10): mixed
