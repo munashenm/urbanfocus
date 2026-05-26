@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $brand->name.' Products | Urban Focus')
-@section('meta_description', 'Shop '.$brand->name.' products at Urban Focus — authorised South African IT supplier.')
+@section('meta_description', $brand->seoDescription())
 
 @section('content')
 <div class="container py-4">

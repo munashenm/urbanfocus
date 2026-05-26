@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $category->meta_title ?: $category->name.' | Urban Focus')
-@section('meta_description', $category->meta_description ?: 'Shop '.$category->name.' in South Africa from Urban Focus. VAT invoices, nationwide delivery and authorised supply from leading IT brands.')
+@section('meta_description', $category->seoDescription())
 
 @include('partials.pagination-seo')
 

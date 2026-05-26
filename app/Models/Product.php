@@ -129,19 +129,29 @@ class Product extends Model
 
     public function seoDescription(): string
     {
-        $value = $this->attributes['meta_description'] ?? null;
+        $value = trim((string) ($this->attributes['meta_description'] ?? ''));
 
-        if ($value) {
-            return $value;
+        if ($value !== '') {
+            return seo_meta_description($value, [
+                'type' => 'product',
+                'name' => $this->name,
+                'brand' => $this->brand,
+                'category' => $this->category?->name,
+            ]);
         }
 
-        $parts = array_filter([
-            $this->brand ? 'Buy '.$this->brand.' '.$this->name : $this->name,
-            'in stock at Urban Focus',
-            'nationwide delivery across South Africa',
-        ]);
+        $source = strip_tags($this->short_description ?: $this->description ?: '');
 
-        return Str::limit(strip_tags($this->short_description ?: $this->description ?: implode('. ', $parts).'.'), 160);
+        if ($source === '') {
+            $source = ($this->brand ? 'Buy '.$this->brand.' ' : '').$this->name;
+        }
+
+        return seo_meta_description($source, [
+            'type' => 'product',
+            'name' => $this->name,
+            'brand' => $this->brand,
+            'category' => $this->category?->name,
+        ]);
     }
 
     public function seoKeywords(): string

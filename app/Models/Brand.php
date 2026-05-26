@@ -33,4 +33,12 @@ class Brand extends Model
     {
         return 'slug';
     }
+
+    public function seoDescription(): string
+    {
+        return seo_meta_description(
+            'Shop '.$this->name.' products at Urban Focus.',
+            ['type' => 'brand', 'name' => $this->name]
+        );
+    }
 }

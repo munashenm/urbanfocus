@@ -93,4 +93,36 @@ class Category extends Model
 
         return $ids;
     }
+
+    public function seoTitle(): string
+    {
+        if (! empty($this->attributes['meta_title'])) {
+            return $this->attributes['meta_title'];
+        }
+
+        return $this->name.' | Buy in South Africa | Urban Focus';
+    }
+
+    public function seoDescription(): string
+    {
+        $value = trim((string) ($this->attributes['meta_description'] ?? ''));
+
+        if ($value !== '') {
+            return seo_meta_description($value, [
+                'type' => 'category',
+                'name' => $this->name,
+            ]);
+        }
+
+        $source = strip_tags($this->description ?: '');
+
+        if ($source === '') {
+            $source = 'Shop '.$this->name.' in South Africa at Urban Focus';
+        }
+
+        return seo_meta_description($source, [
+            'type' => 'category',
+            'name' => $this->name,
+        ]);
+    }
 }

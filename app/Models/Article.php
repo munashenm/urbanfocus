@@ -42,7 +42,25 @@ class Article extends Model
 
     public function seoDescription(): string
     {
-        return $this->meta_description ?: Str::limit(strip_tags($this->excerpt ?: ''), 160);
+        $value = trim((string) ($this->meta_description ?? ''));
+
+        if ($value !== '') {
+            return seo_meta_description($value, [
+                'type' => 'article',
+                'name' => $this->title,
+            ]);
+        }
+
+        $source = strip_tags($this->excerpt ?: '');
+
+        if ($source === '') {
+            $source = $this->title;
+        }
+
+        return seo_meta_description($source, [
+            'type' => 'article',
+            'name' => $this->title,
+        ]);
     }
 
     public function scopePublished($query)

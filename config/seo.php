@@ -7,6 +7,8 @@ return [
         'keywords' => 'IT supplier South Africa, networking equipment South Africa, buy laptops South Africa, Ubiquiti supplier, Hikvision supplier, business IT supplier',
         'locale' => 'en_ZA',
         'country' => 'ZA',
+        'min_description_length' => 120,
+        'max_description_length' => 160,
     ],
 
     'verification' => [

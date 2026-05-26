@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Shop IT Products | Urban Focus')
-@section('meta_description', 'Browse laptops, desktops, networking, storage and software from Urban Focus. Filter by brand, category and price with fast nationwide delivery.')
+@section('meta_description', seo_meta_description('Browse laptops, desktops, networking, storage and software from Urban Focus.', ['type' => 'category', 'name' => 'IT products']))
 @if(request('q'))
 @section('meta_robots', 'noindex, follow')
 @endif

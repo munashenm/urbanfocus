@@ -585,8 +585,17 @@ class ProductImportService
         if (empty($data['meta_description'])) {
             $source = strip_tags($data['short_description'] ?? $data['description'] ?? '');
 
+            if ($source === '' && ! empty($data['name'])) {
+                $source = (! empty($data['brand']) ? 'Buy '.$data['brand'].' ' : '').$data['name'];
+            }
+
             if ($source !== '') {
-                $data['meta_description'] = Str::limit($source, 500, '');
+                $data['meta_description'] = seo_meta_description($source, [
+                    'type' => 'product',
+                    'name' => $data['name'] ?? '',
+                    'brand' => $data['brand'] ?? null,
+                    'category' => $data['category'] ?? null,
+                ]);
             }
         }
 

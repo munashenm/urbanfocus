@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Our Brands | Urban Focus')
-@section('meta_description', 'Browse authorised IT brands supplied by Urban Focus — networking, laptops, security, software and more across South Africa.')
+@section('meta_description', seo_meta_description('Browse authorised IT brands supplied by Urban Focus — networking, laptops, security and software.', ['type' => 'brand', 'name' => 'IT brands']))
 
 @section('content')
 <div class="page-hero">

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'IT Insights & Guides | Urban Focus Blog')
-@section('meta_description', 'Buying guides, product news and IT industry updates from Urban Focus — your South African IT hardware and software partner.')
+@section('meta_description', seo_meta_description('Buying guides, product news and IT industry updates from Urban Focus.', ['type' => 'article', 'name' => 'IT Insights']))
 
 @section('content')
 <div class="container py-4">
