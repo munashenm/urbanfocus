@@ -10,6 +10,7 @@ use App\View\Composers\LayoutComposer;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
@@ -28,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
         Paginator::useBootstrapFive();
         View::composer(['partials.header', 'partials.footer'], LayoutComposer::class);
+
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
 
         Product::observe(ProductObserver::class);
         Article::observe(ArticleObserver::class);

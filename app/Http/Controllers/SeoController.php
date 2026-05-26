@@ -13,6 +13,11 @@ class SeoController extends Controller
         return response($seo->sitemapXml(), 200, ['Content-Type' => 'application/xml']);
     }
 
+    public function imageSitemap(SeoService $seo): Response
+    {
+        return response($seo->imageSitemapXml(), 200, ['Content-Type' => 'application/xml']);
+    }
+
     public function robots(SeoService $seo): Response
     {
         return response($seo->robotsTxt(), 200, ['Content-Type' => 'text/plain']);

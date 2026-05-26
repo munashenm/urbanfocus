@@ -3,41 +3,45 @@
 namespace App\Services;
 
 use App\Models\Product;
+use Illuminate\Support\Facades\Cache;
 
 class FeedService
 {
     public function googleMerchantXml(): string
     {
-        $products = Product::with(['category', 'images'])
-            ->where('is_active', true)
-            ->get();
+        return Cache::remember('feeds.google-merchant.xml', config('seo.cache.feed_ttl', 1800), function () {
+            $products = Product::with(['category', 'images'])
+                ->where('is_active', true)
+                ->get();
 
-        $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"></rss>');
-        $channel = $xml->addChild('channel');
-        $channel->addChild('title', 'Urban Focus Products');
-        $channel->addChild('link', config('app.url'));
-        $channel->addChild('description', 'IT products from Urban Focus South Africa');
+            $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"></rss>');
+            $channel = $xml->addChild('channel');
+            $channel->addChild('title', 'Urban Focus Products');
+            $channel->addChild('link', config('app.url'));
+            $channel->addChild('description', 'IT products from Urban Focus South Africa');
 
-        foreach ($products as $product) {
-            if (! $product->isGoogleMerchantEligible()) {
-                continue;
+            foreach ($products as $product) {
+                if (! $product->isGoogleMerchantEligible()) {
+                    continue;
+                }
+
+                $this->appendGoogleMerchantItem($channel, $product);
             }
 
-            $this->appendGoogleMerchantItem($channel, $product);
-        }
-
-        return $xml->asXML();
+            return $xml->asXML();
+        });
     }
 
     public function priceCheckCsv(): string
     {
-        $products = Product::where('is_active', true)->get();
-        $lines = ['SKU,Product Name,Brand,Price,Stock,URL,Category'];
+        return Cache::remember('feeds.pricecheck.csv', config('seo.cache.feed_ttl', 1800), function () {
+            $products = Product::where('is_active', true)->get();
+            $lines = ['SKU,Product Name,Brand,Price,Stock,URL,Category'];
 
-        foreach ($products as $product) {
-            $lines[] = implode(',', [
-                $this->csvEscape($product->sku ?: $product->id),
-                $this->csvEscape($product->name),
+            foreach ($products as $product) {
+                $lines[] = implode(',', [
+                    $this->csvEscape($product->sku ?: $product->id),
+                    $this->csvEscape($product->name),
                 $this->csvEscape($product->brand ?: 'Urban Focus'),
                 number_format($product->effective_price, 2, '.', ''),
                 $product->isAvailable() ? 'In Stock' : 'Out of Stock',
@@ -46,7 +50,8 @@ class FeedService
             ]);
         }
 
-        return implode("\n", $lines);
+            return implode("\n", $lines);
+        });
     }
 
     protected function appendGoogleMerchantItem(\SimpleXMLElement $channel, Product $product): void

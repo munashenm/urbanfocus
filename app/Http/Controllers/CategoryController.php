@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\CatalogFilterService;
+use App\Services\SeoService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
-    public function __construct(protected CatalogFilterService $catalogFilter) {}
+    public function __construct(
+        protected CatalogFilterService $catalogFilter,
+        protected SeoService $seo,
+    ) {}
 
     public function show(Category $category, Request $request): View
     {
@@ -73,6 +77,19 @@ class CategoryController extends Controller
                 ->get();
         }
 
-        return view('categories.show', compact('category', 'products', 'brands', 'subcategories', 'siblingCategories'));
+        return view('categories.show', [
+            'category' => $category,
+            'products' => $products,
+            'brands' => $brands,
+            'subcategories' => $subcategories,
+            'siblingCategories' => $siblingCategories,
+            'paginationMeta' => $this->seo->paginationMeta($products),
+            'breadcrumbSchema' => $this->seo->breadcrumbSchema([
+                ['name' => 'Home', 'url' => route('home')],
+                ['name' => 'Shop', 'url' => route('shop.index')],
+                ...($category->parent ? [['name' => $category->parent->name, 'url' => route('categories.show', $category->parent)]] : []),
+                ['name' => $category->name, 'url' => route('categories.show', $category)],
+            ]),
+        ]);
     }
 }

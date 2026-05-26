@@ -1,6 +1,6 @@
 <div class="product-card h-100{{ $product->isAvailable() ? '' : ' is-unavailable' }}">
     <a href="{{ route('products.show', $product) }}" class="product-card-image d-block">
-        <img src="{{ $product->display_image_url }}" alt="{{ $product->name }}" loading="lazy" width="300" height="300">
+        <img src="{{ $product->display_image_url }}" alt="{{ $product->imageAlt() }}" loading="lazy" width="300" height="300">
         @if($product->is_on_sale || (!empty($product->is_deal)))
             <span class="badge-sale">{{ $product->deal_label ?: 'Sale' }}</span>
         @endif

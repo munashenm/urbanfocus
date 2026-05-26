@@ -7,6 +7,15 @@
                 </a>
                 <p class="text-white-50 mb-3">South African supplier of IT hardware, networking, components and software licensing. Professional support and nationwide delivery.</p>
                 @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-2'])
+                <div class="mt-4">
+                    <h6 class="text-white mb-2">Deals &amp; Updates</h6>
+                    <form action="{{ route('newsletter.store') }}" method="POST" class="newsletter-form d-flex gap-2">
+                        @csrf
+                        <label for="newsletter-email" class="visually-hidden">Email address</label>
+                        <input id="newsletter-email" type="email" name="email" class="form-control form-control-sm" placeholder="Your email" required>
+                        <button type="submit" class="btn btn-primary btn-sm text-nowrap">Subscribe</button>
+                    </form>
+                </div>
             </div>
 
             <div class="col-6 col-lg-2">
@@ -47,6 +56,12 @@
                     @include('partials.business-address', ['showLabel' => false, 'class' => 'mt-2'])
                 </ul>
                 <p class="footer-text small mb-0">{{ config('business.hours') }}</p>
+                @if(config('business.vat_number') || config('business.company_reg'))
+                    <p class="footer-text small mt-2 mb-0">
+                        @if(config('business.company_reg'))Reg: {{ config('business.company_reg') }}@endif
+                        @if(config('business.vat_number')) · VAT: {{ config('business.vat_number') }}@endif
+                    </p>
+                @endif
             </div>
         </div>
     </div>

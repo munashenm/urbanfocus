@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Mail\LowStockAlert;
 use App\Models\Product;
+use App\Services\SeoService;
 use App\Services\Social\SocialPostingService;
 use App\Services\StockAlertService;
 use Illuminate\Support\Facades\Mail;
@@ -14,12 +15,19 @@ class ProductObserver
     public function __construct(
         protected SocialPostingService $social,
         protected StockAlertService $stockAlerts,
+        protected SeoService $seo,
     ) {}
 
     public function saved(Product $product): void
     {
         $this->safe(fn () => $this->handleSocialQueue($product));
         $this->safe(fn () => $this->handleStockAlerts($product));
+        $this->safe(fn () => $this->seo->clearCache());
+    }
+
+    public function deleted(Product $product): void
+    {
+        $this->safe(fn () => $this->seo->clearCache());
     }
 
     protected function handleSocialQueue(Product $product): void

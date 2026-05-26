@@ -118,7 +118,13 @@ class Product extends Model
 
     public function seoTitle(): string
     {
-        return $this->attributes['meta_title'] ?? ($this->name.' | Urban Focus');
+        if (! empty($this->attributes['meta_title'])) {
+            return $this->attributes['meta_title'];
+        }
+
+        $brand = $this->brand ? $this->brand.' ' : '';
+
+        return Str::limit($brand.$this->name.' — Buy in South Africa | Urban Focus', 70, '');
     }
 
     public function seoDescription(): string
@@ -129,7 +135,37 @@ class Product extends Model
             return $value;
         }
 
-        return Str::limit(strip_tags($this->short_description ?: $this->description ?: ''), 160);
+        $parts = array_filter([
+            $this->brand ? 'Buy '.$this->brand.' '.$this->name : $this->name,
+            'in stock at Urban Focus',
+            'nationwide delivery across South Africa',
+        ]);
+
+        return Str::limit(strip_tags($this->short_description ?: $this->description ?: implode('. ', $parts).'.'), 160);
+    }
+
+    public function seoKeywords(): string
+    {
+        if (! empty($this->attributes['meta_keywords'])) {
+            return $this->attributes['meta_keywords'];
+        }
+
+        $keywords = array_filter([
+            $this->brand,
+            $this->name,
+            $this->category?->name,
+            'buy online South Africa',
+            'Urban Focus',
+        ]);
+
+        return implode(', ', array_unique($keywords));
+    }
+
+    public function imageAlt(): string
+    {
+        $parts = array_filter([$this->brand, $this->name, 'South Africa']);
+
+        return implode(' — ', $parts);
     }
 
     public function isAvailable(): bool
@@ -392,6 +428,12 @@ class Product extends Model
                 $this->googleFeedAdditionalImages()
             ));
             $schema['image'] = count($images) === 1 ? $images[0] : array_values($images);
+        }
+
+        $schema['url'] = route('products.show', $this);
+
+        if ($this->category) {
+            $schema['category'] = $this->category->name;
         }
 
         if ($this->hasValidGtin()) {

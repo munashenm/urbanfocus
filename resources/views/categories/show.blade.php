@@ -1,7 +1,9 @@
 @extends('layouts.app')
 
 @section('title', $category->meta_title ?: $category->name.' | Urban Focus')
-@section('meta_description', $category->meta_description ?: 'Browse '.$category->name.' at Urban Focus — South African IT distributor.')
+@section('meta_description', $category->meta_description ?: 'Shop '.$category->name.' in South Africa from Urban Focus. VAT invoices, nationwide delivery and authorised supply from leading IT brands.')
+
+@include('partials.pagination-seo')
 
 @section('content')
 <div class="container py-4">
@@ -79,4 +81,7 @@
     "url": "{{ route('categories.show', $category) }}"
 }
 </script>
+@if(!empty($breadcrumbSchema))
+<script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>
+@endif
 @endpush

@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\SearchService;
+use App\Services\SeoService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ShopController extends Controller
 {
-    public function __construct(protected SearchService $search) {}
+    public function __construct(
+        protected SearchService $search,
+        protected SeoService $seo,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -68,6 +72,15 @@ class ShopController extends Controller
         $categories = Category::where('is_active', true)->whereNull('parent_id')->visibleInCatalog()->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])->orderBy('sort_order')->get();
         $brands = Product::where('is_active', true)->whereNotNull('brand')->distinct()->orderBy('brand')->pluck('brand');
 
-        return view('shop.index', compact('products', 'categories', 'brands'));
+        return view('shop.index', [
+            'products' => $products,
+            'categories' => $categories,
+            'brands' => $brands,
+            'paginationMeta' => $this->seo->paginationMeta($products),
+            'breadcrumbSchema' => $this->seo->breadcrumbSchema([
+                ['name' => 'Home', 'url' => route('home')],
+                ['name' => 'Shop', 'url' => route('shop.index')],
+            ]),
+        ]);
     }
 }

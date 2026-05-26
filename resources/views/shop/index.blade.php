@@ -6,6 +6,8 @@
 @section('meta_robots', 'noindex, follow')
 @endif
 
+@include('partials.pagination-seo')
+
 @section('content')
 <div class="container py-4">
     <nav aria-label="breadcrumb">
@@ -71,4 +73,7 @@
     "numberOfItems": {{ $products->total() }}
 }
 </script>
+@if(!empty($breadcrumbSchema))
+<script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>
+@endif
 @endpush

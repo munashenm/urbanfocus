@@ -15,6 +15,14 @@ class ProductController extends Controller
         $product->increment('views');
         $product->load(['category', 'images']);
 
+        $recentIds = collect(session('recently_viewed', []))
+            ->prepend($product->id)
+            ->unique()
+            ->take(9)
+            ->values()
+            ->all();
+        session(['recently_viewed' => $recentIds]);
+
         $relatedProducts = Product::with('images')
             ->forStorefront()
             ->where('category_id', $product->category_id)
@@ -37,9 +45,18 @@ class ProductController extends Controller
             ->take(4)
             ->get();
 
+        $recentlyViewed = Product::with('images')
+            ->forStorefront()
+            ->whereIn('id', array_slice($recentIds, 1))
+            ->get()
+            ->sortBy(fn (Product $item) => array_search($item->id, $recentIds, true))
+            ->values();
+
         $schema = $product->toSchemaArray();
         $breadcrumbSchema = $product->toBreadcrumbSchema();
 
-        return view('products.show', compact('product', 'relatedProducts', 'accessories', 'schema', 'breadcrumbSchema'));
+        return view('products.show', compact(
+            'product', 'relatedProducts', 'accessories', 'recentlyViewed', 'schema', 'breadcrumbSchema'
+        ));
     }
 }

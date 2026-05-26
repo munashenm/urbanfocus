@@ -67,6 +67,7 @@ Route::post('/track-order', [OrderTrackingController::class, 'lookup'])->name('o
 
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
+Route::post('/newsletter', [\App\Http\Controllers\NewsletterController::class, 'store'])->middleware('throttle:5,1')->name('newsletter.store');
 
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/shipping-returns', [PageController::class, 'shipping'])->name('shipping');
@@ -105,6 +106,7 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
 Route::middleware('auth')->get('/orders/{order}/invoice', [InvoiceController::class, 'show'])->name('orders.invoice');
 
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/sitemap-images.xml', [SeoController::class, 'imageSitemap'])->name('sitemap.images');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::get('/feeds/google-merchant.xml', [SeoController::class, 'googleMerchantFeed'])->name('feeds.google');
 Route::get('/feeds/pricecheck.csv', [SeoController::class, 'priceCheckFeed'])->name('feeds.pricecheck');

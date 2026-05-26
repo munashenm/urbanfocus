@@ -2,7 +2,7 @@
 
 @section('title', $product->seoTitle())
 @section('meta_description', $product->seoDescription())
-@section('meta_keywords', $product->meta_keywords)
+@section('meta_keywords', $product->seoKeywords())
 @section('canonical', route('products.show', $product))
 @section('og_title', $product->name)
 @section('og_description', $product->seoDescription())
@@ -27,7 +27,7 @@
     <div class="row g-5">
         <div class="col-lg-6">
             <div class="product-detail-image">
-                <img id="productMainImage" src="{{ $product->display_image_url }}" alt="{{ $product->name }}" width="500" height="500" loading="eager">
+                <img id="productMainImage" src="{{ $product->display_image_url }}" alt="{{ $product->imageAlt() }}" width="500" height="500" loading="eager">
             </div>
             @if($product->images->count() > 1)
                 <div class="d-flex gap-2 mt-3 flex-wrap product-thumbs">
@@ -152,6 +152,17 @@
         <div class="row g-4">
             @foreach($accessories as $accessory)
                 <div class="col-6 col-md-3">@include('partials.product-card', ['product' => $accessory])</div>
+            @endforeach
+        </div>
+    </section>
+    @endif
+
+    @if(!empty($recentlyViewed) && $recentlyViewed->count())
+    <section class="mt-5 pt-4 border-top">
+        <h2 class="section-title">Recently Viewed</h2>
+        <div class="row g-4">
+            @foreach($recentlyViewed as $recent)
+                <div class="col-6 col-md-3">@include('partials.product-card', ['product' => $recent])</div>
             @endforeach
         </div>
     </section>

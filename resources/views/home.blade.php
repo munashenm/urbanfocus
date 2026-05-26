@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Urban Focus — South Africa\'s Trusted IT Distributor')
-@section('meta_description', 'Shop IT hardware, networking, components and software licensing from Urban Focus. Nationwide delivery, VAT invoices and professional support across South Africa.')
+@section('title', 'Urban Focus — IT Supplier South Africa | Networking, Laptops & Security')
+@section('meta_description', 'Buy laptops, networking, CCTV, servers and IT equipment in South Africa. Urban Focus supplies Ubiquiti, Hikvision, Dell, TP-Link and more with nationwide delivery and VAT invoices.')
+@section('meta_keywords', 'buy laptops South Africa, networking equipment South Africa, Ubiquiti supplier South Africa, Hikvision supplier South Africa, business IT supplier, computer accessories South Africa')
 @section('og_image', asset('images/logo-stacked.png'))
 
 @section('content')
@@ -316,4 +317,8 @@
     "priceRange": "$$"
 }
 </script>
+@php $faqSchema = app(\App\Services\SeoService::class)->faqSchema(); @endphp
+@if($faqSchema !== [])
+<script type="application/ld+json">{!! json_encode($faqSchema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>
+@endif
 @endpush
