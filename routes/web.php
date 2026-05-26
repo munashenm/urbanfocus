@@ -72,6 +72,7 @@ Route::post('/newsletter', [\App\Http\Controllers\NewsletterController::class, '
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/shipping-returns', [PageController::class, 'shipping'])->name('shipping');
 Route::get('/returns', [PageController::class, 'returns'])->name('returns');
+Route::get('/faq', [PageController::class, 'faq'])->name('faq');
 Route::get('/warranty', [PageController::class, 'warranty'])->name('warranty');
 Route::get('/popia', [PageController::class, 'popia'])->name('popia');
 Route::get('/careers', [PageController::class, 'careers'])->name('careers');

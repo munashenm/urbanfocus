@@ -21,6 +21,11 @@ class PageController extends Controller
         return view('pages.returns');
     }
 
+    public function faq(): View
+    {
+        return view('pages.faq');
+    }
+
     public function warranty(): View
     {
         return view('pages.warranty');

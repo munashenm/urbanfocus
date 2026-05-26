@@ -44,6 +44,7 @@
                 <h6 class="text-white mb-3">Customer Service</h6>
                 <ul class="list-unstyled footer-links">
                     <li><a href="{{ route('contact') }}">Contact Us</a></li>
+                    <li><a href="{{ route('faq') }}">FAQ</a></li>
                     <li><a href="{{ route('returns') }}">Returns</a></li>
                 </ul>
             </div>

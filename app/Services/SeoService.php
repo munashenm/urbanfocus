@@ -252,7 +252,7 @@ class SeoService
             ['loc' => route('contact'), 'changefreq' => 'monthly', 'priority' => '0.6'],
         ];
 
-        foreach (['about', 'brands.index', 'shipping', 'returns', 'warranty', 'popia', 'careers', 'privacy', 'terms', 'b2b.quote', 'b2b.rfq', 'b2b.procurement', 'b2b.source', 'blog.index', 'orders.track'] as $page) {
+        foreach (['about', 'brands.index', 'shipping', 'returns', 'faq', 'warranty', 'popia', 'careers', 'privacy', 'terms', 'b2b.quote', 'b2b.rfq', 'b2b.procurement', 'b2b.source', 'blog.index', 'orders.track'] as $page) {
             $urls[] = ['loc' => route($page), 'changefreq' => 'monthly', 'priority' => '0.5'];
         }
 
