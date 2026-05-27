@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'POPIA Compliance | Urban Focus')
+@section('title', $pageSeo['title'] ?? 'POPIA Compliance | Urban Focus')
+@section('meta_description', $pageSeo['description'] ?? config('seo.defaults.description'))
 
 @section('content')
 <div class="page-hero"><div class="container"><h1 class="h2 fw-bold mb-0">POPIA — Protection of Personal Information</h1></div></div>

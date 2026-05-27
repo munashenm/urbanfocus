@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Terms & Conditions | Urban Focus')
+@section('title', $pageSeo['title'] ?? 'Terms & Conditions | Urban Focus')
+@section('meta_description', $pageSeo['description'] ?? config('seo.defaults.description'))
 
 @section('content')
 <div class="page-hero"><div class="container"><h1 class="h2 fw-bold mb-0">Terms &amp; Conditions</h1></div></div>

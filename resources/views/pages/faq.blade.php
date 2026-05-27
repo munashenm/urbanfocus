@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Frequently Asked Questions | Urban Focus')
-@section('meta_description', seo_meta_description('Find answers about ordering, delivery, returns, warranty, VAT invoices and B2B support at Urban Focus.', ['type' => 'article', 'name' => 'FAQ']))
+@section('title', $pageSeo['title'] ?? 'Frequently Asked Questions | Urban Focus')
+@section('meta_description', $pageSeo['description'] ?? seo_meta_description('Find answers about ordering, delivery, returns, warranty, VAT invoices and B2B support at Urban Focus.', ['type' => 'article', 'name' => 'FAQ']))
 
 @section('content')
 <div class="page-hero">

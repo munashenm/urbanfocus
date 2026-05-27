@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Warranty Terms | Urban Focus')
+@section('title', $pageSeo['title'] ?? 'Warranty Terms | Urban Focus')
+@section('meta_description', $pageSeo['description'] ?? config('seo.defaults.description'))
 
 @section('content')
 <div class="page-hero"><div class="container"><h1 class="h2 fw-bold mb-0">Warranty Terms</h1></div></div>

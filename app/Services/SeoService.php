@@ -277,6 +277,14 @@ class SeoService
             });
         }
 
+        foreach (array_keys(config('seo_landings', [])) as $landingSlug) {
+            $urls[] = [
+                'loc' => route('solutions.show', $landingSlug),
+                'changefreq' => 'monthly',
+                'priority' => '0.7',
+            ];
+        }
+
         return $urls;
     }
 

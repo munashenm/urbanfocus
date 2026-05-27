@@ -34,11 +34,34 @@ class Brand extends Model
         return 'slug';
     }
 
+    public function seoTitle(): string
+    {
+        $configured = config("brand_seo.{$this->slug}.title");
+
+        if (is_string($configured) && $configured !== '') {
+            return $configured;
+        }
+
+        return $this->name.' Products | Urban Focus';
+    }
+
     public function seoDescription(): string
     {
+        $configured = config("brand_seo.{$this->slug}.description");
+
+        if (is_string($configured) && $configured !== '') {
+            return $configured;
+        }
+
         return seo_meta_description(
             'Shop '.$this->name.' products at Urban Focus.',
             ['type' => 'brand', 'name' => $this->name]
         );
+    }
+
+    /** @return array<string, mixed> */
+    public function seoContent(): array
+    {
+        return config("brand_seo.{$this->slug}", []);
     }
 }

@@ -124,6 +124,18 @@
     </div>
 
     <div class="col-lg-6">
+        <div class="card h-100 border-success"><div class="card-body">
+            <h2 class="h5 fw-bold text-success">Optimize Product SEO</h2>
+            <p class="small text-muted">Assign categories to uncategorized products, generate SEO titles (brand + model + specs), meta descriptions and image alt tags. Run after CSV imports.</p>
+            <p class="small text-muted mb-3">CLI: <code>php artisan catalog:optimize-seo</code> · add <code>--dry-run</code> to preview.</p>
+            <form action="{{ route('admin.catalog.optimize-seo') }}" method="POST" onsubmit="return confirm('Optimize SEO metadata for all products? This may take a few minutes on large catalogs.')">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-success">Run SEO Optimization</button>
+            </form>
+        </div></div>
+    </div>
+
+    <div class="col-lg-6">
         <div class="card h-100 border-warning"><div class="card-body">
             <h2 class="h5 fw-bold text-warning">Remove Non-IT Catalog</h2>
             <p class="small text-muted">Permanently deletes non-IT products <strong>and</strong> their categories (lady shavers, dictionaries, bathroom accessories, stationery, homeware, etc.). IT categories with mixed stock are kept — only matching products are removed. Large catalogs may take several minutes — use <code>deploy/cleanup-non-it.php</code> in <code>public_html</code> if this times out.</p>

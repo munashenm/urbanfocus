@@ -19,7 +19,9 @@ INSERT INTO brands (name, slug, logo, sort_order, is_active, created_at, updated
 ('Samsung', 'samsung', 'images/brands/samsung.svg', 14, 1, NOW(), NOW()),
 ('TP-Link', 'tp-link', 'images/brands/tp-link.svg', 15, 1, NOW(), NOW()),
 ('Logitech', 'logitech', 'images/brands/logitech.svg', 16, 1, NOW(), NOW()),
-('LG', 'lg', 'images/brands/lg.svg', 17, 1, NOW(), NOW())
+('LG', 'lg', 'images/brands/lg.svg', 17, 1, NOW(), NOW()),
+('Yeastar', 'yeastar', NULL, 18, 1, NOW(), NOW()),
+('Cisco', 'cisco', NULL, 19, 1, NOW(), NOW())
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     logo = VALUES(logo),

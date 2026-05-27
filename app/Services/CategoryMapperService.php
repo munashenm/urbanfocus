@@ -131,35 +131,115 @@ class CategoryMapperService
         return $this->displayPath($slugPath);
     }
 
+    public function pathFromCatalogProduct(\App\Models\Product $product): string
+    {
+        return $this->pathFromScoopProduct([
+            'name' => $product->name,
+            'brand' => $product->brand ?? '',
+            'description' => trim(($product->short_description ?? '').' '.strip_tags((string) $product->description)),
+        ]);
+    }
+
     /** @param array<string, mixed> $data */
     public function pathFromScoopProduct(array $data): string
     {
+        return $this->displayPath($this->inferSlugPath($data));
+    }
+
+    /** @param array<string, mixed> $data */
+    public function inferSlugPath(array $data): string
+    {
         $name = strtolower(trim($data['name'] ?? $data['description'] ?? ''));
+        $text = strtolower(trim(($data['name'] ?? '').' '.($data['description'] ?? '')));
         $brand = trim($data['brand'] ?? '');
 
         if ($name !== '') {
-            if (preg_match('/\b(phone|voip|sip|doorphone|intercom)\b/i', $name)) {
-                return $this->displayPath('telephony-voip/ip-phones');
+            if (preg_match('/\b(gaming laptop|g15|rog strix|omen|nitro|legion)\b/i', $name)) {
+                return 'laptops-notebooks/gaming-laptops';
             }
 
-            if (preg_match('/\b(switch|sw\.)\b/i', $name)) {
-                return $this->displayPath('networking/network-switches');
+            if (preg_match('/\b(laptop|notebook|chromebook|thinkpad|latitude|elitebook|probook|ideapad|vostro|inspiron|xps)\b/i', $name)) {
+                return 'laptops-notebooks/business-laptops';
             }
 
-            if (preg_match('/\b(router|routerboard|hap|hex|cap\s|rb[0-9]|gateway)\b/i', $name)) {
-                return $this->displayPath('networking/routers-gateways');
+            if (preg_match('/\b(server|poweredge|proliant|thinksystem|rack\s*server)\b/i', $name)) {
+                return 'servers/rack-servers';
+            }
+
+            if (preg_match('/\b(nas|synology|qnap|storage\s*array)\b/i', $name)) {
+                return 'servers/nas-storage';
+            }
+
+            if (preg_match('/\b(printer|laserjet|inkjet|mfp|multifunction|toner|cartridge)\b/i', $name)) {
+                return preg_match('/\b(toner|cartridge|ink)\b/i', $name)
+                    ? 'printers/ink-toner'
+                    : 'printers/laser-printers';
+            }
+
+            if (preg_match('/\b(microsoft 365|office 365|windows 11|windows 10|antivirus|kaspersky|eset|norton)\b/i', $name)) {
+                return 'software-licensing';
+            }
+
+            if (preg_match('/\b(nvr|dvr|recorder|bullet|dome|ptz|ip cam|cctv|hikvision|dahua)\b/i', $name)) {
+                return preg_match('/\b(nvr|dvr|recorder)\b/i', $name)
+                    ? 'cctv-security/nvr-dvr'
+                    : 'cctv-security/ip-cameras';
+            }
+
+            if (preg_match('/\b(phone|voip|sip|doorphone|intercom|pbx|yeastar)\b/i', $name)) {
+                return preg_match('/\b(pbx|gateway|yeastar)\b/i', $name)
+                    ? 'telephony-voip/pbx-gateways'
+                    : 'telephony-voip/ip-phones';
+            }
+
+            if (preg_match('/\b(ssd|nvme|hard drive|hdd|ram|memory|motherboard|graphics|gpu|processor|cpu)\b/i', $name)) {
+                return 'components-storage';
+            }
+
+            if (preg_match('/\b(ups|inverter|surge|pdu)\b/i', $name)) {
+                return preg_match('/\b(ups|inverter)\b/i', $name)
+                    ? 'ups-power/ups-systems'
+                    : 'ups-power/pdus-cables';
+            }
+
+            if (preg_match('/\b(switch|sw\.|catalyst| crs)\b/i', $name)) {
+                return 'networking/network-switches';
+            }
+
+            if (preg_match('/\b(router|routerboard|hap|hex|cap\s|rb[0-9]|gateway|unifi\s*cloud)\b/i', $name)) {
+                return 'networking/routers-gateways';
+            }
+
+            if (preg_match('/\b(access point|u6-|u7-|unifi|omada|wap|wireless)\b/i', $name)) {
+                return 'networking/access-points';
             }
 
             if (preg_match('/\b(battery|ups)\b/i', $name)) {
-                return $this->displayPath('ups-power/pdus-cables');
+                return 'ups-power/pdus-cables';
             }
 
             if (preg_match('/\b(rack|cabinet|bracket|mount|tripod|stand off)\b/i', $name)) {
-                return $this->displayPath('networking/cabinets-racks');
+                return 'networking/cabinets-racks';
             }
 
-            if (preg_match('/\b(cable|patch|sfp|fibre|fiber|pigtail)\b/i', $name)) {
-                return $this->displayPath('peripherals/cables-adapters');
+            if (preg_match('/\b(cable|patch|sfp|fibre|fiber|pigtail|transceiver|optic)\b/i', $name)) {
+                return preg_match('/\b(sfp|fibre|fiber|transceiver|optic)\b/i', $name)
+                    ? 'networking/fibre-sfp'
+                    : 'peripherals/cables-adapters';
+            }
+
+            if (preg_match('/\b(monitor|display)\b/i', $name)) {
+                return 'monitors-displays/office-monitors';
+            }
+
+            if (preg_match('/\b(keyboard|mouse|webcam|headset|dock)\b/i', $name)) {
+                return 'peripherals';
+            }
+        }
+
+        if ($text !== '') {
+            if (preg_match('/\b(laptop|notebook)\b/i', $text) && preg_match('/\b(dell|hp|lenovo)\b/i', $brand)) {
+                return 'laptops-notebooks/business-laptops';
             }
         }
 
@@ -174,7 +254,7 @@ class CategoryMapperService
             }
         }
 
-        return $this->displayPath($slugPath ?? 'networking/access-points');
+        return $slugPath ?? 'peripherals';
     }
 
     public function resolveCategoryId(string $categories): ?int

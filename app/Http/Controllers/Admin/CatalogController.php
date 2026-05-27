@@ -10,6 +10,7 @@ use App\Services\GoogleMerchantService;
 use App\Services\ProductCleanupService;
 use App\Services\ProductExportService;
 use App\Services\ProductImportService;
+use App\Services\ProductSeoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -211,5 +212,23 @@ class CatalogController extends Controller
             'success',
             "Moved {$result['moved']} products into the canonical category tree and deactivated {$result['deactivated']} empty import categories."
         );
+    }
+
+    public function optimizeSeo(ProductSeoService $seo): RedirectResponse
+    {
+        try {
+            @set_time_limit(0);
+
+            $stats = $seo->optimizeCatalog();
+
+            return back()->with(
+                'success',
+                "SEO optimization complete: {$stats['categorized']} categories assigned, {$stats['meta_updated']} meta fields updated, {$stats['images_updated']} image alt tags updated ({$stats['processed']} products processed)."
+            );
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'SEO optimization failed: '.$e->getMessage());
+        }
     }
 }

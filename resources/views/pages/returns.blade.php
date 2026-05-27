@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Returns Policy | Urban Focus')
+@section('title', $pageSeo['title'] ?? 'Returns Policy | Urban Focus')
+@section('meta_description', $pageSeo['description'] ?? config('seo.defaults.description'))
 
 @section('content')
 <div class="page-hero">

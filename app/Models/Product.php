@@ -173,6 +173,12 @@ class Product extends Model
 
     public function imageAlt(): string
     {
+        $image = $this->images->firstWhere('is_primary', true) ?? $this->images->first();
+
+        if ($image && trim((string) $image->alt_text) !== '') {
+            return trim($image->alt_text);
+        }
+
         $parts = array_filter([$this->brand, $this->name, 'South Africa']);
 
         return implode(' — ', $parts);
