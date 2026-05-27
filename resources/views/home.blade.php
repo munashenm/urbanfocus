@@ -187,8 +187,6 @@
         'subtitle' => 'Switches, access points, routers and fibre for ISPs and businesses.',
         'url' => route('shop.index', ['category' => 'networking']),
         'products' => $networkingProducts,
-        'sectionKey' => 'networking',
-        'sectionBrands' => $sectionBrands,
         'bgLight' => true,
     ])
 @endif

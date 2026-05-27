@@ -113,9 +113,9 @@ return [
 
     /*
     | Brand logos shown above homepage product rows (slug order preserved).
+    | Networking uses product cards only — no logo strip.
     */
     'section_brands' => [
-        'networking' => ['ubiquiti', 'mikrotik', 'tp-link', 'cambium-networks', 'huawei'],
         'laptops-notebooks' => ['dell', 'hp', 'lenovo', 'microsoft'],
         'cctv-security' => ['hikvision', 'dahua'],
         'top_sellers' => ['ubiquiti', 'mikrotik', 'hikvision', 'dahua', 'tp-link', 'dell'],
@@ -125,7 +125,25 @@ return [
     | When loading category product rows, prefer these brand slugs first.
     */
     'section_product_brands' => [
-        'networking' => ['ubiquiti', 'mikrotik', 'tp-link', 'cambium-networks', 'huawei'],
         'laptops-notebooks' => ['dell', 'hp', 'lenovo'],
+    ],
+
+    /*
+    | Homepage Networking Solutions row — switches/APs/routers from major brands only.
+    */
+    'networking_showcase' => [
+        'brand_slugs' => [
+            'ubiquiti', 'mikrotik', 'tp-link', 'cambium-networks', 'huawei', 'cisco',
+        ],
+        'category_slugs' => [
+            'network-switches', 'access-points', 'routers-gateways', 'fibre-sfp',
+        ],
+        'exclude_brands' => [
+            'Locally Sourced', 'Linkbasic', 'Scoop', 'Rackstuds', 'Cudy', 'Reyee',
+        ],
+        'exclude_name_terms' => [
+            'trunking', 'bracket', 'mount', 'rack stud', 'cable tray', 'patch panel',
+            'stand off', 'tripod', 'pigtail', 'patch cord', 'cable tie',
+        ],
     ],
 ];

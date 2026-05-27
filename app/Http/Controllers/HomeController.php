@@ -32,11 +32,7 @@ class HomeController extends Controller
 
         $topSellers = $this->remember('home.top_sellers_v2', fn () => $this->topSellerProducts(8));
 
-        $networkingProducts = $this->remember('home.networking_v2', fn () => $this->categoryProducts(
-            'networking',
-            8,
-            config('homepage.section_product_brands.networking', [])
-        ));
+        $networkingProducts = $this->remember('home.networking_v3', fn () => $this->networkingShowcaseProducts(8));
 
         $laptopProducts = $this->remember('home.laptops_v2', fn () => $this->categoryProducts(
             'laptops-notebooks',
@@ -137,13 +133,109 @@ class HomeController extends Controller
                     ->take($limit)
                     ->get();
 
-                if ($preferred->count() >= min(4, $limit)) {
+                if ($preferred->isNotEmpty()) {
                     return $preferred;
                 }
             }
         }
 
         return $base->latest()->take($limit)->get();
+    }
+
+    protected function networkingShowcaseProducts(int $limit)
+    {
+        $config = config('homepage.networking_showcase', []);
+        $brandSlugs = $config['brand_slugs'] ?? [];
+        $brandNames = $this->brandNamesForSlugs($brandSlugs);
+
+        if ($brandNames === []) {
+            return collect();
+        }
+
+        $categoryIds = $this->categoryIdsForSlugs($config['category_slugs'] ?? []);
+        if ($categoryIds === []) {
+            $categoryIds = $this->categoryIdsForSlugs(['networking']);
+        }
+
+        $query = Product::with('images')
+            ->forStorefront()
+            ->whereIn('category_id', $categoryIds)
+            ->whereIn(DB::raw('LOWER(TRIM(brand))'), $brandNames);
+
+        $this->applyExcludedBrands($query, $config['exclude_brands'] ?? []);
+        $this->applyExcludedNameTerms($query, $config['exclude_name_terms'] ?? []);
+
+        $query->orderByRaw(
+            "CASE
+                WHEN LOWER(name) LIKE '%switch%' OR LOWER(name) LIKE '% crs%' OR LOWER(name) LIKE '%catalyst%' THEN 0
+                WHEN LOWER(name) LIKE '%access point%' OR LOWER(name) LIKE '% u6-%' OR LOWER(name) LIKE '% u7-%' OR LOWER(name) LIKE '%unifi ap%' THEN 1
+                WHEN LOWER(name) LIKE '%router%' OR LOWER(name) LIKE '%routerboard%' OR LOWER(name) LIKE '% hap%' OR LOWER(name) LIKE '%gateway%' THEN 2
+                ELSE 3
+            END"
+        );
+
+        $results = $query
+            ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
+            ->take($limit)
+            ->get();
+
+        if ($results->count() < min(4, $limit)) {
+            $fallback = $this->networkingShowcaseFallback($limit, $brandNames, $config);
+
+            return $fallback->count() > $results->count() ? $fallback : $results;
+        }
+
+        return $results;
+    }
+
+    /** @param list<string> $brandNames @param array<string, mixed> $config */
+    protected function networkingShowcaseFallback(int $limit, array $brandNames, array $config)
+    {
+        $categoryIds = $this->categoryIdsForSlugs(['networking']);
+
+        $query = Product::with('images')
+            ->forStorefront()
+            ->whereIn('category_id', $categoryIds)
+            ->whereIn(DB::raw('LOWER(TRIM(brand))'), $brandNames);
+
+        $this->applyExcludedBrands($query, $config['exclude_brands'] ?? []);
+        $this->applyExcludedNameTerms($query, $config['exclude_name_terms'] ?? []);
+
+        $query->orderByRaw(
+            "CASE
+                WHEN LOWER(name) LIKE '%switch%' OR LOWER(name) LIKE '% crs%' OR LOWER(name) LIKE '%catalyst%' THEN 0
+                WHEN LOWER(name) LIKE '%access point%' OR LOWER(name) LIKE '% u6-%' OR LOWER(name) LIKE '% u7-%' OR LOWER(name) LIKE '%unifi ap%' THEN 1
+                WHEN LOWER(name) LIKE '%router%' OR LOWER(name) LIKE '%routerboard%' OR LOWER(name) LIKE '% hap%' OR LOWER(name) LIKE '%gateway%' THEN 2
+                ELSE 3
+            END"
+        );
+
+        return $query
+            ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
+            ->take($limit)
+            ->get();
+    }
+
+    /** @param list<string> $brands */
+    protected function applyExcludedBrands($query, array $brands): void
+    {
+        foreach ($brands as $brand) {
+            $brand = mb_strtolower(trim($brand));
+            if ($brand !== '') {
+                $query->whereRaw('LOWER(TRIM(brand)) != ?', [$brand]);
+            }
+        }
+    }
+
+    /** @param list<string> $terms */
+    protected function applyExcludedNameTerms($query, array $terms): void
+    {
+        foreach ($terms as $term) {
+            $term = trim($term);
+            if ($term !== '') {
+                $query->where('name', 'not like', '%'.$term.'%');
+            }
+        }
     }
 
     /** @param list<string> $slugs @return list<string> */
