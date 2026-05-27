@@ -84,6 +84,19 @@ try {
         echo "✓ /blog loads successfully.\n";
     }
     $http->terminate($request, $response);
+
+    $request = Illuminate\Http\Request::create("https://{$host}/blog/category/networking", 'GET', [], [], [], [
+        'HTTP_HOST' => $host,
+        'HTTPS' => 'on',
+    ]);
+    $response = $http->handle($request);
+    echo '/blog/category/networking status: '.$response->getStatusCode()."\n";
+    if ($response->getStatusCode() >= 400) {
+        echo substr(strip_tags($response->getContent()), 0, 400)."\n";
+    } else {
+        echo "✓ Category archive loads successfully.\n";
+    }
+    $http->terminate($request, $response);
 } catch (Throwable $e) {
     echo "ERROR: ".$e->getMessage()."\n";
     echo $e->getFile().':'.$e->getLine()."\n";

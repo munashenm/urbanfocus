@@ -57,13 +57,17 @@ class BlogController extends Controller
         ));
     }
 
-    public function category(string $category): View
+    public function category(string $category): View|\Illuminate\Http\RedirectResponse
     {
         abort_unless(array_key_exists($category, config('blog.categories', [])), 404);
 
+        if (! BlogSchema::hasColumn('category')) {
+            return redirect()->route('blog.index', ['category' => $category]);
+        }
+
         $meta = config("blog.categories.{$category}");
         $articles = BlogSchema::withOptionalRelations(
-            Article::published()->where('category', $category)->latest('published_at')
+            Article::published()->inCategory($category)->latest('published_at')
         )->paginate(12);
 
         $pagination = $this->seo->paginationMeta($articles);

@@ -143,4 +143,5 @@ After Plan B setup, `public_html` should only contain:
 | Pull overwrites nothing | Git may still point at `public_html` — move Git to `urbanfocus` |
 | 404 on `/admin/users` | Clear route cache with `clear-cache.php` |
 | `.env` missing after clone | Copy from backup or `.env.example` |
-| `vendor` missing after clone | Re-upload `vendor` or download GitHub Actions artifact |
+| Pull blocked on `deploy/clear-cache.php` | Delete `urbanfocus/deploy/clear-cache.php`, pull again, copy to `public_html` and set key there only |
+| `/blog/category/*` 500 | Run migrate (`clear-cache.php?migrate=1`). Category column must exist — migration `000091` |
