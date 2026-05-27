@@ -5,14 +5,7 @@
                 <a href="{{ route('home') }}" class="site-logo site-logo--footer d-inline-block mb-3">
                     <img src="{{ asset('images/logo-footer.png') }}" alt="Urban Focus" width="253" height="24" class="footer-logo" loading="lazy">
                 </a>
-                <p class="text-white-50 mb-2">Professional South African IT distributor — networking, enterprise hardware, CCTV, fibre solutions and software licensing for business procurement.</p>
-                <p class="text-white-50 small mb-3">VAT-compliant tax invoices · Authorised brand supply · Nationwide courier delivery</p>
-                @if(config('business.vat_number') || config('business.company_reg'))
-                    <p class="text-white-50 small mb-3">
-                        @if(config('business.vat_number'))<span class="d-block">VAT No: {{ config('business.vat_number') }}</span>@endif
-                        @if(config('business.company_reg'))<span class="d-block">Reg No: {{ config('business.company_reg') }}</span>@endif
-                    </p>
-                @endif
+                <p class="text-white-50 mb-3">Professional South African IT distributor — networking, enterprise hardware, CCTV, fibre solutions and software licensing for business procurement.</p>
                 @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-2'])
                 <div class="mt-4">
                     <h6 class="text-white mb-2">Deals &amp; Updates</h6>
