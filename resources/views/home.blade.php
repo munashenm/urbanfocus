@@ -158,55 +158,39 @@
 @endif
 
 @if($topSellers->count())
-<section class="py-5 bg-light">
-    <div class="container">
-        @include('partials.section-header', [
-            'title' => 'Top Sellers',
-            'subtitle' => 'Networking, security and IT products from leading brands like Dahua, TP-Link, Ubiquiti, Dell and Hikvision.',
-            'url' => route('shop.index', ['category' => 'networking', 'sort' => 'popular']),
-            'linkLabel' => 'View All',
-        ])
-        <div class="row g-4">
-            @foreach($topSellers as $product)
-                <div class="col-6 col-md-4 col-lg-3">@include('partials.product-card', ['product' => $product])</div>
-            @endforeach
-        </div>
-    </div>
-</section>
+    @include('partials.home-product-section', [
+        'title' => 'Top Sellers',
+        'subtitle' => 'Networking, security and IT products from leading brands like Dahua, TP-Link, Ubiquiti, Dell and Hikvision.',
+        'url' => route('shop.index', ['category' => 'networking', 'sort' => 'popular']),
+        'linkLabel' => 'View All',
+        'products' => $topSellers,
+        'sectionKey' => 'top_sellers',
+        'sectionBrands' => $sectionBrands,
+        'bgLight' => true,
+    ])
 @endif
 
 @if($laptopProducts->count())
-<section class="py-5">
-    <div class="container">
-        @include('partials.section-header', [
-            'title' => 'Business Laptops',
-            'subtitle' => 'Corporate notebooks and mobile workstations from Dell, HP, Lenovo and more.',
-            'url' => route('shop.index', ['category' => 'laptops-notebooks']),
-        ])
-        <div class="row g-4">
-            @foreach($laptopProducts as $product)
-                <div class="col-6 col-md-4 col-lg-3">@include('partials.product-card', ['product' => $product])</div>
-            @endforeach
-        </div>
-    </div>
-</section>
+    @include('partials.home-product-section', [
+        'title' => 'Business Laptops',
+        'subtitle' => 'Corporate notebooks and mobile workstations from Dell, HP, Lenovo and more.',
+        'url' => route('shop.index', ['category' => 'laptops-notebooks']),
+        'products' => $laptopProducts,
+        'sectionKey' => 'laptops-notebooks',
+        'sectionBrands' => $sectionBrands,
+    ])
 @endif
 
 @if($networkingProducts->count())
-<section class="py-5 bg-light">
-    <div class="container">
-        @include('partials.section-header', [
-            'title' => 'Networking Solutions',
-            'subtitle' => 'Switches, access points, routers and fibre for ISPs and businesses.',
-            'url' => route('shop.index', ['category' => 'networking']),
-        ])
-        <div class="row g-4">
-            @foreach($networkingProducts as $product)
-                <div class="col-6 col-md-4 col-lg-3">@include('partials.product-card', ['product' => $product])</div>
-            @endforeach
-        </div>
-    </div>
-</section>
+    @include('partials.home-product-section', [
+        'title' => 'Networking Solutions',
+        'subtitle' => 'Switches, access points, routers and fibre for ISPs and businesses.',
+        'url' => route('shop.index', ['category' => 'networking']),
+        'products' => $networkingProducts,
+        'sectionKey' => 'networking',
+        'sectionBrands' => $sectionBrands,
+        'bgLight' => true,
+    ])
 @endif
 
 @if($featuredProducts->count())

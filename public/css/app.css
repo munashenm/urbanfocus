@@ -606,6 +606,30 @@ a:hover { color: var(--uf-blue); }
 .filter-sidebar { background: var(--uf-gray-100); border-radius: 12px; padding: 1.25rem; }
 .brand-showcase { border-top: 1px solid var(--uf-gray-200); border-bottom: 1px solid var(--uf-gray-200); }
 
+.section-brand-strip {
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    border: 1px solid var(--uf-gray-200);
+    border-radius: 12px;
+}
+.bg-light .section-brand-strip {
+    box-shadow: 0 1px 3px rgba(10, 22, 40, 0.04);
+}
+.section-brand-strip .brand-carousel {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+.section-brand-strip .brand-logo-card {
+    flex: 0 0 auto;
+    min-width: 108px;
+    min-height: 52px;
+}
+
 @media (max-width: 768px) {
     .hero-carousel .carousel-item { min-height: 320px; }
     .product-card-image img { height: 160px; }

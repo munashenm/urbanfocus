@@ -32,9 +32,17 @@ class HomeController extends Controller
 
         $topSellers = $this->remember('home.top_sellers_v2', fn () => $this->topSellerProducts(8));
 
-        $networkingProducts = $this->remember('home.networking', fn () => $this->categoryProducts('networking', 8));
+        $networkingProducts = $this->remember('home.networking_v2', fn () => $this->categoryProducts(
+            'networking',
+            8,
+            config('homepage.section_product_brands.networking', [])
+        ));
 
-        $laptopProducts = $this->remember('home.laptops', fn () => $this->categoryProducts('laptops-notebooks', 8));
+        $laptopProducts = $this->remember('home.laptops_v2', fn () => $this->categoryProducts(
+            'laptops-notebooks',
+            8,
+            config('homepage.section_product_brands.laptops-notebooks', [])
+        ));
 
         $categories = $this->remember('home.categories', fn () => Category::where('is_active', true)
             ->whereNull('parent_id')
@@ -68,15 +76,45 @@ class HomeController extends Controller
         $heroSlides = config('homepage.hero_slides', []);
         $solutionBlocks = config('homepage.solution_blocks', []);
         $categoryIcons = config('homepage.category_icons', []);
+        $sectionBrands = $this->remember('home.section_brands', fn () => $this->sectionBrands());
 
         return view('home', compact(
             'featuredProducts', 'dealProducts', 'topSellers', 'networkingProducts',
             'laptopProducts', 'categories', 'newProducts', 'brands', 'banners',
-            'articles', 'heroSlides', 'solutionBlocks', 'categoryIcons'
+            'articles', 'heroSlides', 'solutionBlocks', 'categoryIcons', 'sectionBrands'
         ));
     }
 
-    protected function categoryProducts(string $slug, int $limit)
+    /** @return array<string, \Illuminate\Support\Collection<int, Brand>> */
+    protected function sectionBrands(): array
+    {
+        $map = config('homepage.section_brands', []);
+        $result = [];
+
+        if (! Schema::hasTable('brands') || $map === []) {
+            return $result;
+        }
+
+        $allSlugs = collect($map)->flatten()->unique()->values()->all();
+        $bySlug = Brand::where('is_active', true)
+            ->whereIn('slug', $allSlugs)
+            ->get()
+            ->keyBy('slug');
+
+        foreach ($map as $section => $slugs) {
+            $result[$section] = collect($slugs)
+                ->map(fn (string $slug) => $bySlug->get($slug))
+                ->filter()
+                ->values();
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  list<string>  $preferredBrandSlugs
+     */
+    protected function categoryProducts(string $slug, int $limit, array $preferredBrandSlugs = [])
     {
         $category = Category::where('slug', $slug)->first();
         if (! $category) {
@@ -85,12 +123,42 @@ class HomeController extends Controller
 
         $ids = Category::descendantIds($category->id);
 
-        return Product::with('images')
+        $base = Product::with('images')
             ->forStorefront()
-            ->whereIn('category_id', $ids)
-            ->latest()
-            ->take($limit)
-            ->get();
+            ->whereIn('category_id', $ids);
+
+        if ($preferredBrandSlugs !== []) {
+            $brandNames = $this->brandNamesForSlugs($preferredBrandSlugs);
+
+            if ($brandNames !== []) {
+                $preferred = (clone $base)
+                    ->whereIn(DB::raw('LOWER(TRIM(brand))'), $brandNames)
+                    ->latest()
+                    ->take($limit)
+                    ->get();
+
+                if ($preferred->count() >= min(4, $limit)) {
+                    return $preferred;
+                }
+            }
+        }
+
+        return $base->latest()->take($limit)->get();
+    }
+
+    /** @param list<string> $slugs @return list<string> */
+    protected function brandNamesForSlugs(array $slugs): array
+    {
+        if (! Schema::hasTable('brands')) {
+            return [];
+        }
+
+        return Brand::where('is_active', true)
+            ->whereIn('slug', $slugs)
+            ->pluck('name')
+            ->map(fn (string $name) => mb_strtolower(trim($name)))
+            ->values()
+            ->all();
     }
 
     protected function topSellerProducts(int $limit)

@@ -110,4 +110,22 @@ return [
         'monitors-displays',
         'ups-power',
     ],
+
+    /*
+    | Brand logos shown above homepage product rows (slug order preserved).
+    */
+    'section_brands' => [
+        'networking' => ['ubiquiti', 'mikrotik', 'tp-link', 'cambium-networks', 'huawei'],
+        'laptops-notebooks' => ['dell', 'hp', 'lenovo', 'microsoft'],
+        'cctv-security' => ['hikvision', 'dahua'],
+        'top_sellers' => ['ubiquiti', 'mikrotik', 'hikvision', 'dahua', 'tp-link', 'dell'],
+    ],
+
+    /*
+    | When loading category product rows, prefer these brand slugs first.
+    */
+    'section_product_brands' => [
+        'networking' => ['ubiquiti', 'mikrotik', 'tp-link', 'cambium-networks', 'huawei'],
+        'laptops-notebooks' => ['dell', 'hp', 'lenovo'],
+    ],
 ];
