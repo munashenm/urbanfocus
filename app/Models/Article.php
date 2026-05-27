@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class Article extends Model
@@ -194,12 +195,16 @@ class Article extends Model
 
     public function scopeFeatured($query)
     {
-        return $query->where('is_featured', true);
+        if (Schema::hasColumn('articles', 'is_featured')) {
+            return $query->where('is_featured', true);
+        }
+
+        return $query;
     }
 
     public function scopeInCategory($query, ?string $category)
     {
-        if ($category && array_key_exists($category, config('blog.categories', []))) {
+        if ($category && array_key_exists($category, config('blog.categories', [])) && Schema::hasColumn('articles', 'category')) {
             $query->where('category', $category);
         }
 
@@ -208,6 +213,10 @@ class Article extends Model
 
     public function scopeWithTag($query, string $tagSlug)
     {
+        if (! Schema::hasTable('tags') || ! Schema::hasTable('article_tag')) {
+            return $query->whereRaw('1 = 0');
+        }
+
         return $query->whereHas('tags', fn ($q) => $q->where('slug', $tagSlug));
     }
 }

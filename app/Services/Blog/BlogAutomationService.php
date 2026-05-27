@@ -14,9 +14,13 @@ class BlogAutomationService
 
     public function process(Article $article, bool $save = true): Article
     {
+        if (! \App\Services\Blog\BlogSchema::hasArticlesTable()) {
+            return $article;
+        }
+
         $article = $this->seo->optimize($article);
 
-        if (config('blog_automation.auto_internal_links', true) && $article->content) {
+        if (config('blog_automation.auto_internal_links', true) && $article->content && \App\Services\Blog\BlogSchema::hasArticlesTable()) {
             $article->content = $this->linking->enrich($article);
         }
 

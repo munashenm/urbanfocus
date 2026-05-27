@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\Author;
 use App\Models\Tag;
+use App\Services\Blog\BlogSchema;
 use App\Services\Blog\BlogSeoService;
 use App\Services\Blog\BlogTocService;
 use App\Services\SeoService;
@@ -24,19 +25,21 @@ class BlogController extends Controller
         $activeCategory = $request->query('category');
         $categories = config('blog.categories', []);
 
-        $featured = Article::published()
-            ->featured()
-            ->latest('published_at')
-            ->first();
+        $featured = null;
+        if (BlogSchema::hasFeatured()) {
+            $featured = Article::published()
+                ->featured()
+                ->latest('published_at')
+                ->first();
+        }
 
         if (! $featured) {
             $featured = Article::published()->latest('published_at')->first();
         }
 
-        $articlesQuery = Article::published()
-            ->with(['author', 'tags'])
-            ->inCategory($activeCategory)
-            ->latest('published_at');
+        $articlesQuery = BlogSchema::withOptionalRelations(
+            Article::published()->inCategory($activeCategory)->latest('published_at')
+        );
 
         if ($featured) {
             $articlesQuery->where('id', '!=', $featured->id);
@@ -59,11 +62,9 @@ class BlogController extends Controller
         abort_unless(array_key_exists($category, config('blog.categories', [])), 404);
 
         $meta = config("blog.categories.{$category}");
-        $articles = Article::published()
-            ->with(['author', 'tags'])
-            ->where('category', $category)
-            ->latest('published_at')
-            ->paginate(12);
+        $articles = BlogSchema::withOptionalRelations(
+            Article::published()->where('category', $category)->latest('published_at')
+        )->paginate(12);
 
         $pagination = $this->seo->paginationMeta($articles);
 
@@ -79,11 +80,11 @@ class BlogController extends Controller
 
     public function tag(Tag $tag): View
     {
-        $articles = Article::published()
-            ->with(['author', 'tags'])
-            ->withTag($tag->slug)
-            ->latest('published_at')
-            ->paginate(12);
+        abort_unless(BlogSchema::hasTags(), 404);
+
+        $articles = BlogSchema::withOptionalRelations(
+            Article::published()->withTag($tag->slug)->latest('published_at')
+        )->paginate(12);
 
         $pagination = $this->seo->paginationMeta($articles);
 
@@ -100,13 +101,11 @@ class BlogController extends Controller
 
     public function author(Author $author): View
     {
-        abort_unless($author->is_active, 404);
+        abort_unless($author->is_active && BlogSchema::hasAuthors(), 404);
 
-        $articles = $author->articles()
-            ->published()
-            ->with('tags')
-            ->latest('published_at')
-            ->paginate(12);
+        $articles = BlogSchema::withOptionalRelations(
+            $author->articles()->published()->latest('published_at')
+        )->paginate(12);
 
         $pagination = $this->seo->paginationMeta($articles);
 
@@ -123,49 +122,54 @@ class BlogController extends Controller
 
     public function show(Article $article): View
     {
-        $article->load(['author', 'tags']);
-        $article->increment('views');
+        if (BlogSchema::hasAuthors() || BlogSchema::hasTags()) {
+            $with = array_filter([
+                BlogSchema::hasAuthors() ? 'author' : null,
+                BlogSchema::hasTags() ? 'tags' : null,
+            ]);
+            $article->load($with);
+        }
 
-        $related = Article::published()
-            ->with(['author', 'tags'])
-            ->where('id', '!=', $article->id)
-            ->when(
-                $article->categoryKey(),
-                fn ($q) => $q->where('category', $article->categoryKey()),
-                fn ($q) => $q
-            )
-            ->latest('published_at')
-            ->take(3)
-            ->get();
+        if (BlogSchema::hasColumn('views')) {
+            $article->increment('views');
+        }
 
-        if ($related->count() < 3 && $article->tags->isNotEmpty()) {
-            $tagIds = $article->tags->pluck('id');
-            $tagRelated = Article::published()
-                ->with(['author', 'tags'])
+        $related = BlogSchema::withOptionalRelations(
+            Article::published()
                 ->where('id', '!=', $article->id)
-                ->whereNotIn('id', $related->pluck('id'))
-                ->whereHas('tags', fn ($q) => $q->whereIn('tags.id', $tagIds))
+                ->when(
+                    $article->categoryKey() && BlogSchema::hasColumn('category'),
+                    fn ($q) => $q->where('category', $article->categoryKey()),
+                    fn ($q) => $q
+                )
                 ->latest('published_at')
-                ->take(3 - $related->count())
-                ->get();
+        )->take(3)->get();
+
+        if ($related->count() < 3 && BlogSchema::hasTags() && $article->relationLoaded('tags') && $article->tags->isNotEmpty()) {
+            $tagIds = $article->tags->pluck('id');
+            $tagRelated = BlogSchema::withOptionalRelations(
+                Article::published()
+                    ->where('id', '!=', $article->id)
+                    ->whereNotIn('id', $related->pluck('id'))
+                    ->whereHas('tags', fn ($q) => $q->whereIn('tags.id', $tagIds))
+                    ->latest('published_at')
+            )->take(3 - $related->count())->get();
             $related = $related->merge($tagRelated);
         }
 
         if ($related->count() < 3) {
-            $related = Article::published()
-                ->with(['author', 'tags'])
-                ->where('id', '!=', $article->id)
-                ->whereNotIn('id', $related->pluck('id'))
-                ->latest('published_at')
-                ->take(3 - $related->count())
-                ->get()
-                ->merge($related);
+            $related = BlogSchema::withOptionalRelations(
+                Article::published()
+                    ->where('id', '!=', $article->id)
+                    ->whereNotIn('id', $related->pluck('id'))
+                    ->latest('published_at')
+            )->take(3 - $related->count())->get()->merge($related);
         }
 
         $content = $article->content ?? '';
         $tocItems = [];
 
-        if ($article->toc_enabled && $content !== '') {
+        if (BlogSchema::hasColumn('toc_enabled') && $article->toc_enabled && $content !== '') {
             $processed = $this->toc->process($content);
             $content = $processed['html'];
             $tocItems = $processed['items'];

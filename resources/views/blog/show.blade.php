@@ -37,7 +37,7 @@
                 <p class="small text-muted mb-0">
                     By <a href="{{ $article->author ? route('blog.author', $article->author) : route('blog.index') }}">{{ $article->authorName() }}</a>
                 </p>
-                @if($article->tags->isNotEmpty())
+                @if($article->relationLoaded('tags') && $article->tags->isNotEmpty())
                     <div class="d-flex flex-wrap gap-1 mt-2">
                         @foreach($article->tags as $tag)
                             <a href="{{ route('blog.tag', $tag) }}" class="badge bg-light text-dark text-decoration-none">{{ $tag->name }}</a>
