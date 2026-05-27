@@ -38,7 +38,7 @@
     @foreach($brandItems as $brand)
         <a href="{{ $brand['url'] }}" class="brand-logo-card" title="{{ $brand['name'] }}">
             @if(!empty($brand['logo']))
-                <img src="{{ asset($brand['logo']) }}" alt="{{ $brand['name'] }}" loading="lazy" height="36">
+                <img src="{{ asset($brand['logo']) }}" alt="{{ $brand['name'] }}" loading="lazy" width="120" height="36">
             @else
                 <span class="brand-logo-fallback">{{ $brand['name'] }}</span>
             @endif
