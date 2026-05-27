@@ -94,6 +94,7 @@ class NewsSyncService
                 'source_url' => $link,
                 'source_name' => $sourceName,
                 'external_id' => $externalId,
+                'category' => 'news',
                 'is_published' => ! config('news.publish_as_draft', true),
                 'published_at' => config('news.publish_as_draft', true) ? null : $publishedAt,
             ]);
@@ -150,6 +151,7 @@ class NewsSyncService
                 'source_url' => $link,
                 'source_name' => $sourceName,
                 'external_id' => $externalId,
+                'category' => 'news',
                 'is_published' => ! config('news.publish_as_draft', true),
                 'published_at' => config('news.publish_as_draft', true) ? null : now(),
             ]);

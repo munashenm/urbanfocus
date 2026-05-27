@@ -15,7 +15,7 @@ class SeoService
 {
     public function sitemapXml(): string
     {
-        return $this->rememberSitemap('sitemap.main.v2', function () {
+        return $this->rememberSitemap('sitemap.main.v3', function () {
             $urls = $this->baseUrls();
 
             Category::where('is_active', true)->visibleInCatalog()->get()->each(function (Category $category) use (&$urls) {
@@ -197,7 +197,7 @@ class SeoService
 
     public function clearCache(): void
     {
-        foreach (['sitemap.xml', 'sitemap-images.xml', 'sitemap.main.v2', 'sitemap.images.v2'] as $key) {
+        foreach (['sitemap.xml', 'sitemap-images.xml', 'sitemap.main.v2', 'sitemap.main.v3', 'sitemap.images.v2'] as $key) {
             Cache::forget($key);
         }
 
@@ -267,6 +267,14 @@ class SeoService
         }
 
         if (Schema::hasTable('articles')) {
+            foreach (array_keys(config('blog.categories', [])) as $categoryKey) {
+                $urls[] = [
+                    'loc' => route('blog.category', $categoryKey),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.55',
+                ];
+            }
+
             Article::published()->get()->each(function (Article $article) use (&$urls) {
                 $urls[] = [
                     'loc' => route('blog.show', $article),
@@ -275,6 +283,32 @@ class SeoService
                     'priority' => '0.6',
                 ];
             });
+        }
+
+        if (Schema::hasTable('tags')) {
+            \App\Models\Tag::query()
+                ->whereHas('articles', fn ($q) => $q->published())
+                ->get()
+                ->each(function (\App\Models\Tag $tag) use (&$urls) {
+                    $urls[] = [
+                        'loc' => route('blog.tag', $tag),
+                        'changefreq' => 'weekly',
+                        'priority' => '0.5',
+                    ];
+                });
+        }
+
+        if (Schema::hasTable('authors')) {
+            \App\Models\Author::where('is_active', true)
+                ->whereHas('articles', fn ($q) => $q->published())
+                ->get()
+                ->each(function (\App\Models\Author $author) use (&$urls) {
+                    $urls[] = [
+                        'loc' => route('blog.author', $author),
+                        'changefreq' => 'monthly',
+                        'priority' => '0.5',
+                    ];
+                });
         }
 
         foreach (array_keys(config('seo_landings', [])) as $landingSlug) {

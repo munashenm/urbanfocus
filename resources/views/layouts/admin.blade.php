@@ -38,6 +38,7 @@
                 <a class="nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}" href="{{ route('admin.banners.index') }}">Banners</a>
                 <a class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">Coupons</a>
                 <a class="nav-link {{ request()->routeIs('admin.articles.*') ? 'active' : '' }}" href="{{ route('admin.articles.index') }}">Blog</a>
+                <a class="nav-link {{ request()->routeIs('admin.blog-strategy.*') ? 'active' : '' }}" href="{{ route('admin.blog-strategy.index') }}">Content Strategy</a>
                 <a class="nav-link {{ request()->routeIs('admin.social.*') ? 'active' : '' }}" href="{{ route('admin.social.index') }}">Social Media</a>
                 @endif
                 <hr>

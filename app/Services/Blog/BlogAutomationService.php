@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Services\Blog;
+
+use App\Models\Article;
+
+class BlogAutomationService
+{
+    public function __construct(
+        protected BlogSeoService $seo,
+        protected BlogInternalLinkingService $linking,
+        protected BlogSocialSnippetService $social,
+    ) {}
+
+    public function process(Article $article, bool $save = true): Article
+    {
+        $article = $this->seo->optimize($article);
+
+        if (config('blog_automation.auto_internal_links', true) && $article->content) {
+            $article->content = $this->linking->enrich($article);
+        }
+
+        if (config('blog_automation.auto_social_snippets', true)) {
+            $article->social_snippets = $this->social->generate($article);
+        }
+
+        if ($save && $article->exists) {
+            $article->saveQuietly();
+        }
+
+        return $article;
+    }
+}

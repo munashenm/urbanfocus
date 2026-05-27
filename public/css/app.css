@@ -592,8 +592,24 @@ a:hover { color: var(--uf-blue); }
 .testimonial-card { background: #fff; border: 1px solid var(--uf-gray-200); border-radius: 12px; padding: 1.5rem; }
 .testimonial-stars { color: #f59e0b; letter-spacing: 2px; }
 .testimonial-quote { font-size: 0.95rem; color: var(--uf-muted); font-style: italic; }
-.article-card { border: 1px solid var(--uf-gray-200); border-radius: 12px; text-decoration: none; color: var(--uf-navy); transition: border-color 0.2s; }
-.article-card:hover { border-color: var(--uf-blue); color: var(--uf-navy); }
+.article-card { border: 1px solid var(--uf-gray-200); border-radius: 12px; text-decoration: none; color: var(--uf-navy); transition: border-color 0.2s, box-shadow 0.2s; overflow: hidden; background: #fff; }
+.article-card:hover { border-color: var(--uf-blue); color: var(--uf-navy); box-shadow: 0 8px 24px rgba(10,22,40,0.08); }
+.article-card-image img { width: 100%; height: 200px; object-fit: cover; display: block; background: var(--uf-gray-100); }
+.article-card-body { padding: 1.25rem; }
+.article-card-title { font-weight: 700; margin-bottom: 0.5rem; }
+.article-card-excerpt { color: var(--uf-muted); font-size: 0.925rem; }
+.article-card-link { display: inline-block; margin-top: 0.75rem; font-size: 0.875rem; font-weight: 600; color: var(--uf-blue); }
+.article-card--featured { display: grid; grid-template-columns: 1.1fr 1fr; gap: 0; }
+.article-card--featured .article-card-image img { height: 100%; min-height: 280px; }
+@media (max-width: 768px) {
+    .article-card--featured { grid-template-columns: 1fr; }
+    .article-card--featured .article-card-image img { min-height: 200px; height: 200px; }
+}
+.article-category-badge { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 999px; background: rgba(0,136,255,0.1); color: var(--uf-blue); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.blog-category-nav .btn { border-radius: 999px; }
+.blog-cta-panel, .blog-sidebar-card { border: 1px solid var(--uf-gray-200); border-radius: 12px; padding: 1.25rem; background: #fff; }
+.bg-light .blog-cta-panel { background: #fff; }
+.article-featured-image img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--uf-gray-200); }
 .brand-hero-logo { max-height: 48px; width: auto; }
 .subcategory-chips .btn { border-radius: 999px; }
 .product-card-image img { width: 100%; height: 220px; object-fit: contain; background: #f8fafc; padding: 0.5rem; }
@@ -694,6 +710,16 @@ a:hover { color: var(--uf-blue); }
     border: 1px solid var(--uf-gray-200);
     padding: 0.5rem 0.75rem;
 }
+
+.blog-toc {
+    background: var(--uf-gray-100);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+}
+.blog-toc a { text-decoration: none; color: var(--uf-navy); }
+.blog-toc a:hover { color: var(--uf-blue); }
+.blog-related-products { background: #f8fafc; border-radius: 12px; padding: 1.25rem; }
+.blog-faq .accordion-button { font-weight: 600; }
 
 .checkout-card.sticky-top { top: calc(var(--header-height) + 1rem); }
 

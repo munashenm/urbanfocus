@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="CCTV">
+  <rect width="640" height="360" fill="#172554"/>
+  <rect x="250" y="110" width="140" height="90" rx="18" fill="#1e3a8a" stroke="#0088ff" stroke-width="3"/>
+  <circle cx="320" cy="155" r="28" fill="#0a1628" stroke="#38bdf8" stroke-width="4"/>
+  <text x="48" y="72" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">CCTV &amp; Security</text>
+</svg>

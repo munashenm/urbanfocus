@@ -218,10 +218,7 @@
         <div class="row g-4">
             @foreach($articles as $article)
                 <div class="col-md-4">
-                    <a href="{{ route('blog.show', $article) }}" class="article-card d-block h-100">
-                        <h3 class="h6 fw-bold">{{ $article->title }}</h3>
-                        <p class="small text-muted mb-0">{{ \Illuminate\Support\Str::limit($article->excerpt, 120) }}</p>
-                    </a>
+                    @include('partials.article-card', ['article' => $article])
                 </div>
             @endforeach
         </div>

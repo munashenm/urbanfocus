@@ -25,13 +25,16 @@ class SocialPostFormatter
     public function article(Article $article): array
     {
         $url = route('blog.show', $article);
-        $message = trim("{$article->title}\n".Str::limit(strip_tags($article->excerpt ?: ''), 120)."\n{$url}\n".config('social-posting.hashtags'));
-        $imageUrl = $article->image ? storage_public_url($article->image) : null;
+        $snippets = $article->socialSnippetList();
+
+        $message = $snippets['x'] ?? $snippets['facebook'] ?? trim("{$article->title}\n".Str::limit(strip_tags($article->excerpt ?: ''), 120)."\n{$url}\n".config('social-posting.hashtags'));
+        $imageUrl = $article->displayImageUrl();
 
         return [
             'message' => Str::limit($message, 280, ''),
             'link_url' => $url,
-            'image_url' => $imageUrl ? $this->absoluteUrl($imageUrl) : null,
+            'image_url' => $this->absoluteUrl($imageUrl),
+            'snippets' => $snippets,
         ];
     }
 

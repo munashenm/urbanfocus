@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="Industry news">
+  <rect width="640" height="360" fill="#0f172a"/>
+  <rect x="80" y="110" width="480" height="24" rx="6" fill="#0088ff" opacity="0.35"/>
+  <rect x="80" y="150" width="420" height="12" rx="6" fill="#ffffff" opacity="0.85"/>
+  <rect x="80" y="175" width="460" height="12" rx="6" fill="#94a3b8"/>
+  <rect x="80" y="200" width="380" height="12" rx="6" fill="#94a3b8"/>
+  <text x="48" y="72" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">Industry News</text>
+</svg>

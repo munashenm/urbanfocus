@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="Networking">
+  <rect width="640" height="360" fill="#0f2744"/>
+  <circle cx="500" cy="100" r="130" fill="#0088ff" opacity="0.2"/>
+  <rect x="180" y="130" width="280" height="100" rx="12" fill="#ffffff" opacity="0.12" stroke="#0088ff" stroke-width="3"/>
+  <circle cx="220" cy="180" r="10" fill="#38bdf8"/><circle cx="260" cy="180" r="10" fill="#38bdf8"/><circle cx="300" cy="180" r="10" fill="#38bdf8"/>
+  <text x="48" y="72" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">Networking</text>
+</svg>
