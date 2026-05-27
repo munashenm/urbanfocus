@@ -10,7 +10,7 @@ class BlogSeoService
     public function optimize(Article $article): Article
     {
         if (! config('blog_automation.auto_seo', true)) {
-            return $article;
+            return BlogSchema::stripUnknownAttributes($article);
         }
 
         if (empty($article->slug)) {
@@ -38,15 +38,15 @@ class BlogSeoService
             $article->excerpt = Str::limit(strip_tags($article->content), 500, '');
         }
 
-        if ($article->faqs === null && $article->content) {
+        if (BlogSchema::hasColumn('faqs') && $article->faqs === null && $article->content) {
             $article->faqs = $this->suggestFaqsFromContent($article);
         }
 
-        if ($article->focus_keywords === null) {
+        if (BlogSchema::hasColumn('focus_keywords') && $article->focus_keywords === null) {
             $article->focus_keywords = $this->suggestKeywords($article);
         }
 
-        return $article;
+        return BlogSchema::stripUnknownAttributes($article);
     }
 
     public function optimizeSlug(string $value): string

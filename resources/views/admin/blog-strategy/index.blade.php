@@ -1,6 +1,7 @@
 @extends('layouts.admin')
 @section('page_title', 'Content Strategy')
 @section('content')
+@include('admin.partials.blog-migration-alert')
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
     <p class="text-muted mb-0 small">Trending topics, Search Console metrics and top-performing blog content.</p>
     <div class="d-flex flex-wrap gap-2">

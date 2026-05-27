@@ -24,14 +24,10 @@ class BlogAutomationService
             $article->content = $this->linking->enrich($article);
         }
 
-        if (config('blog_automation.auto_social_snippets', true)) {
+        if (config('blog_automation.auto_social_snippets', true) && BlogSchema::hasColumn('social_snippets')) {
             $article->social_snippets = $this->social->generate($article);
         }
 
-        if ($save && $article->exists) {
-            $article->saveQuietly();
-        }
-
-        return $article;
+        return BlogSchema::stripUnknownAttributes($article);
     }
 }

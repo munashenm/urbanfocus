@@ -1,6 +1,7 @@
 @extends('layouts.admin')
 @section('page_title', 'Blog Articles')
 @section('content')
+@include('admin.partials.blog-migration-alert')
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
     <div class="d-flex flex-wrap gap-2">
         <form action="{{ route('admin.articles.sync') }}" method="POST" class="d-inline">

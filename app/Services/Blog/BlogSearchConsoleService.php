@@ -37,6 +37,10 @@ class BlogSearchConsoleService
             throw new \RuntimeException('GSC API '.$response->status().': '.$response->body());
         }
 
+        if (! BlogSchema::hasAnalyticsSnapshots()) {
+            return null;
+        }
+
         $rows = $response->json('rows', []);
         $payload = [
             'rows' => $rows,
@@ -80,6 +84,10 @@ class BlogSearchConsoleService
 
     public function latestSnapshot(): ?array
     {
+        if (! BlogSchema::hasAnalyticsSnapshots()) {
+            return null;
+        }
+
         $snap = BlogAnalyticsSnapshot::where('source', 'gsc')->latest('snapshot_date')->first();
 
         return $snap?->payload;
