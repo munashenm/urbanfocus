@@ -24,7 +24,7 @@ return [
     ],
 
     'whatsapp' => [
-        'enabled' => env('WHATSAPP_ENABLED', true),
+        'enabled' => env('WHATSAPP_ENABLED', false),
         'number' => env('WHATSAPP_NUMBER', '27875501813'),
         'message' => env('WHATSAPP_MESSAGE', 'Hi Urban Focus, I need help with a product or quote.'),
     ],

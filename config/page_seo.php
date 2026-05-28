@@ -7,7 +7,7 @@ return [
     ],
     'contact' => [
         'title' => 'Contact Urban Focus | IT Sales & Support',
-        'description' => 'Contact Urban Focus for IT quotes, bulk procurement, product sourcing and support. Email, phone and WhatsApp assistance for businesses across South Africa.',
+        'description' => 'Contact Urban Focus for IT quotes, bulk procurement, product sourcing and support. Email and phone assistance for businesses across South Africa.',
     ],
     'shipping' => [
         'title' => 'Delivery & Shipping | Urban Focus South Africa',
