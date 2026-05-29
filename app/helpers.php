@@ -89,3 +89,100 @@ if (! function_exists('seo_meta_description')) {
         return \Illuminate\Support\Str::limit($fallback, $max, '');
     }
 }
+
+if (! function_exists('clean_html')) {
+    /**
+     * Sanitise rich HTML before rendering it unescaped in Blade.
+     *
+     * Product descriptions and blog content can originate from CSV/feed imports
+     * and content sync jobs, so they are treated as untrusted. This strips
+     * scripts, iframes, inline event handlers and javascript: URLs while keeping
+     * a safe allowlist of formatting tags.
+     */
+    function clean_html(?string $html): string
+    {
+        if ($html === null) {
+            return '';
+        }
+
+        $html = trim($html);
+
+        if ($html === '') {
+            return '';
+        }
+
+        $allowedTags = [
+            'p', 'br', 'b', 'strong', 'i', 'em', 'u', 's', 'ul', 'ol', 'li', 'a',
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'span', 'div',
+            'table', 'thead', 'tbody', 'tr', 'td', 'th', 'caption', 'img', 'figure',
+            'figcaption', 'hr', 'pre', 'code', 'sub', 'sup', 'small',
+        ];
+        $allowedAttrs = ['href', 'title', 'alt', 'src', 'width', 'height', 'colspan', 'rowspan', 'target', 'rel', 'id', 'class'];
+
+        $previous = libxml_use_internal_errors(true);
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+        $dom->loadHTML(
+            '<?xml encoding="UTF-8"?><div id="uf-clean-root">'.$html.'</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $xpath = new \DOMXPath($dom);
+        $root = $xpath->query('//*[@id="uf-clean-root"]')->item(0);
+
+        if (! $root instanceof \DOMElement) {
+            return '';
+        }
+
+        foreach (iterator_to_array($xpath->query('//*')) as $node) {
+            if (! $node instanceof \DOMElement || $node === $root) {
+                continue;
+            }
+
+            if (! in_array(strtolower($node->nodeName), $allowedTags, true)) {
+                $node->parentNode?->removeChild($node);
+
+                continue;
+            }
+
+            if (! $node->hasAttributes()) {
+                continue;
+            }
+
+            foreach (iterator_to_array($node->attributes) as $attr) {
+                $name = strtolower($attr->nodeName);
+
+                if (str_starts_with($name, 'on') || ! in_array($name, $allowedAttrs, true)) {
+                    $node->removeAttribute($attr->nodeName);
+
+                    continue;
+                }
+
+                if (in_array($name, ['href', 'src'], true)) {
+                    $value = strtolower(preg_replace('/\s+/', '', (string) $attr->nodeValue) ?? '');
+
+                    $unsafe = str_starts_with($value, 'javascript:')
+                        || str_starts_with($value, 'vbscript:')
+                        || (str_starts_with($value, 'data:') && ! str_starts_with($value, 'data:image/'));
+
+                    if ($unsafe) {
+                        $node->removeAttribute($attr->nodeName);
+                    }
+                }
+            }
+
+            if (strtolower($node->nodeName) === 'a' && strtolower((string) $node->getAttribute('target')) === '_blank') {
+                $node->setAttribute('rel', 'noopener noreferrer');
+            }
+        }
+
+        $out = '';
+
+        foreach (iterator_to_array($root->childNodes) as $child) {
+            $out .= $dom->saveHTML($child);
+        }
+
+        return $out;
+    }
+}

@@ -12,7 +12,15 @@ declare(strict_types=1);
 
 const SYNC_KEY = 'CHANGE-ME-sync-public-secret';
 
-if (($_GET['key'] ?? '') !== SYNC_KEY) {
+header('X-Robots-Tag: noindex, nofollow');
+header('Cache-Control: no-store, max-age=0');
+
+if (str_contains(SYNC_KEY, 'CHANGE-ME') || strlen(SYNC_KEY) < 16) {
+    http_response_code(403);
+    exit('Refusing to run: edit this file and set a strong, unique secret key (16+ chars, no "CHANGE-ME") before use.');
+}
+
+if (! hash_equals(SYNC_KEY, (string) ($_GET['key'] ?? ''))) {
     http_response_code(403);
     exit('Forbidden');
 }

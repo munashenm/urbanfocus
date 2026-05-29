@@ -14,11 +14,19 @@
 
 declare(strict_types=1);
 
-const FIX_KEY = 'urbanfocus-fix-2026';
+const FIX_KEY = 'CHANGE-ME-fix-500-secret';
 
-if (($_GET['key'] ?? '') !== FIX_KEY) {
+header('X-Robots-Tag: noindex, nofollow');
+header('Cache-Control: no-store, max-age=0');
+
+if (str_contains(FIX_KEY, 'CHANGE-ME') || strlen(FIX_KEY) < 16) {
     http_response_code(403);
-    exit('Forbidden — add ?key=YOUR_PASSWORD to the URL (must match FIX_KEY in this file).');
+    exit('Refusing to run: edit this file and set a strong, unique secret key (16+ chars, no "CHANGE-ME") before use.');
+}
+
+if (! hash_equals(FIX_KEY, (string) ($_GET['key'] ?? ''))) {
+    http_response_code(403);
+    exit('Forbidden');
 }
 
 $laravelRoot = dirname(__DIR__).'/urbanfocus';

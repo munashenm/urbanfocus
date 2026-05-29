@@ -13,9 +13,17 @@ declare(strict_types=1);
 
 const MIGRATE_KEY = 'CHANGE-ME-migrate-secret';
 
-if (($_GET['key'] ?? '') !== MIGRATE_KEY) {
+header('X-Robots-Tag: noindex, nofollow');
+header('Cache-Control: no-store, max-age=0');
+
+if (str_contains(MIGRATE_KEY, 'CHANGE-ME') || strlen(MIGRATE_KEY) < 16) {
     http_response_code(403);
-    exit('Forbidden. Add ?key=YOUR_SECRET to the URL.');
+    exit('Refusing to run: edit this file and set a strong, unique secret key (16+ chars, no "CHANGE-ME") before use.');
+}
+
+if (! hash_equals(MIGRATE_KEY, (string) ($_GET['key'] ?? ''))) {
+    http_response_code(403);
+    exit('Forbidden');
 }
 
 $laravelRoot = dirname(__DIR__).'/urbanfocus';

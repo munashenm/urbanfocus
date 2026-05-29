@@ -14,9 +14,17 @@ declare(strict_types=1);
 
 const SEED_KEY = 'CHANGE-ME-seed-categories-secret';
 
-if (($_GET['key'] ?? '') !== SEED_KEY) {
+header('X-Robots-Tag: noindex, nofollow');
+header('Cache-Control: no-store, max-age=0');
+
+if (str_contains(SEED_KEY, 'CHANGE-ME') || strlen(SEED_KEY) < 16) {
     http_response_code(403);
-    exit('Forbidden. Add ?key=YOUR_SECRET to the URL.');
+    exit('Refusing to run: edit this file and set a strong, unique secret key (16+ chars, no "CHANGE-ME") before use.');
+}
+
+if (! hash_equals(SEED_KEY, (string) ($_GET['key'] ?? ''))) {
+    http_response_code(403);
+    exit('Forbidden');
 }
 
 $laravelRoot = dirname(__DIR__).'/urbanfocus';

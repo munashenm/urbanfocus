@@ -53,7 +53,7 @@
             @include('blog.partials.toc', ['tocItems' => $tocItems])
 
             <div class="article-content">
-                {!! $content !!}
+                {!! clean_html($content) !!}
             </div>
 
             @include('blog.partials.faq', ['article' => $article])

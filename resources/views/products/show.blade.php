@@ -115,7 +115,7 @@
             @if($product->description)
                 <div class="checkout-card mb-4">
                     <h2 class="h5 fw-bold mb-3">Description</h2>
-                    <div class="product-description">{!! $product->description !!}</div>
+                    <div class="product-description">{!! clean_html($product->description) !!}</div>
                 </div>
             @endif
         </div>

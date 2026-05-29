@@ -13,7 +13,15 @@ declare(strict_types=1);
 
 const FIX_KEY = 'CHANGE-ME-emergency-fix';
 
-if (($_GET['key'] ?? '') !== FIX_KEY) {
+header('X-Robots-Tag: noindex, nofollow');
+header('Cache-Control: no-store, max-age=0');
+
+if (str_contains(FIX_KEY, 'CHANGE-ME') || strlen(FIX_KEY) < 16) {
+    http_response_code(403);
+    exit('Refusing to run: edit this file and set a strong, unique secret key (16+ chars, no "CHANGE-ME") before use.');
+}
+
+if (! hash_equals(FIX_KEY, (string) ($_GET['key'] ?? ''))) {
     http_response_code(403);
     exit('Forbidden');
 }

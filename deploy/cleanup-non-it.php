@@ -14,7 +14,15 @@ declare(strict_types=1);
 
 const CLEANUP_KEY = 'CHANGE-ME-cleanup-non-it-secret';
 
-if (($_GET['key'] ?? '') !== CLEANUP_KEY) {
+header('X-Robots-Tag: noindex, nofollow');
+header('Cache-Control: no-store, max-age=0');
+
+if (str_contains(CLEANUP_KEY, 'CHANGE-ME') || strlen(CLEANUP_KEY) < 16) {
+    http_response_code(403);
+    exit('Refusing to run: edit this file and set a strong, unique secret key (16+ chars, no "CHANGE-ME") before use.');
+}
+
+if (! hash_equals(CLEANUP_KEY, (string) ($_GET['key'] ?? ''))) {
     http_response_code(403);
     exit('Forbidden');
 }

@@ -18,8 +18,7 @@ class ApiKeyMiddleware
         }
 
         $provided = $request->header('X-API-Key')
-            ?? $request->header('Authorization')
-            ?? $request->query('api_key');
+            ?? $request->header('Authorization');
 
         if (str_starts_with((string) $provided, 'Bearer ')) {
             $provided = substr($provided, 7);
