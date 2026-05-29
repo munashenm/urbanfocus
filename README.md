@@ -9,7 +9,7 @@ Built for **cPanel shared hosting** (PHP 8.2+, MySQL/MariaDB).
 - Product categories, search, filters, and SEO-friendly URLs (`/product/{slug}`)
 - Shopping cart, checkout, customer accounts
 - Admin dashboard: products, categories, orders, WooCommerce CSV import
-- PayFast payment gateway + manual EFT option
+- Paystack payment gateway + manual EFT option
 - Shipping: flat rate courier, free shipping threshold, manual quote, collection
 - Order confirmation emails
 - SEO: meta fields, Product schema JSON-LD, XML sitemap, robots.txt
@@ -102,10 +102,9 @@ MAIL_USERNAME=sales@urbanfocus.co.za
 MAIL_PASSWORD=your_email_password
 MAIL_FROM_ADDRESS=sales@urbanfocus.co.za
 
-PAYFAST_MERCHANT_ID=your_merchant_id
-PAYFAST_MERCHANT_KEY=your_merchant_key
-PAYFAST_PASSPHRASE=your_passphrase
-PAYFAST_SANDBOX=false
+PAYSTACK_PUBLIC_KEY=your-paystack-public-key
+PAYSTACK_SECRET_KEY=your-paystack-secret-key
+PAYSTACK_CURRENCY=ZAR
 
 GOOGLE_SITE_VERIFICATION=your_verification_code
 ```
@@ -157,12 +156,12 @@ Used for queued emails and scheduled tasks.
 
 Configure cPanel email account `sales@urbanfocus.co.za` and use those SMTP credentials in `.env`. Test with a contact form submission or test order.
 
-### 10. PayFast Setup
+### 10. Paystack Setup
 
-1. Register at [PayFast](https://www.payfast.co.za)
-2. Set ITN (Instant Transaction Notification) URL: `https://www.urbanfocus.co.za/checkout/payfast/notify`
-3. Add merchant ID, key, and passphrase to `.env`
-4. Set `PAYFAST_SANDBOX=false` for production
+1. Register at [Paystack](https://paystack.com)
+2. In **Settings → API Keys & Webhooks**, copy your live Public and Secret keys into `.env`
+3. Set the Webhook URL to: `https://www.urbanfocus.co.za/checkout/paystack/webhook`
+4. Use `sk_test_` / `pk_test_` keys for testing, then switch to `sk_live_` / `pk_live_` for production
 
 ### 11. Google Search Console & Merchant Center
 
@@ -189,7 +188,7 @@ Configure cPanel email account `sales@urbanfocus.co.za` and use those SMTP crede
 - [ ] Set `APP_DEBUG=false`
 - [ ] Enable HTTPS (AutoSSL in cPanel)
 - [ ] Upload product images via admin
-- [ ] Test PayFast sandbox then live payments
+- [ ] Test Paystack with test keys then live payments
 - [ ] Test order confirmation emails
 - [ ] Submit sitemap to Google Search Console
 - [ ] Configure Google Merchant Center feed

@@ -56,7 +56,7 @@ if (! function_exists('seo_meta_description')) {
         $suffixes = match ($type) {
             'product' => array_filter([
                 $brand ? "Genuine {$brand} supply from Urban Focus with VAT invoices, warranty support and nationwide delivery across South Africa." : null,
-                'Buy online from Urban Focus with secure PayFast checkout, VAT invoices and fast courier delivery to Johannesburg, Cape Town, Durban and nationwide.',
+                'Buy online from Urban Focus with secure Paystack checkout, VAT invoices and fast courier delivery to Johannesburg, Cape Town, Durban and nationwide.',
                 'Order from Urban Focus — trusted South African IT distributor with professional support and B2B quote options.',
             ]),
             'category' => array_filter([

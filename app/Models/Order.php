@@ -14,7 +14,7 @@ class Order extends Model
         'status',
         'payment_method',
         'payment_status',
-        'payfast_payment_id',
+        'paystack_reference',
         'shipping_method',
         'subtotal',
         'shipping_cost',

@@ -28,7 +28,7 @@ Phone: <a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phon
 </ul>
 
 <h2 class="h5 fw-bold mt-4">Categories of data</h2>
-<p>Name, contact details, billing and delivery address, company name, order history, payment references (we do not store full card details — payments are processed by PayFast), and account credentials.</p>
+<p>Name, contact details, billing and delivery address, company name, order history, payment references (we do not store full card details — payments are processed by Paystack), and account credentials.</p>
 
 <h2 class="h5 fw-bold mt-4">Your rights</h2>
 <p>Under POPIA you may request:</p>

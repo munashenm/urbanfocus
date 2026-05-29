@@ -64,10 +64,9 @@ Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.in
 Route::post('/checkout/validate-coupon', [CheckoutController::class, 'validateCoupon'])->middleware('throttle:20,1')->name('checkout.validate-coupon');
 Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
-Route::get('/checkout/payfast/{order}', [CheckoutController::class, 'payfastRedirect'])->name('checkout.payfast.redirect');
-Route::get('/checkout/payfast/return', [CheckoutController::class, 'payfastReturn'])->name('checkout.payfast.return');
-Route::get('/checkout/payfast/cancel', [CheckoutController::class, 'payfastCancel'])->name('checkout.payfast.cancel');
-Route::post('/checkout/payfast/notify', [CheckoutController::class, 'payfastNotify'])->name('checkout.payfast.notify');
+Route::get('/checkout/paystack/callback', [CheckoutController::class, 'paystackCallback'])->name('checkout.paystack.callback');
+Route::post('/checkout/paystack/webhook', [CheckoutController::class, 'paystackWebhook'])->name('checkout.paystack.webhook');
+Route::get('/checkout/paystack/{order}', [CheckoutController::class, 'paystackPay'])->name('checkout.paystack.pay');
 
 Route::get('/track-order', [OrderTrackingController::class, 'showForm'])->name('orders.track');
 Route::post('/track-order', [OrderTrackingController::class, 'lookup'])->name('orders.track.lookup');

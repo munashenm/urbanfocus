@@ -74,7 +74,7 @@
     <div class="container">
         <div class="row g-0">
             <div class="col-6 col-md-3 trust-item"><strong>Fast Delivery</strong><span class="small text-muted">Nationwide</span></div>
-            <div class="col-6 col-md-3 trust-item"><strong>Secure Checkout</strong><span class="small text-muted">PayFast &amp; EFT</span></div>
+            <div class="col-6 col-md-3 trust-item"><strong>Secure Checkout</strong><span class="small text-muted">Paystack &amp; EFT</span></div>
             <div class="col-6 col-md-3 trust-item"><strong>Authorised Supply</strong><span class="small text-muted">Genuine products</span></div>
             <div class="col-6 col-md-3 trust-item"><strong>Warranty Support</strong><span class="small text-muted">After-sales care</span></div>
         </div>

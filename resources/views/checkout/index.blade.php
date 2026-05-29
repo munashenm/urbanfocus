@@ -121,8 +121,8 @@
                     <h2 class="h5 fw-bold mb-3">Payment Method</h2>
                     @include('partials.partner-logos', ['variant' => 'compact', 'class' => 'partner-logos--checkout mb-3'])
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="radio" name="payment_method" id="pay_payfast" value="payfast" @checked(old('payment_method', 'payfast') === 'payfast')>
-                        <label class="form-check-label" for="pay_payfast">PayFast (Card, Instant EFT, etc.)</label>
+                        <input class="form-check-input" type="radio" name="payment_method" id="pay_paystack" value="paystack" @checked(old('payment_method', 'paystack') === 'paystack')>
+                        <label class="form-check-label" for="pay_paystack">Paystack (Card, Instant EFT, etc.)</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="payment_method" id="pay_eft" value="eft" @checked(old('payment_method') === 'eft')>

@@ -8,11 +8,12 @@ use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\CartService;
-use App\Services\PayFastService;
+use App\Services\PaystackService;
 use App\Services\ShippingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
@@ -22,7 +23,7 @@ class CheckoutController extends Controller
     public function __construct(
         protected CartService $cart,
         protected ShippingService $shipping,
-        protected PayFastService $payfast
+        protected PaystackService $paystack
     ) {}
 
     public function index(): View|RedirectResponse
@@ -96,7 +97,7 @@ class CheckoutController extends Controller
             'customer_email' => 'required|email|max:255',
             'customer_phone' => 'required|string|max:30',
             'shipping_method' => 'required|in:courier,free,manual_quote,collection',
-            'payment_method' => 'required|in:payfast,eft',
+            'payment_method' => 'required|in:paystack,eft',
             'customer_notes' => 'nullable|string|max:1000',
             'coupon_code' => 'nullable|string|max:50',
             'same_as_billing' => 'nullable|boolean',
@@ -130,7 +131,7 @@ class CheckoutController extends Controller
         $shippingData = $this->shipping->calculate($discountedSubtotal, $validated['shipping_method']);
         $shippingCost = $shippingData['cost'];
         [$taxAmount, $total] = $this->calculateTaxAndTotal($discountedSubtotal, $shippingCost);
-        $deferStock = $validated['payment_method'] === 'payfast';
+        $deferStock = $validated['payment_method'] === 'paystack';
 
         $order = DB::transaction(function () use ($validated, $subtotal, $discountAmount, $shippingData, $shippingCost, $taxAmount, $total, $deferStock) {
             $order = Order::create([
@@ -197,14 +198,14 @@ class CheckoutController extends Controller
         Mail::to($order->customer_email)->send(new OrderConfirmation($order));
         Mail::to(config('app.email'))->send(new NewOrderNotification($order));
 
-        if ($validated['payment_method'] === 'payfast') {
-            return redirect()->route('checkout.payfast.redirect', $order);
+        if ($validated['payment_method'] === 'paystack') {
+            return redirect()->route('checkout.paystack.pay', $order);
         }
 
         return redirect()->route('checkout.success', $order)->with('success', 'Order placed. Please complete EFT payment using the reference on the confirmation page.');
     }
 
-    public function payfastRedirect(Order $order): View|RedirectResponse
+    public function paystackPay(Order $order): RedirectResponse
     {
         if (session('checkout_order_id') !== $order->id) {
             abort(403);
@@ -214,63 +215,98 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.success', $order);
         }
 
-        $paymentData = $this->payfast->buildPaymentData($order);
+        $reference = $order->order_number.'-'.strtoupper(substr(uniqid(), -6));
+        $order->update(['paystack_reference' => $reference]);
 
-        return view('checkout.payfast-redirect', [
-            'order' => $order,
-            'paymentData' => $paymentData,
-            'processUrl' => config('payfast.process_url'),
-        ]);
-    }
+        $result = $this->paystack->initializeTransaction($order, $reference);
 
-    public function payfastReturn(Request $request): RedirectResponse
-    {
-        $orderNumber = $request->get('m_payment_id');
-        $order = Order::where('order_number', $orderNumber)->firstOrFail();
-
-        $message = $request->get('payment_status') === 'COMPLETE'
-            ? 'Payment received. Thank you for your order.'
-            : 'Your order has been received. We will confirm payment once PayFast completes processing.';
-
-        return redirect()->route('checkout.success', $order)->with('success', $message);
-    }
-
-    public function payfastCancel(): RedirectResponse
-    {
-        return redirect()->route('cart.index')->with('error', 'Payment was cancelled.');
-    }
-
-    public function payfastNotify(Request $request): void
-    {
-        $data = $request->all();
-
-        if (! $this->payfast->validateNotification($data)) {
-            abort(400);
+        if (($result['status'] ?? false) && ! empty($result['data']['authorization_url'])) {
+            return redirect()->away($result['data']['authorization_url']);
         }
 
-        if (! $this->payfast->verifyWithPayFast($data)) {
-            abort(400);
+        return redirect()->route('checkout.success', $order)
+            ->with('error', 'We could not start the Paystack payment. Please choose Manual EFT or contact us to complete your order.');
+    }
+
+    public function paystackCallback(Request $request): RedirectResponse
+    {
+        $reference = $request->get('reference') ?? $request->get('trxref');
+
+        if (! $reference) {
+            return redirect()->route('cart.index')->with('error', 'Payment could not be confirmed.');
         }
 
-        $order = Order::where('order_number', $data['m_payment_id'] ?? '')->first();
+        $order = Order::where('paystack_reference', $reference)->firstOrFail();
 
-        if ($order && $data['payment_status'] === 'COMPLETE' && $order->payment_status !== 'paid') {
-            $order->load('items.product');
+        $result = $this->paystack->verifyTransaction($reference);
+        $data = $result['data'] ?? [];
 
-            foreach ($order->items as $orderItem) {
-                $product = $orderItem->product;
+        if (($result['status'] ?? false) && ($data['status'] ?? null) === 'success') {
+            $this->markOrderPaid($order, $data);
 
-                if ($product && $product->manage_stock) {
-                    $product->decrement('stock_quantity', $orderItem->quantity);
-                }
+            return redirect()->route('checkout.success', $order)
+                ->with('success', 'Payment received. Thank you for your order.');
+        }
+
+        return redirect()->route('checkout.success', $order)
+            ->with('success', 'Your order has been received. We will confirm payment once Paystack completes processing.');
+    }
+
+    public function paystackWebhook(Request $request): Response
+    {
+        $signature = $request->header('x-paystack-signature');
+
+        if (! $this->paystack->isValidWebhookSignature($request->getContent(), $signature)) {
+            abort(401);
+        }
+
+        $event = $request->json()->all();
+
+        if (($event['event'] ?? null) === 'charge.success') {
+            $data = $event['data'] ?? [];
+            $order = Order::where('paystack_reference', $data['reference'] ?? '')->first();
+
+            if ($order && ($data['status'] ?? null) === 'success') {
+                $this->markOrderPaid($order, $data);
             }
+        }
 
-            $order->update([
+        return response('OK', 200);
+    }
+
+    /**
+     * Atomically mark an order as paid and decrement stock exactly once,
+     * guarding against the callback and webhook racing each other.
+     *
+     * @param  array<string, mixed>  $data  Verified Paystack transaction data.
+     */
+    protected function markOrderPaid(Order $order, array $data): void
+    {
+        if (isset($data['amount']) && (int) $data['amount'] !== $this->paystack->toSubunit((float) $order->total)) {
+            return;
+        }
+
+        $claimed = Order::where('id', $order->id)
+            ->where('payment_status', '!=', 'paid')
+            ->update([
                 'payment_status' => 'paid',
                 'status' => 'processing',
-                'payfast_payment_id' => $data['pf_payment_id'] ?? null,
+                'paystack_reference' => $data['reference'] ?? $order->paystack_reference,
                 'paid_at' => now(),
             ]);
+
+        if (! $claimed) {
+            return;
+        }
+
+        $order->load('items.product');
+
+        foreach ($order->items as $orderItem) {
+            $product = $orderItem->product;
+
+            if ($product && $product->manage_stock) {
+                $product->decrement('stock_quantity', $orderItem->quantity);
+            }
         }
     }
 

@@ -10,7 +10,7 @@
 <h2 class="h5 fw-bold mt-4">Orders &amp; pricing</h2>
 <p>All prices are in South African Rand (ZAR) and include VAT unless stated otherwise. We reserve the right to correct pricing errors. An order is confirmed once payment is received or approved.</p>
 <h2 class="h5 fw-bold mt-4">Payment</h2>
-<p>We accept PayFast (card, instant EFT) and manual EFT. Orders are processed after payment verification.</p>
+<p>We accept Paystack (card, instant EFT) and manual EFT. Orders are processed after payment verification.</p>
 <h2 class="h5 fw-bold mt-4">Products &amp; availability</h2>
 <p>Product images are for illustration. Specifications may change without notice. Stock availability is shown on product pages.</p>
 <h2 class="h5 fw-bold mt-4">Limitation of liability</h2>

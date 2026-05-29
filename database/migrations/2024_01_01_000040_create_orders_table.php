@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('status')->default('pending');
             $table->string('payment_method')->nullable();
             $table->string('payment_status')->default('pending');
-            $table->string('payfast_payment_id')->nullable();
+            $table->string('paystack_reference')->nullable();
             $table->string('shipping_method')->nullable();
             $table->decimal('subtotal', 12, 2);
             $table->decimal('shipping_cost', 12, 2)->default(0);

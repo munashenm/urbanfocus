@@ -120,7 +120,7 @@ Urban Focus already had strong foundations: dynamic sitemap, robots.txt, Google 
 | WhatsApp button | ✅ **New** |
 | Newsletter signup | ✅ **New** Footer form |
 | Trust bar / badges | ✅ Homepage |
-| PayFast secure checkout | ✅ |
+| Paystack secure checkout | ✅ |
 | VAT / company reg in footer | ✅ When env vars set |
 | Customer reviews | ⚠️ Google Reviews config only |
 

@@ -9,7 +9,7 @@ return [
         ['name' => 'Instant EFT', 'logo' => 'images/partners/instant-eft.svg', 'alt' => 'Instant EFT'],
         ['name' => 'SnapScan', 'logo' => 'images/partners/snapscan.svg', 'alt' => 'SnapScan'],
         ['name' => 'Capitec Pay', 'logo' => 'images/partners/capitec-pay.svg', 'alt' => 'Capitec Pay'],
-        ['name' => 'PayFast', 'logo' => 'images/partners/payfast.svg', 'alt' => 'PayFast secure payments'],
+        ['name' => 'Paystack', 'logo' => 'images/partners/paystack.svg', 'alt' => 'Paystack secure payments'],
     ],
 
     'shipping' => [

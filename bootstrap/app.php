@@ -20,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
+        $middleware->validateCsrfTokens(except: [
+            'checkout/paystack/webhook',
+        ]);
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'api.key' => \App\Http\Middleware\ApiKeyMiddleware::class,

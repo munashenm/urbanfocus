@@ -23,12 +23,6 @@ return [
         'tiktok_pixel_id' => env('TIKTOK_PIXEL_ID'),
     ],
 
-    'whatsapp' => [
-        'enabled' => env('WHATSAPP_ENABLED', false),
-        'number' => env('WHATSAPP_NUMBER', '27875501813'),
-        'message' => env('WHATSAPP_MESSAGE', 'Hi Urban Focus, I need help with a product or quote.'),
-    ],
-
     'cache' => [
         'sitemap_ttl' => (int) env('SEO_SITEMAP_CACHE_TTL', 3600),
         'feed_ttl' => (int) env('SEO_FEED_CACHE_TTL', 1800),
@@ -73,7 +67,7 @@ return [
         [
             'group' => 'Orders & Payment',
             'question' => 'Which payment methods do you accept?',
-            'answer' => 'We accept PayFast secure checkout including credit and debit card, Instant EFT, Apple Pay, Google Pay and manual EFT bank transfer. All prices on the website are shown in South African Rand (ZAR) and include VAT where applicable.',
+            'answer' => 'We accept Paystack secure checkout including credit and debit card, Instant EFT, Apple Pay, Google Pay and manual EFT bank transfer. All prices on the website are shown in South African Rand (ZAR) and include VAT where applicable.',
         ],
         [
             'group' => 'Orders & Payment',

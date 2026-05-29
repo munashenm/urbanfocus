@@ -285,7 +285,7 @@
                 <li>Add feed URL below (scheduled fetch daily)</li>
                 <li>Set business info, shipping &amp; returns for South Africa</li>
                 <li>Return policy: <a href="{{ config('google-merchant.return_policy_url') ?: route('returns') }}" target="_blank">{{ config('google-merchant.return_policy_url') ?: route('returns') }}</a></li>
-                <li>Link PayFast checkout and ensure prices match the feed</li>
+                <li>Link Paystack checkout and ensure prices match the feed</li>
             </ol>
         </div></div>
     </div>

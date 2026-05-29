@@ -148,15 +148,14 @@ DB_PASSWORD=your_real_database_password
 
 PUBLIC_PATH=/home/urbanzdc/public_html
 
-PAYFAST_MERCHANT_ID=your_merchant_id
-PAYFAST_MERCHANT_KEY=your_merchant_key
-PAYFAST_PASSPHRASE=your_passphrase
-PAYFAST_SANDBOX=true
+PAYSTACK_PUBLIC_KEY=your-paystack-public-key
+PAYSTACK_SECRET_KEY=your-paystack-secret-key
+PAYSTACK_CURRENCY=ZAR
 ```
 
 Replace:
 - `urbanzdc` with your cPanel username
-- Database password and PayFast values with your real credentials
+- Database password and Paystack keys with your real credentials
 
 Leave **`APP_KEY=`** empty — setup script will generate it.
 
