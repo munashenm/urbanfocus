@@ -1,11 +1,12 @@
 @php
     $variant = $variant ?? 'full';
+    $logos = $logos ?? null;
     $payments = config('partners.payments', []);
     $shipping = config('partners.shipping', []);
     $trust = $variant === 'compact' ? [] : config('partners.trust', []);
-    $all = $variant === 'payments'
+    $all = $logos ?? ($variant === 'payments'
         ? $payments
-        : ($variant === 'compact' ? array_merge($payments, $shipping) : array_merge($payments, $shipping, $trust));
+        : ($variant === 'compact' ? array_merge($payments, $shipping) : array_merge($payments, $shipping, $trust)));
 @endphp
 
 @if(count($all))

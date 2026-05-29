@@ -119,10 +119,24 @@
 
                 <div class="checkout-card">
                     <h2 class="h5 fw-bold mb-3">Payment Method</h2>
-                    @include('partials.partner-logos', ['variant' => 'compact', 'class' => 'partner-logos--checkout mb-3'])
+                    @php
+                        $checkoutPaymentLogos = collect(config('partners.payments', []))
+                            ->whereIn('name', ['Mastercard', 'Visa', 'Apple Pay', 'Google Pay', 'SnapScan'])
+                            ->values()
+                            ->all();
+                    @endphp
+                    @include('partials.partner-logos', ['variant' => 'compact', 'logos' => $checkoutPaymentLogos, 'class' => 'partner-logos--checkout mb-3'])
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="radio" name="payment_method" id="pay_paystack" value="paystack" @checked(old('payment_method', 'paystack') === 'paystack')>
-                        <label class="form-check-label" for="pay_paystack">Paystack (Card, Instant EFT, etc.)</label>
+                        <label class="form-check-label fw-semibold" for="pay_paystack">Secure Payment via Paystack</label>
+                        <div class="d-flex flex-wrap small text-muted mt-2" style="gap:.25rem 1rem">
+                            <span>&#9989; Visa</span>
+                            <span>&#9989; Mastercard</span>
+                            <span>&#9989; American Express</span>
+                            <span>&#9989; Instant EFT</span>
+                            <span>&#9989; Apple Pay</span>
+                            <span>&#9989; Google Pay</span>
+                        </div>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="payment_method" id="pay_eft" value="eft" @checked(old('payment_method') === 'eft')>
