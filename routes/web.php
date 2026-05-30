@@ -133,6 +133,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('catalog/import/preview', [AdminCatalogController::class, 'importPreview'])->name('catalog.import-preview');
     Route::post('catalog/clear-products', [AdminCatalogController::class, 'clearProducts'])->name('catalog.clear-products');
     Route::post('catalog/remove-non-it', [AdminCatalogController::class, 'removeNonIt'])->name('catalog.remove-non-it');
+    Route::post('catalog/consolidate-categories', [AdminCatalogController::class, 'consolidateCategories'])->name('catalog.consolidate-categories');
     Route::post('catalog/optimize-seo', [AdminCatalogController::class, 'optimizeSeo'])->name('catalog.optimize-seo');
     Route::get('catalog/export', [AdminCatalogController::class, 'export'])->name('catalog.export');
     Route::get('catalog/export/woocommerce', [AdminCatalogController::class, 'exportWooCommerce'])->name('catalog.export.woocommerce');
