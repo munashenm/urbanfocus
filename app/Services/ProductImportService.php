@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Services\Marketing\MakeWebhookService;
 use App\Services\Social\SocialPostingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -162,6 +163,7 @@ class ProductImportService
 
         if (! $dryRun) {
             SocialPostingService::$suppress = true;
+            MakeWebhookService::$suppress = true;
         }
 
         try {
@@ -243,6 +245,7 @@ class ProductImportService
         } finally {
             if (! $dryRun) {
                 SocialPostingService::$suppress = false;
+                MakeWebhookService::$suppress = false;
             }
         }
 

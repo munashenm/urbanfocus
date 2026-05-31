@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Mail\LowStockAlert;
 use App\Models\Product;
+use App\Services\Marketing\MakeWebhookService;
 use App\Services\SeoService;
 use App\Services\Social\SocialPostingService;
 use App\Services\StockAlertService;
@@ -16,11 +17,13 @@ class ProductObserver
         protected SocialPostingService $social,
         protected StockAlertService $stockAlerts,
         protected SeoService $seo,
+        protected MakeWebhookService $make,
     ) {}
 
     public function saved(Product $product): void
     {
         $this->safe(fn () => $this->handleSocialQueue($product));
+        $this->safe(fn () => $this->handleMakeWebhook($product));
         $this->safe(fn () => $this->handleStockAlerts($product));
         $this->safe(fn () => $this->seo->clearCache());
     }
@@ -37,6 +40,24 @@ class ProductObserver
         }
 
         $this->social->queueProduct($product);
+    }
+
+    protected function handleMakeWebhook(Product $product): void
+    {
+        if (! $this->make->isEnabled() || ! $product->is_active) {
+            return;
+        }
+
+        // Fire only when the product is first published or (re)activated.
+        $becamePublished = $product->wasRecentlyCreated
+            || ($product->wasChanged('is_active') && $product->is_active);
+
+        if (! $becamePublished) {
+            return;
+        }
+
+        // Queued so the webhook HTTP call never blocks the admin save.
+        $this->make->queueProduct($product);
     }
 
     protected function handleStockAlerts(Product $product): void

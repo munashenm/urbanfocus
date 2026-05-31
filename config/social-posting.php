@@ -5,6 +5,8 @@ return [
 
     'max_per_run' => (int) env('SOCIAL_POST_MAX_PER_RUN', 5),
 
+    // Platforms for the direct-API posting path (Meta/X/TikTok drivers).
+    // LinkedIn is handled via the Make.com workflow (see config/make.php).
     'platforms' => [
         'facebook' => env('SOCIAL_POST_FACEBOOK', true),
         'instagram' => env('SOCIAL_POST_INSTAGRAM', true),

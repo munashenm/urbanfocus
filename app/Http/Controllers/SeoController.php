@@ -35,6 +35,28 @@ class SeoController extends Controller
         return response($seo->robotsTxt(), 200, ['Content-Type' => 'text/plain']);
     }
 
+    public function blogRss(FeedService $feed): Response
+    {
+        try {
+            return response($feed->blogRssXml(), 200, ['Content-Type' => 'application/rss+xml; charset=UTF-8']);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response($this->emptySitemap(), 503, ['Content-Type' => 'application/xml; charset=UTF-8']);
+        }
+    }
+
+    public function facebookCatalog(FeedService $feed): Response
+    {
+        try {
+            return response($feed->facebookCatalogXml(), 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response($this->emptySitemap(), 503, ['Content-Type' => 'application/xml; charset=UTF-8']);
+        }
+    }
+
     public function googleMerchantFeed(FeedService $feed): Response
     {
         return response($feed->googleMerchantXml(), 200, ['Content-Type' => 'application/xml']);

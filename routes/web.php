@@ -112,6 +112,8 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
 
 Route::middleware('auth')->get('/orders/{order}/invoice', [InvoiceController::class, 'show'])->name('orders.invoice');
 
+Route::get('/rss.xml', [SeoController::class, 'blogRss'])->name('feeds.rss');
+Route::get('/facebook-feed.xml', [SeoController::class, 'facebookCatalog'])->name('feeds.facebook');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/sitemap-images.xml', [SeoController::class, 'imageSitemap'])->name('sitemap.images');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
@@ -157,6 +159,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('social/publish', [AdminSocialController::class, 'publish'])->name('social.publish');
     Route::post('social/retry-failed', [AdminSocialController::class, 'retryFailed'])->name('social.retry-failed');
     Route::post('social/queue-all', [AdminSocialController::class, 'queueAll'])->name('social.queue-all');
+    Route::post('social/webhooks/{webhookLog}/retry', [AdminSocialController::class, 'retryWebhook'])->name('social.webhook-retry');
     Route::get('quotes', [AdminQuoteController::class, 'index'])->name('quotes.index');
     Route::get('quotes/{quote}', [AdminQuoteController::class, 'show'])->name('quotes.show');
     Route::put('quotes/{quote}', [AdminQuoteController::class, 'update'])->name('quotes.update');
