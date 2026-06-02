@@ -236,30 +236,4 @@ class ImageService
             throw new RuntimeException('Could not mirror image to public storage.');
         }
     }
-
-    /** Copy public placeholder SVG into product storage for imports without image URLs. */
-    public function attachProductPlaceholder(int $productId): ?string
-    {
-        $source = public_path('images/product-placeholder.svg');
-
-        if (! is_file($source)) {
-            return null;
-        }
-
-        $contents = file_get_contents($source);
-
-        if ($contents === false || $contents === '') {
-            return null;
-        }
-
-        $path = 'products/'.$productId.'/'.Str::uuid().'.svg';
-
-        try {
-            $this->storeBytes($path, $contents);
-        } catch (RuntimeException) {
-            return null;
-        }
-
-        return $path;
-    }
 }

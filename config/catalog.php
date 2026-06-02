@@ -5,12 +5,6 @@ return [
     'deprioritize_out_of_stock' => filter_var(env('CATALOG_DEPRIORITIZE_OUT_OF_STOCK', true), FILTER_VALIDATE_BOOL),
 
     /*
-    | When true, CSV imports without image URLs get the site placeholder attached
-    | (required for Astrum pricelist feeds that ship without image links).
-    */
-    'import_placeholder_image' => filter_var(env('IMPORT_PLACEHOLDER_IMAGE', true), FILTER_VALIDATE_BOOL),
-
-    /*
     | Categories under these heads are kept unless they match excluded_category_terms.
     | Top-level categories NOT in this list (orphan categories) are non-IT by default.
     */
