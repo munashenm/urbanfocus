@@ -7,7 +7,7 @@
     <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Import Products (CSV)</h2>
-            <p class="small text-muted">Supports WooCommerce, Esquire, and <strong>Pinnacle</strong> CSV feeds. Only <strong>IT products with images and a cost price</strong> are imported.</p>
+            <p class="small text-muted">Supports WooCommerce, Esquire, <strong>Pinnacle</strong>, <strong>Astrum</strong>, and Scoop CSV feeds. Only rows with <strong>image URL(s) and a valid price</strong> are imported (Astrum: dealer <code>price</code> + retail <code>srp_price</code>).</p>
 
             <div class="alert alert-info small mb-3">
                 <strong>Pricing policy:</strong>
@@ -34,7 +34,9 @@
             <ul class="small text-muted mb-3">
                 <li><strong>Pinnacle:</strong> StockCode, ProdName, ProdImg, ProdPriceExclVAT, ProdQty, category_tree, BarcodeEAN</li>
                 <li><strong>Esquire:</strong> ProductName, ProductCode, CategoryHead, Category, Image, Price (Data Export CSV)</li>
-                <li>Required: name, image URL(s), cost/price — skipped if missing</li>
+                <li><strong>Astrum:</strong> Convert <code>Astrum_Full_Pricelist_*.xlsx</code> with <code>scripts/convert_astrum_pricelist.py</code> → <code>astrum_pricelist.csv</code>, then import. Columns: sku, name, price (your final sell price), category, optional images.</li>
+                <li><strong>Astrum pricing:</strong> <code>price</code> column = storefront price as-is (config <code>ASTRUM_RETAIL_FROM=price</code>). No extra {{ $importPricing['markup_percent'] }}% markup. Example: R{{ number_format($importPricing['astrum_example']['retail'] ?? 399, 0) }} on site.</li>
+                <li>Required: name and price. Image URL(s) required except <strong>Astrum</strong> (placeholder image attached automatically).</li>
                 <li>Cost under R{{ number_format($importPricing['low_cost_threshold'], 0) }}: markup only; R{{ number_format($importPricing['low_cost_threshold'], 0) }}+: rounded to R{{ $importPricing['round_to'] }}</li>
                 <li>Matches existing products by SKU or WooCommerce ID</li>
             </ul>

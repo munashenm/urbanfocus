@@ -7,14 +7,16 @@
  *
  * 1. Git pull latest code
  * 2. Upload your CSV to: urbanfocus/storage/imports/products.csv
- *    (or astrum_products_level2.csv / scoop_pricelist.csv with &file=...)
+ *    (or astrum_pricelist.csv / astrum_products_level2.csv / scoop_pricelist.csv with &file=...)
  * 3. Copy this file to public_html/import-csv.php and set IMPORT_KEY
  * 4. Preview: https://www.urbanfocus.co.za/import-csv.php?key=YOUR_SECRET&preview=1
  * 5. Run:    https://www.urbanfocus.co.za/import-csv.php?key=YOUR_SECRET
  * 6. DELETE public_html/import-csv.php when done
  *
  * Rules: IT products only (except Scoop/Astrum distributor feeds — all Scoop rows import).
- * Must have image URL(s) and cost/dealer price. Retail = markup + rounding from config/pricing.php
+ * Must have cost/dealer price. Image URL(s) required except Astrum (placeholder attached).
+ * Astrum: run scripts/convert_astrum_pricelist.py on the xlsx first. price column = storefront price as-is (ASTRUM_RETAIL_FROM=price).
+ * Other feeds: retail = markup + rounding from config/pricing.php
  *
  * Scoop import:
  *   Upload scoop_pricelist.csv then preview/run with &file=scoop_pricelist.csv

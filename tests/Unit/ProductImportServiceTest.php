@@ -177,24 +177,87 @@ class ProductImportServiceTest extends TestCase
         $this->assertSame(5.6, $result['retail_price']);
     }
 
-    public function test_skips_astrum_row_without_image(): void
+    public function test_astrum_row_without_image_is_accepted_when_placeholder_enabled(): void
     {
+        config(['catalog.import_placeholder_image' => true, 'pricing.astrum_retail_from' => 'price']);
+
         $data = $this->import->normalizeImportRow([
             'sku' => 'AMP180GB',
             'name' => 'Mouse Pad with Rubber Base - MP180G (BLACK)',
-            'regular_price' => '13',
-            'srp_price' => '19',
+            'regular_price' => '19',
+            'srp_price' => '29',
             'stock' => '100',
             'category' => 'Cooling and Mousepad',
         ]);
 
         $this->assertSame('astrum', $data['import_source']);
-        $this->assertSame('Astrum', $data['brand']);
 
         $result = $this->import->evaluateRow($data);
 
-        $this->assertSame('skip', $result['action']);
-        $this->assertSame('no_image', $result['reason']);
+        $this->assertSame('create', $result['action']);
+        $this->assertSame(19.0, $result['retail_price']);
+    }
+
+    public function test_astrum_import_attaches_placeholder_image(): void
+    {
+        config(['catalog.import_placeholder_image' => true, 'pricing.astrum_retail_from' => 'price']);
+
+        $csv = tempnam(sys_get_temp_dir(), 'astrum_import_');
+        file_put_contents($csv, "sku,name,price,stock,category\nTEST-PH,Astrum Placeholder Test,99,5,Mouse\n");
+
+        $result = $this->import->importFromPath($csv);
+        @unlink($csv);
+
+        $this->assertSame(1, $result['imported']);
+
+        $product = Product::where('sku', 'TEST-PH')->first();
+        $this->assertNotNull($product);
+        $this->assertTrue($product->images()->exists());
+        $this->assertStringEndsWith('.svg', $product->images()->first()->path);
+    }
+
+    public function test_astrum_uses_price_column_as_retail_without_markup(): void
+    {
+        config(['pricing.astrum_retail_from' => 'price']);
+
+        $data = $this->import->normalizeImportRow([
+            'sku' => 'A92020-B',
+            'name' => 'Smart Wireless Charging Pad 7.5W (Black / Black)',
+            'regular_price' => '399',
+            'srp_price' => '299',
+            'stock' => '0',
+            'category' => 'Mobile Chargers',
+            'images' => 'https://example.com/charger.jpg',
+        ]);
+
+        $result = $this->import->evaluateRow($data);
+
+        $this->assertSame('create', $result['action']);
+        $this->assertSame(0.0, $result['cost_price']);
+        $this->assertSame(399.0, $result['retail_price']);
+    }
+
+    public function test_astrum_pricelist_row_detects_part_no_headers(): void
+    {
+        config(['pricing.astrum_retail_from' => 'price']);
+
+        $data = $this->import->normalizeImportRow([
+            'sku' => 'AS128GX',
+            'name' => '2.5" 128GB SSD',
+            'model_number' => 'S128GX',
+            'regular_price' => '499',
+            'srp_price' => '499',
+            'category' => 'USB Peripherals',
+            'images' => 'https://example.com/ssd.jpg',
+            'warranty' => '36 Months',
+        ]);
+
+        $this->assertSame('astrum', $data['import_source']);
+
+        $result = $this->import->evaluateRow($data);
+
+        $this->assertSame('create', $result['action']);
+        $this->assertSame(499.0, $result['retail_price']);
     }
 
     public function test_accepts_scoop_pricelist_row_with_image_and_markup(): void

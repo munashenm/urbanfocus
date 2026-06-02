@@ -11,7 +11,7 @@ class ImportProductsCsv extends Command
                             {path? : CSV file path (default: storage/imports/products.csv)}
                             {--preview : Scan only — no database changes}';
 
-    protected $description = 'Import IT products from Esquire, Pinnacle, or WooCommerce CSV feeds';
+    protected $description = 'Import products from Esquire, Pinnacle, Astrum, Scoop, or WooCommerce CSV feeds';
 
     public function handle(ProductImportService $import): int
     {

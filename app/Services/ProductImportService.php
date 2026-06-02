@@ -84,6 +84,14 @@ class ProductImportService
         'prodexternalurl' => 'external_url',
         'srp price' => 'srp_price',
         'srp_price' => 'srp_price',
+        'srp' => 'srp_price',
+        // Astrum full pricelist (xlsx → CSV)
+        'part no' => 'sku',
+        'partno' => 'sku',
+        'model no' => 'model_number',
+        'modelno' => 'model_number',
+        'options' => 'variant_option',
+        'warranty' => 'warranty',
         // Scoop distributor pricelist
         'dealer price' => 'cost_price',
         'retail price' => 'list_price',
@@ -304,6 +312,11 @@ class ProductImportService
                 'cost_inc_vat' => $this->pricing->importCostPrice($scoopExampleExVat, 'scoop'),
                 'retail' => $this->pricing->retailPriceForImport($scoopExampleExVat, 'scoop'),
             ],
+            'astrum_retail_from' => (string) config('pricing.astrum_retail_from', 'price'),
+            'astrum_example' => [
+                'price' => 399.0,
+                'retail' => 399.0,
+            ],
         ];
     }
 
@@ -343,18 +356,28 @@ class ProductImportService
         $imageUrls = $this->parseImageUrls($data['images'] ?? '');
         $hasExistingImages = $existing && $existing->images()->exists();
 
-        if ($imageUrls === [] && ! $hasExistingImages) {
+        if ($imageUrls === [] && ! $hasExistingImages && ! $this->shouldUsePlaceholderImage($data)) {
             return ['action' => 'skip', 'reason' => 'no_image', 'name' => $name];
         }
 
-        $costPrice = $this->resolveCostPrice($data);
-        if ($costPrice <= 0) {
-            return ['action' => 'skip', 'reason' => 'no_price', 'name' => $name];
+        $importSource = $data['import_source'] ?? null;
+
+        if ($importSource === 'astrum') {
+            $astrum = $this->resolveAstrumImportPricing($data);
+            $retailPrice = $astrum['retail'];
+            $storedCost = $astrum['cost'] > 0
+                ? $this->pricing->importCostPrice($astrum['cost'], 'astrum')
+                : 0.0;
+        } else {
+            $costPrice = $this->resolveCostPrice($data);
+            if ($costPrice <= 0) {
+                return ['action' => 'skip', 'reason' => 'no_price', 'name' => $name];
+            }
+
+            $storedCost = $this->pricing->importCostPrice($costPrice, $importSource);
+            $retailPrice = $this->resolveRetailPriceForImport($data, $costPrice);
         }
 
-        $importSource = $data['import_source'] ?? null;
-        $storedCost = $this->pricing->importCostPrice($costPrice, $importSource);
-        $retailPrice = $this->pricing->retailPriceForImport($costPrice, $importSource);
         if ($retailPrice <= 0) {
             return ['action' => 'skip', 'reason' => 'no_price', 'name' => $name];
         }
@@ -403,8 +426,10 @@ class ProductImportService
             'sku' => $sku ?: $existing?->sku,
             'short_description' => strip_tags($data['short_description'] ?? ''),
             'description' => $data['description'] ?? '',
-            'cost_price' => $costPrice,
+            'cost_price' => $costPrice > 0 ? $costPrice : null,
             'price' => $regularPrice,
+            'model_number' => trim($data['model_number'] ?? '') ?: $existing?->model_number,
+            'warranty_months' => $this->parseWarrantyMonths($data['warranty'] ?? null) ?? $existing?->warranty_months,
             'sale_price' => $salePrice > 0 && $salePrice < $regularPrice ? $salePrice : null,
             'stock_quantity' => $stockQty,
             'manage_stock' => true,
@@ -434,9 +459,13 @@ class ProductImportService
         if ($imageUrls !== []) {
             $saved = $this->importImages($product, $imageUrls);
 
-            if ($saved === 0 && ! $product->images()->exists()) {
+            if ($saved === 0 && ! $product->images()->exists() && ! $this->shouldUsePlaceholderImage($data)) {
                 throw new \InvalidArgumentException('Skipped: image download failed');
             }
+        }
+
+        if (! $product->images()->exists() && $this->shouldUsePlaceholderImage($data)) {
+            $this->attachPlaceholderImage($product);
         }
 
         if (! $product->images()->exists()) {
@@ -603,7 +632,7 @@ class ProductImportService
             }
         }
 
-        if (($data['import_source'] ?? '') === 'scoop' || trim($data['categories'] ?? '') !== '') {
+        if (in_array($data['import_source'] ?? '', ['scoop', 'astrum'], true) || trim($data['categories'] ?? '') !== '') {
             $data['categories'] = $this->categoryMapper->mapImportCategories($data);
         }
 
@@ -703,12 +732,73 @@ class ProductImportService
             return true;
         }
 
+        $hasPrice = round($this->parsePrice($data['regular_price'] ?? ''), 2) > 0
+            || round($this->parsePrice($data['srp_price'] ?? ''), 2) > 0
+            || $this->resolveCostPrice($data) > 0;
+
         return trim($data['sku'] ?? '') !== ''
             && trim($data['name'] ?? '') !== ''
             && trim($data['category'] ?? '') !== ''
-            && trim($data['images'] ?? '') === ''
             && trim($data['category_head'] ?? '') === ''
-            && (trim($data['srp_price'] ?? '') !== '' || $this->resolveCostPrice($data) > 0);
+            && trim($data['category_tree'] ?? '') === ''
+            && $hasPrice;
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function resolveRetailPriceForImport(array $data, float $costPrice): float
+    {
+        if (($data['import_source'] ?? '') === 'astrum') {
+            return $this->resolveAstrumImportPricing($data)['retail'];
+        }
+
+        return $this->pricing->retailPriceForImport($costPrice, $data['import_source'] ?? null);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{retail: float, cost: float}
+     */
+    protected function resolveAstrumImportPricing(array $data): array
+    {
+        $mode = (string) config('pricing.astrum_retail_from', 'price');
+
+        if ($mode === 'price') {
+            $retail = round($this->parsePrice($data['regular_price'] ?? ''), 2);
+            $dealer = round($this->parsePrice($data['cost_price'] ?? ''), 2);
+
+            return ['retail' => $retail, 'cost' => $dealer];
+        }
+
+        if ($mode === 'srp') {
+            $retail = round($this->parsePrice($data['srp_price'] ?? ''), 2);
+            $cost = $this->resolveCostPrice($data);
+
+            return ['retail' => $retail, 'cost' => $cost];
+        }
+
+        $cost = $this->resolveCostPrice($data);
+
+        return [
+            'retail' => $this->pricing->retailPriceForImport($cost, 'astrum'),
+            'cost' => $cost,
+        ];
+    }
+
+    protected function parseWarrantyMonths(?string $warranty): ?int
+    {
+        if ($warranty === null || trim($warranty) === '') {
+            return null;
+        }
+
+        if (preg_match('/(\d+)\s*(year|yr)/i', $warranty, $years)) {
+            return (int) $years[1] * 12;
+        }
+
+        if (preg_match('/(\d+)\s*(month|mo)/i', $warranty, $months)) {
+            return (int) $months[1];
+        }
+
+        return null;
     }
 
     /** @param array<string, mixed> $data */
@@ -721,8 +811,17 @@ class ProductImportService
             $data['brand'] = 'Astrum';
         }
 
-        if (trim($data['short_description'] ?? '') === '' && $data['category'] !== '') {
-            $data['short_description'] = 'Astrum '.$data['category'];
+        $variant = trim($data['variant_option'] ?? '');
+        if (trim($data['name'] ?? '') === '' && $variant !== '') {
+            $data['name'] = $variant;
+        } elseif ($variant !== '' && ! str_contains((string) $data['name'], $variant)) {
+            $data['name'] = trim($data['name']).' ('.$variant.')';
+        }
+
+        if (trim($data['short_description'] ?? '') === '') {
+            $desc = strip_tags($data['description'] ?? '');
+
+            $data['short_description'] = Str::limit($desc !== '' ? $desc : 'Astrum '.$data['category'], 255, '');
         }
 
         if (! isset($data['in_stock']) || trim((string) $data['in_stock']) === '') {
@@ -935,6 +1034,33 @@ class ProductImportService
         }
 
         return array_values(array_unique($urls));
+    }
+
+    /** @param  array<string, mixed>  $data */
+    protected function shouldUsePlaceholderImage(array $data): bool
+    {
+        if (! config('catalog.import_placeholder_image', true)) {
+            return false;
+        }
+
+        return ($data['import_source'] ?? '') === 'astrum';
+    }
+
+    protected function attachPlaceholderImage(Product $product): void
+    {
+        $path = $this->images->attachProductPlaceholder($product->id);
+
+        if (! $path) {
+            return;
+        }
+
+        ProductImage::create([
+            'product_id' => $product->id,
+            'path' => $path,
+            'alt_text' => $product->name,
+            'sort_order' => 0,
+            'is_primary' => true,
+        ]);
     }
 
     protected function importImages(Product $product, array $urls): int
