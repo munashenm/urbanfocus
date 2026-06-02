@@ -293,7 +293,7 @@
     <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Product Feeds</h2>
-            <p class="small text-muted">Use these URLs in Google Merchant Center, PriceCheck, and Bob Shop.</p>
+            <p class="small text-muted">Google Merchant and <strong>PriceCheck</strong> use their own formats. <strong>Bob Shop</strong> needs the XML trade feed (<code>/feeds/bobshop.xml</code>) — not Google XML or the PriceCheck CSV. Register the XML URL with Bob Shop (hello@bidorbuy.co.za). Bulk listing uses Bob Shop’s own CSV template from Seller View.</p>
             <table class="table table-sm">
                 <thead><tr><th>Feed</th><th>URL</th></tr></thead>
                 <tbody>

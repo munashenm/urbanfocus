@@ -328,6 +328,74 @@ class Product extends Model
         return $this->is_active && $this->googleMerchantIssues() === [];
     }
 
+    public function bobShopStockQuantity(): int
+    {
+        if ($this->manage_stock) {
+            return max(0, (int) $this->stock_quantity);
+        }
+
+        return $this->in_stock ? 999 : 0;
+    }
+
+    public function bobShopCategoryPath(): string
+    {
+        $parts = [];
+        $category = $this->category;
+
+        while ($category) {
+            array_unshift($parts, $category->name);
+            $category = $category->parent;
+        }
+
+        return $parts !== []
+            ? implode(' > ', $parts)
+            : (string) config('bobshop.default_category', 'Computers & Electronics');
+    }
+
+    public function bobShopDescription(): string
+    {
+        $text = $this->googleFeedDescription();
+
+        return strip_tags($text, '<p><br><br/>');
+    }
+
+    /** @return list<string> */
+    public function bobShopIssues(): array
+    {
+        $issues = [];
+
+        if (! $this->sku) {
+            $issues[] = 'no_sku';
+        }
+
+        if (strlen($this->googleFeedDescription()) < 10) {
+            $issues[] = 'no_description';
+        }
+
+        if ($this->effective_price <= 0) {
+            $issues[] = 'no_price';
+        }
+
+        if (! $this->primary_image_url) {
+            $issues[] = 'no_image';
+        }
+
+        if ($this->bobShopStockQuantity() <= 0) {
+            $issues[] = 'no_stock';
+        }
+
+        if (! $this->category_id) {
+            $issues[] = 'no_category';
+        }
+
+        return $issues;
+    }
+
+    public function isBobShopEligible(): bool
+    {
+        return $this->is_active && $this->bobShopIssues() === [];
+    }
+
     /** @return array<string, string> */
     public static function googleMerchantIssueLabels(): array
     {

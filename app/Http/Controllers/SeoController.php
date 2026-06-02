@@ -59,15 +59,38 @@ class SeoController extends Controller
 
     public function googleMerchantFeed(FeedService $feed): Response
     {
-        return response($feed->googleMerchantXml(), 200, ['Content-Type' => 'application/xml']);
+        try {
+            return response($feed->googleMerchantXml(), 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response('Feed temporarily unavailable.', 503, ['Content-Type' => 'text/plain']);
+        }
+    }
+
+    public function bobShopFeed(FeedService $feed): Response
+    {
+        try {
+            return response($feed->bobShopXml(), 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response('Feed temporarily unavailable.', 503, ['Content-Type' => 'text/plain']);
+        }
     }
 
     public function priceCheckFeed(FeedService $feed): Response
     {
-        return response($feed->priceCheckCsv(), 200, [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="urbanfocus-pricecheck.csv"',
-        ]);
+        try {
+            return response($feed->priceCheckCsv(), 200, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="urbanfocus-pricecheck.csv"',
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response('Feed temporarily unavailable.', 503, ['Content-Type' => 'text/plain']);
+        }
     }
 
     protected function emptySitemap(): string

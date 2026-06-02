@@ -14,7 +14,8 @@ Built for **cPanel shared hosting** (PHP 8.2+, MySQL/MariaDB).
 - Order confirmation emails
 - SEO: meta fields, Product schema JSON-LD, XML sitemap, robots.txt
 - Google Merchant Center feed (`/feeds/google-merchant.xml`)
-- PriceCheck/Bob Shop CSV export (`/feeds/pricecheck.csv`)
+- PriceCheck CSV export (`/feeds/pricecheck.csv`)
+- Bob Shop trade feed XML (`/feeds/bobshop.xml`)
 - Mobile-first responsive design
 - CSRF protection, password hashing, input validation
 

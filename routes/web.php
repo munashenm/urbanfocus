@@ -119,7 +119,8 @@ Route::get('/sitemap-images.xml', [SeoController::class, 'imageSitemap'])->name(
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::get('/feeds/google-merchant.xml', [SeoController::class, 'googleMerchantFeed'])->name('feeds.google');
 Route::get('/feeds/pricecheck.csv', [SeoController::class, 'priceCheckFeed'])->name('feeds.pricecheck');
-Route::get('/feeds/bobshop.csv', [SeoController::class, 'priceCheckFeed'])->name('feeds.bobshop');
+Route::get('/feeds/bobshop.xml', [SeoController::class, 'bobShopFeed'])->name('feeds.bobshop');
+Route::get('/feeds/bobshop.csv', [SeoController::class, 'priceCheckFeed'])->name('feeds.bobshop.csv');
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');

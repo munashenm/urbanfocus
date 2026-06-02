@@ -31,7 +31,8 @@ class CatalogController extends Controller
 
         $feeds = [
             ['name' => 'Google Merchant Center', 'url' => route('feeds.google'), 'format' => 'XML'],
-            ['name' => 'PriceCheck / Bob Shop', 'url' => route('feeds.pricecheck'), 'format' => 'CSV'],
+            ['name' => 'Bob Shop product feed', 'url' => route('feeds.bobshop'), 'format' => 'XML'],
+            ['name' => 'PriceCheck comparison CSV', 'url' => route('feeds.pricecheck'), 'format' => 'CSV'],
             ['name' => 'XML Sitemap', 'url' => route('sitemap'), 'format' => 'XML'],
         ];
 

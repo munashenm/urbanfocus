@@ -206,6 +206,7 @@ class SeoService
         }
 
         Cache::forget('feeds.google-merchant.xml');
+        Cache::forget('feeds.bobshop.xml');
         Cache::forget('feeds.pricecheck.csv');
 
         if (config('seo.indexing.ping_search_engines')) {

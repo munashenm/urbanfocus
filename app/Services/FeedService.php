@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Article;
 use App\Models\Product;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class FeedService
 {
@@ -99,23 +100,106 @@ class FeedService
     public function priceCheckCsv(): string
     {
         return Cache::remember('feeds.pricecheck.csv', config('seo.cache.feed_ttl', 1800), function () {
-            $products = Product::where('is_active', true)->get();
             $lines = ['SKU,Product Name,Brand,Price,Stock,URL,Category'];
 
-            foreach ($products as $product) {
-                $lines[] = implode(',', [
-                    $this->csvEscape($product->sku ?: $product->id),
-                    $this->csvEscape($product->name),
-                $this->csvEscape($product->brand ?: 'Urban Focus'),
-                number_format($product->effective_price, 2, '.', ''),
-                $product->isAvailable() ? 'In Stock' : 'Out of Stock',
-                route('products.show', $product),
-                $this->csvEscape($product->category?->name ?? ''),
-            ]);
-        }
+            Product::query()
+                ->with('category')
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->chunkById(200, function ($products) use (&$lines) {
+                    foreach ($products as $product) {
+                        $lines[] = implode(',', [
+                            $this->csvEscape($product->sku ?: $product->id),
+                            $this->csvEscape($product->name),
+                            $this->csvEscape($product->brand ?: 'Urban Focus'),
+                            number_format($product->effective_price, 2, '.', ''),
+                            $product->isAvailable() ? 'In Stock' : 'Out of Stock',
+                            route('products.show', $product),
+                            $this->csvEscape($product->category?->name ?? ''),
+                        ]);
+                    }
+                });
 
             return implode("\n", $lines);
         });
+    }
+
+    /**
+     * Bob Shop / Bidorbuy trade feed XML (not Google Merchant format).
+     */
+    public function bobShopXml(): string
+    {
+        return Cache::remember('feeds.bobshop.xml', config('seo.cache.feed_ttl', 1800), function () {
+            $doc = new \DOMDocument('1.0', 'UTF-8');
+            $doc->formatOutput = false;
+            $root = $doc->createElement('products');
+            $doc->appendChild($root);
+
+            Product::query()
+                ->with(['category.parent.parent.parent', 'images'])
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->chunkById(100, function ($products) use ($doc, $root) {
+                    foreach ($products as $product) {
+                        if (! $product->isBobShopEligible()) {
+                            continue;
+                        }
+
+                        $this->appendBobShopProduct($doc, $root, $product);
+                    }
+                });
+
+            return $doc->saveXML();
+        });
+    }
+
+    protected function appendBobShopProduct(\DOMDocument $doc, \DOMElement $root, Product $product): void
+    {
+        $productNode = $doc->createElement('product');
+        $root->appendChild($productNode);
+
+        $this->appendBobShopText($doc, $productNode, 'code', Str::limit($product->sku, 100, ''));
+        $this->appendBobShopText($doc, $productNode, 'name', $product->googleFeedTitle());
+        $this->appendBobShopText($doc, $productNode, 'category', $product->bobShopCategoryPath());
+        $this->appendBobShopText($doc, $productNode, 'price', number_format($product->effective_price, 2, '.', ''));
+
+        if ($product->is_on_sale) {
+            $this->appendBobShopText($doc, $productNode, 'marketPrice', number_format((float) $product->price, 2, '.', ''));
+        }
+
+        $this->appendBobShopText($doc, $productNode, 'availableQuantity', (string) $product->bobShopStockQuantity());
+
+        $description = $doc->createElement('description');
+        $description->appendChild($doc->createCDATASection($product->bobShopDescription()));
+        $productNode->appendChild($description);
+
+        if ($imageUrl = $product->primary_image_url) {
+            $images = $doc->createElement('images');
+            $image = $doc->createElement('image');
+            $image->appendChild($doc->createTextNode($imageUrl));
+            $images->appendChild($image);
+            $productNode->appendChild($images);
+        }
+
+        if ($product->brand) {
+            $attributes = $doc->createElement('attributes');
+            $attribute = $doc->createElement('attribute');
+            $this->appendBobShopText($doc, $attribute, 'name', 'Brand');
+            $this->appendBobShopText($doc, $attribute, 'value', $product->brand);
+            $attributes->appendChild($attribute);
+            $productNode->appendChild($attributes);
+        }
+
+        if ($product->hasValidGtin()) {
+            $this->appendBobShopText($doc, $productNode, 'gtin', $product->normalizedGtin());
+        }
+    }
+
+    protected function appendBobShopText(\DOMDocument $doc, \DOMElement $parent, string $name, string $value): void
+    {
+        $node = $doc->createElement($name);
+        $node->appendChild($doc->createTextNode($value));
+        $parent->appendChild($node);
     }
 
     protected function appendGoogleMerchantItem(\SimpleXMLElement $channel, Product $product): void
