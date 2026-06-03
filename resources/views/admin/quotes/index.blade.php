@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('page_title', 'Quotes & RFQs')
+@section('page_title', 'Enquiries (RFQ)')
 @section('content')
 <div class="card"><div class="table-responsive"><table class="table mb-0">
 <thead><tr><th>Date</th><th>Type</th><th>Name</th><th>Company</th><th>Email</th><th>Status</th><th></th></tr></thead>

@@ -33,6 +33,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\QuoteController as AdminQuoteController;
+use App\Http\Controllers\Admin\QuotationController as AdminQuotationController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -164,4 +165,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('quotes', [AdminQuoteController::class, 'index'])->name('quotes.index');
     Route::get('quotes/{quote}', [AdminQuoteController::class, 'show'])->name('quotes.show');
     Route::put('quotes/{quote}', [AdminQuoteController::class, 'update'])->name('quotes.update');
+    Route::get('quotations/products/search', [AdminQuotationController::class, 'productSearch'])->name('quotations.products.search');
+    Route::get('quotations/{quotation}/print', [AdminQuotationController::class, 'print'])->name('quotations.print');
+    Route::get('quotations/{quotation}/download', [AdminQuotationController::class, 'download'])->name('quotations.download');
+    Route::resource('quotations', AdminQuotationController::class);
 });

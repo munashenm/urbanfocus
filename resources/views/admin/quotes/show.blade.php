@@ -1,6 +1,12 @@
 @extends('layouts.admin')
 @section('page_title', 'Quote #'.$quote->id)
 @section('content')
+<div class="admin-page-actions mb-3">
+    @if(Route::has('admin.quotations.create'))
+        <a href="{{ route('admin.quotations.create', ['from_quote' => $quote->id]) }}" class="btn btn-primary btn-sm">Create sales quotation</a>
+    @endif
+    <a href="{{ route('admin.quotes.index') }}" class="btn btn-link btn-sm">All enquiries</a>
+</div>
 <div class="row g-4">
 <div class="col-lg-7"><div class="card"><div class="card-body">
 <p><strong>Type:</strong> {{ $quote->typeLabel() }}</p>
