@@ -28,7 +28,15 @@
         .totals .amount { text-align: right; }
         .totals .grand td { font-weight: bold; font-size: 16px; border-top: 2px solid #0a1628; padding-top: 10px; }
         .notes { margin-top: 24px; padding: 12px; background: #f9fafb; border-radius: 4px; }
-        .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+        .legal-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid #ddd; }
+        .legal-section h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #0a1628; margin: 0 0 12px; }
+        .banking-box { background: #f5f7fa; border: 1px solid #dde3ea; border-radius: 6px; padding: 14px 16px; margin-bottom: 8px; }
+        .banking-box table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .banking-box td { padding: 4px 8px 4px 0; vertical-align: top; }
+        .banking-box td:first-child { color: #666; width: 140px; white-space: nowrap; }
+        .banking-box .reference { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; font-weight: bold; color: #0a1628; }
+        .terms-text { font-size: 12px; color: #444; line-height: 1.55; white-space: pre-wrap; }
+        .footer { margin-top: 24px; padding-top: 12px; font-size: 12px; color: #888; }
         .badge-expired { color: #b45309; font-weight: bold; }
         @media print {
             .toolbar { display: none; }
@@ -154,14 +162,39 @@
         @if($quotation->notes)
             <div class="notes">
                 <strong>Notes</strong>
-                <p class="mb-0">{!! nl2br(e($quotation->notes)) !!}</p>
+                <p style="margin:8px 0 0">{!! nl2br(e($quotation->notes)) !!}</p>
+            </div>
+        @endif
+
+        @if(!empty($banking))
+            <div class="legal-section">
+                <h3>Banking details</h3>
+                <div class="banking-box">
+                    <table>
+                        @if($banking['bank_name'])
+                            <tr><td>Bank</td><td>{{ $banking['bank_name'] }}</td></tr>
+                        @endif
+                        @if($banking['branch_code'])
+                            <tr><td>Branch code</td><td>{{ $banking['branch_code'] }}</td></tr>
+                        @endif
+                        <tr><td>Account number</td><td>{{ $banking['account_number'] }}</td></tr>
+                        @if($banking['swift_code'])
+                            <tr><td>SWIFT</td><td>{{ $banking['swift_code'] }}</td></tr>
+                        @endif
+                    </table>
+                    <p class="reference">Payment reference: {{ $quotation->quotation_number }}</p>
+                </div>
+            </div>
+        @endif
+
+        @if(!empty($termsText))
+            <div class="legal-section">
+                <h3>Terms &amp; conditions</h3>
+                <div class="terms-text">{{ $termsText }}</div>
             </div>
         @endif
 
         <div class="footer">
-            @if($quotation->terms)
-                <p>{!! nl2br(e($quotation->terms)) !!}</p>
-            @endif
             <p>{{ $seller['name'] }} · {{ $seller['website'] ?? config('app.url') }}</p>
         </div>
     </div>

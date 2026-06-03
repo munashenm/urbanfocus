@@ -81,7 +81,10 @@ class QuotationController extends Controller
     {
         $quotation->load(['items.product', 'sourceQuote', 'creator']);
 
-        return view('admin.quotations.show', compact('quotation'));
+        return view('admin.quotations.show', [
+            'quotation' => $quotation,
+            'banking' => $this->quotations->bankingDetails(),
+        ]);
     }
 
     public function edit(Quotation $quotation): View

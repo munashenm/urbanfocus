@@ -111,11 +111,15 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label">Customer notes</label>
-                        <textarea name="notes" class="form-control" rows="3">{{ old('notes', $q?->notes ?? '') }}</textarea>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Optional message shown on the quotation">{{ old('notes', $q?->notes ?? '') }}</textarea>
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Terms &amp; conditions</label>
-                        <textarea name="terms" class="form-control" rows="3">{{ old('terms', $q?->terms ?? $defaultTerms) }}</textarea>
+                        <textarea name="terms" class="form-control" rows="12">{{ old('terms', $q?->terms ?? $defaultTerms) }}</textarea>
+                        <p class="form-text mb-0">
+                            Shown on print/download. Banking details are set in <code>.env</code>
+                            (<code>BUSINESS_BANK_*</code>). Edit site-wide default terms in <code>config/quotation.php</code> or <code>QUOTATION_TERMS_AND_CONDITIONS</code> in <code>.env</code>.
+                        </p>
                     </div>
                 </div>
             </div>

@@ -17,4 +17,11 @@ return [
     'careers_email' => env('CAREERS_EMAIL', 'sales@urbanfocus.co.za'),
     'vat_number' => env('BUSINESS_VAT_NUMBER', ''),
     'company_reg' => env('BUSINESS_COMPANY_REG', ''),
+
+    'banking' => [
+        'bank_name' => env('BUSINESS_BANK_NAME', ''),
+        'branch_code' => env('BUSINESS_BANK_BRANCH_CODE', ''),
+        'account_number' => env('BUSINESS_BANK_ACCOUNT_NUMBER', ''),
+        'swift_code' => env('BUSINESS_BANK_SWIFT', ''),
+    ],
 ];

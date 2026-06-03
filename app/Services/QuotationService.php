@@ -35,7 +35,61 @@ class QuotationService
 
     public function defaultTerms(): string
     {
-        return (string) config('quotation.default_terms', '');
+        return $this->defaultQuotationTerms();
+    }
+
+    public function standardTermsAndConditions(): string
+    {
+        return trim((string) config('quotation.terms_and_conditions', ''));
+    }
+
+    public function defaultPaymentNote(): string
+    {
+        return trim((string) config('quotation.default_terms', ''));
+    }
+
+    /** Full text pre-filled when creating a new quotation in admin. */
+    public function defaultQuotationTerms(): string
+    {
+        $parts = array_filter([
+            $this->standardTermsAndConditions(),
+            $this->defaultPaymentNote(),
+        ]);
+
+        return implode("\n\n", $parts);
+    }
+
+    /**
+     * @return array<string, string>|null
+     */
+    public function bankingDetails(): ?array
+    {
+        $bank = config('business.banking', []);
+        if (! is_array($bank)) {
+            return null;
+        }
+
+        $accountNumber = trim((string) ($bank['account_number'] ?? ''));
+        if ($accountNumber === '') {
+            return null;
+        }
+
+        return [
+            'bank_name' => trim((string) ($bank['bank_name'] ?? '')),
+            'branch_code' => trim((string) ($bank['branch_code'] ?? '')),
+            'account_number' => $accountNumber,
+            'swift_code' => trim((string) ($bank['swift_code'] ?? '')),
+        ];
+    }
+
+    public function documentTerms(Quotation $quotation): string
+    {
+        $custom = trim((string) ($quotation->terms ?? ''));
+        if ($custom !== '') {
+            return $custom;
+        }
+
+        return $this->defaultQuotationTerms();
     }
 
     /**
@@ -110,6 +164,8 @@ class QuotationService
                 'address' => config('business.address'),
                 'website' => config('business.website'),
             ],
+            'banking' => $this->bankingDetails(),
+            'termsText' => $this->documentTerms($quotation),
         ];
     }
 

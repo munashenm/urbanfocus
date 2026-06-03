@@ -83,6 +83,24 @@
                 <p class="mb-0 small">{!! nl2br(e($quotation->internal_notes)) !!}</p>
             </div></div>
         @endif
+        <div class="card admin-card mb-4"><div class="card-body">
+            <h3 class="h6 fw-bold">Banking (on print)</h3>
+            @if($banking)
+                @if($banking['bank_name'])<p class="small mb-1">{{ $banking['bank_name'] }}</p>@endif
+                <p class="small mb-1">Acc: {{ $banking['account_number'] }}@if($banking['branch_code']) · Branch {{ $banking['branch_code'] }}@endif</p>
+                <p class="small text-muted mb-0">Ref: {{ $quotation->quotation_number }}</p>
+            @else
+                <p class="small text-muted mb-0">Not configured. Add <code>BUSINESS_BANK_ACCOUNT_NUMBER</code> (and related vars) in <code>.env</code>.</p>
+            @endif
+        </div></div>
+        <div class="card admin-card mb-4"><div class="card-body">
+            <h3 class="h6 fw-bold">Terms &amp; conditions</h3>
+            @if($quotation->terms)
+                <p class="mb-0 small" style="white-space:pre-wrap">{{ $quotation->terms }}</p>
+            @else
+                <p class="small text-muted mb-0">Using site default terms on print. Edit this quotation to customize.</p>
+            @endif
+        </div></div>
         <div class="card admin-card"><div class="card-body small text-muted">
             Created {{ $quotation->created_at->format('d M Y H:i') }}
             @if($quotation->creator) by {{ $quotation->creator->name }}@endif
