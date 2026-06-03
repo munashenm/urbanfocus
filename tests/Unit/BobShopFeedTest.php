@@ -42,11 +42,15 @@ class BobShopFeedTest extends TestCase
 
         $xml = app(FeedService::class)->bobShopXml();
 
-        $this->assertStringContainsString('<code>AP-TEST-01</code>', $xml);
-        $this->assertStringContainsString('<availableQuantity>5</availableQuantity>', $xml);
-        $this->assertStringContainsString('<category>Networking</category>', $xml);
-        $this->assertStringContainsString('<name>Test Access Point</name>', $xml);
-        $this->assertStringContainsString('<price>1999.00</price>', $xml);
+        $this->assertStringContainsString('<ROOT>', $xml);
+        $this->assertStringContainsString('<Products>', $xml);
+        $this->assertStringContainsString('<Product>', $xml);
+        $this->assertStringContainsString('<ProductCode><![CDATA[AP-TEST-01]]></ProductCode>', $xml);
+        $this->assertStringContainsString('<AvailableQty>5</AvailableQty>', $xml);
+        $this->assertStringContainsString('<Category><![CDATA[Networking]]></Category>', $xml);
+        $this->assertStringContainsString('<ProductName><![CDATA[Test Access Point]]></ProductName>', $xml);
+        $this->assertStringContainsString('<Price>1999.00</Price>', $xml);
+        $this->assertStringContainsString('<Brand>Ubiquiti</Brand>', $xml);
     }
 
     public function test_out_of_stock_product_excluded_from_bob_shop_feed(): void
@@ -69,6 +73,35 @@ class BobShopFeedTest extends TestCase
 
         $xml = app(FeedService::class)->bobShopXml();
 
-        $this->assertStringNotContainsString('<code>OOS-PRINT</code>', $xml);
+        $this->assertStringNotContainsString('<ProductCode><![CDATA[OOS-PRINT]]></ProductCode>', $xml);
+    }
+
+    public function test_bob_shop_bulkload_csv_matches_official_template(): void
+    {
+        Cache::flush();
+
+        $category = Category::create(['name' => 'Networking', 'slug' => 'networking', 'is_active' => true]);
+        Product::create([
+            'category_id' => $category->id,
+            'name' => 'Bulkload Test Router',
+            'slug' => 'bulkload-test-router',
+            'sku' => 'BB-ROUTER-1',
+            'short_description' => 'Gigabit router for Bob Shop bulk CSV export testing.',
+            'price' => 899,
+            'stock_quantity' => 3,
+            'manage_stock' => true,
+            'in_stock' => true,
+            'is_active' => true,
+        ]);
+
+        $csv = app(FeedService::class)->bobShopBulkloadCsv();
+        $lines = preg_split('/\r\n|\r|\n/', trim($csv));
+
+        $this->assertGreaterThanOrEqual(2, count($lines));
+        $this->assertStringContainsString('Listing Type [mandatory]', $lines[0]);
+        $this->assertStringContainsString('FIXED_PRICE', $lines[1]);
+        $this->assertStringContainsString('BB-ROUTER-1', $lines[1]);
+        $this->assertStringContainsString('899.00', $lines[1]);
+        $this->assertStringEndsWith(',End', $lines[1]);
     }
 }

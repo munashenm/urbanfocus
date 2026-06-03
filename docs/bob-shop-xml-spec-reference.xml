@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Reference copy of Bob Shop trade feed spec (https://bobshop-tools-backend-prod-infra-public.s3.af-south-1.amazonaws.com/Bob-Shop-XML-Spec.xml) -->
+<ROOT>
+<Version>
+    <PluginVersion>WooCommerce v1.23</PluginVersion>
+    <ExportCreated>2002-05-30T09:30:10-06:00</ExportCreated>
+</Version>
+<Products>
+    <Product>
+        <ProductCode><![CDATA[SEHM12]]></ProductCode>
+        <ProductGTIN>3234567890126</ProductGTIN>
+        <ProductName><![CDATA[Salton Elite Food Hand Mixer (SEHM12)]]></ProductName>
+        <Category><![CDATA[Food Preparation]]></Category>
+        <Price>182.99</Price>
+        <MarketPrice>250.00</MarketPrice>
+        <AllowOffers>false</AllowOffers>
+        <AvailableQty>5</AvailableQty>
+        <Condition>New</Condition>
+        <Images>
+            <ImageURL><![CDATA[http://example.com/image.jpg]]></ImageURL>
+        </Images>
+        <ProductDescription><![CDATA[<p>Description</p>]]></ProductDescription>
+        <ProductAttributes>
+            <Brand>Apple</Brand>
+        </ProductAttributes>
+        <WarrantyType>3</WarrantyType>
+        <WarrantyText>12 month manufacturer warranty</WarrantyText>
+    </Product>
+</Products>
+</ROOT>

@@ -293,7 +293,11 @@
     <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Product Feeds</h2>
-            <p class="small text-muted">Google Merchant and <strong>PriceCheck</strong> use their own formats. <strong>Bob Shop</strong> needs the XML trade feed (<code>/feeds/bobshop.xml</code>) — not Google XML or the PriceCheck CSV. Register the XML URL with Bob Shop (hello@bidorbuy.co.za). Bulk listing uses Bob Shop’s own CSV template from Seller View.</p>
+            <p class="small text-muted">
+                <strong>Bob Shop BulkLoad:</strong> download <a href="{{ route('feeds.bobshop.csv') }}" target="_blank">bobshop.csv</a> and upload in Seller View → BulkLoad Items.
+                Set <code>BOBSHOP_PRIMARY_CATEGORY_ID</code> in <code>.env</code> to your Bob Shop category number (see their category picker when listing manually).
+                <strong>XML trade feed:</strong> <a href="{{ route('feeds.bobshop') }}" target="_blank">bobshop.xml</a> — official Bob Shop spec (<code>ROOT</code> → <code>Products</code> → <code>Product</code>). Register URL with hello@bidorbuy.co.za.
+            </p>
             <table class="table table-sm">
                 <thead><tr><th>Feed</th><th>URL</th></tr></thead>
                 <tbody>

@@ -68,10 +68,24 @@ class SeoController extends Controller
         }
     }
 
-    public function bobShopFeed(FeedService $feed): Response
+    public function bobShopXmlFeed(FeedService $feed): Response
     {
         try {
             return response($feed->bobShopXml(), 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response('Feed temporarily unavailable.', 503, ['Content-Type' => 'text/plain']);
+        }
+    }
+
+    public function bobShopBulkloadCsv(FeedService $feed): Response
+    {
+        try {
+            return response($feed->bobShopBulkloadCsv(), 200, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="urbanfocus-bobshop-bulkload.csv"',
+            ]);
         } catch (\Throwable $e) {
             report($e);
 

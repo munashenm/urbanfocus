@@ -368,6 +368,10 @@ class Product extends Model
             $issues[] = 'no_sku';
         }
 
+        if (config('bobshop.xml.require_gtin', false) && ! $this->hasValidGtin()) {
+            $issues[] = 'no_gtin';
+        }
+
         if (strlen($this->googleFeedDescription()) < 10) {
             $issues[] = 'no_description';
         }
@@ -376,7 +380,7 @@ class Product extends Model
             $issues[] = 'no_price';
         }
 
-        if (! $this->primary_image_url) {
+        if ($this->bobShopXmlImageUrls() === []) {
             $issues[] = 'no_image';
         }
 
@@ -384,16 +388,124 @@ class Product extends Model
             $issues[] = 'no_stock';
         }
 
-        if (! $this->category_id) {
-            $issues[] = 'no_category';
-        }
-
         return $issues;
     }
 
     public function isBobShopEligible(): bool
     {
-        return $this->is_active && $this->bobShopIssues() === [];
+        $issues = $this->bobShopIssues();
+
+        if (! config('bobshop.xml_require_stock', true)) {
+            $issues = array_values(array_diff($issues, ['no_stock']));
+        }
+
+        return $this->is_active && $issues === [];
+    }
+
+    /** @return list<string> */
+    public function bobShopBulkloadIssues(): array
+    {
+        $issues = [];
+
+        if (! $this->sku) {
+            $issues[] = 'no_sku';
+        }
+
+        if (strlen($this->googleFeedDescription()) < 10) {
+            $issues[] = 'no_description';
+        }
+
+        if ($this->effective_price <= 0) {
+            $issues[] = 'no_price';
+        }
+
+        if (config('bobshop.bulkload.require_stock', false) && $this->bobShopStockQuantity() <= 0) {
+            $issues[] = 'no_stock';
+        }
+
+        return $issues;
+    }
+
+    public function isBobShopBulkloadEligible(): bool
+    {
+        return $this->is_active && $this->bobShopBulkloadIssues() === [];
+    }
+
+    public function bobShopPrimaryCategoryId(): string
+    {
+        $slug = $this->category?->slug;
+        $map = config('bobshop.primary_category_ids', []);
+
+        if ($slug && isset($map[$slug])) {
+            return (string) $map[$slug];
+        }
+
+        return (string) config('bobshop.default_primary_category_id', '2521');
+    }
+
+    public function bobShopWarrantyType(): string
+    {
+        $months = (int) ($this->warranty_months ?? config('shipping.default_warranty_months', 12));
+
+        return $months > 0 ? 'MANUFACTURER' : 'NOT_OFFERED';
+    }
+
+    public function bobShopWarrantyRemarks(): string
+    {
+        if ($this->bobShopWarrantyType() === 'NOT_OFFERED') {
+            return '';
+        }
+
+        return Str::limit($this->warrantyLabel(), 300, '');
+    }
+
+    /** Bob Shop XML spec: New, Secondhand, or Refurbished. */
+    public function bobShopCondition(): string
+    {
+        return 'New';
+    }
+
+    /** Bob Shop XML WarrantyType numeric code (0–3). */
+    public function bobShopWarrantyTypeCode(): string
+    {
+        return match ($this->bobShopWarrantyType()) {
+            'REPLACEMENT' => '1',
+            'DEALER' => '2',
+            'MANUFACTURER' => '3',
+            default => '0',
+        };
+    }
+
+    public function bobShopXmlDescription(): string
+    {
+        $body = '<p>'.e($this->bobShopDescription()).'</p>'
+            .'<p><a href="'.e(route('products.show', $this)).'">View on Urban Focus</a></p>';
+
+        return Str::limit($body, (int) config('bobshop.max_description_length', 8000), '');
+    }
+
+    /** @return list<string> */
+    public function bobShopXmlImageUrls(): array
+    {
+        $maxLen = (int) config('bobshop.xml.max_image_url_length', 300);
+        $urls = [];
+
+        if ($this->primary_image_url) {
+            $urls[] = $this->primary_image_url;
+        }
+
+        foreach ($this->googleFeedAdditionalImages() as $imageUrl) {
+            $urls[] = $imageUrl;
+        }
+
+        if ($urls === [] && config('bobshop.bulkload.use_placeholder_image', true)) {
+            $urls[] = product_image_url();
+        }
+
+        return array_values(array_filter(array_map(
+            fn (string $url) => Str::limit($url, $maxLen, ''),
+            array_unique($urls)
+        )));
     }
 
     /** @return array<string, string> */

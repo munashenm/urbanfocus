@@ -125,27 +125,174 @@ class FeedService
     }
 
     /**
-     * Bob Shop / Bidorbuy trade feed XML (not Google Merchant format).
+     * Bob Shop BulkLoad CSV (official template columns for Seller View upload).
+     */
+    public function bobShopBulkloadCsv(): string
+    {
+        return Cache::remember('feeds.bobshop.bulkload.csv', config('seo.cache.feed_ttl', 1800), function () {
+            $handle = fopen('php://temp', 'r+');
+
+            if ($handle === false) {
+                throw new \RuntimeException('Could not build Bob Shop CSV.');
+            }
+
+            fputcsv($handle, config('bobshop.bulkload_headers', []));
+
+            $listing = config('bobshop.listing', []);
+            $timezone = config('app.timezone', 'Africa/Johannesburg');
+            $start = now($timezone)->addDay()->setTime(
+                (int) ($listing['start_hour'] ?? 1),
+                (int) ($listing['start_minute'] ?? 0)
+            );
+            $stop = $start->copy()->addDays((int) ($listing['listing_days'] ?? 30));
+            $dateFormat = 'd/m/Y H:i';
+
+            Product::query()
+                ->with(['category.parent.parent.parent', 'images'])
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->chunkById(100, function ($products) use ($handle, $listing, $start, $stop, $dateFormat) {
+                    foreach ($products as $product) {
+                        if (! $product->isBobShopBulkloadEligible()) {
+                            continue;
+                        }
+
+                        fputcsv($handle, $this->bobShopBulkloadRow($product, $listing, $start, $stop, $dateFormat));
+                    }
+                });
+
+            rewind($handle);
+            $csv = stream_get_contents($handle);
+            fclose($handle);
+
+            return $csv !== false ? $csv : '';
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $listing
+     * @return list<string|int|float|null>
+     */
+    protected function bobShopBulkloadRow(Product $product, array $listing, \Carbon\Carbon $start, \Carbon\Carbon $stop, string $dateFormat): array
+    {
+        $quantity = $this->bobShopBulkloadQuantity($product);
+        $buyNow = number_format($product->effective_price, 2, '.', '');
+        $rrp = $product->is_on_sale
+            ? number_format((float) $product->price, 2, '.', '')
+            : '';
+
+        $description = '<p>'.e($product->bobShopDescription()).'</p>'
+            .'<p><a href="'.e(route('products.show', $product)).'">View on Urban Focus</a></p>';
+
+        return [
+            $listing['type'] ?? 'FIXED_PRICE',
+            $product->googleFeedTitle(),
+            $product->bobShopPrimaryCategoryId(),
+            '',
+            $listing['location'] ?? 'South Africa',
+            Str::limit($product->sku, 100, ''),
+            $start->format($dateFormat),
+            $stop->format($dateFormat),
+            (string) $quantity,
+            '',
+            '',
+            '',
+            '',
+            $buyNow,
+            $rrp,
+            '',
+            $listing['currency'] ?? 'R',
+            $listing['condition'] ?? 'NEW',
+            $this->bobShopBulkloadImageUrls($product),
+            $listing['relist_option'] ?? 'RELIST_DAILY_ALL',
+            (string) ($listing['relist_count'] ?? '1'),
+            Str::limit($description, (int) config('bobshop.max_description_length', 8000), ''),
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            $product->bobShopWarrantyType(),
+            $product->bobShopWarrantyRemarks(),
+            '',
+            '',
+            '',
+            '',
+            '',
+            $product->hasValidGtin() ? $product->normalizedGtin() : '',
+            '',
+            '',
+            '',
+            $product->weight ? number_format((float) $product->weight, 2, '.', '') : '',
+            '',
+            'End',
+        ];
+    }
+
+    protected function bobShopBulkloadQuantity(Product $product): int
+    {
+        $qty = $product->bobShopStockQuantity();
+
+        if ($qty > 0) {
+            return $qty;
+        }
+
+        return max(0, (int) config('bobshop.bulkload.min_quantity', 1));
+    }
+
+    protected function bobShopBulkloadImageUrls(Product $product): string
+    {
+        $urls = [];
+
+        if ($product->primary_image_url) {
+            $urls[] = $product->primary_image_url;
+        }
+
+        foreach ($product->googleFeedAdditionalImages() as $imageUrl) {
+            $urls[] = $imageUrl;
+        }
+
+        if ($urls === [] && config('bobshop.bulkload.use_placeholder_image', true)) {
+            $urls[] = product_image_url();
+        }
+
+        return implode(':', array_values(array_unique($urls)));
+    }
+
+    /**
+     * Bob Shop official trade feed XML (Bob-Shop-XML-Spec: ROOT > Products > Product).
      */
     public function bobShopXml(): string
     {
         return Cache::remember('feeds.bobshop.xml', config('seo.cache.feed_ttl', 1800), function () {
             $doc = new \DOMDocument('1.0', 'UTF-8');
             $doc->formatOutput = false;
-            $root = $doc->createElement('products');
+
+            $root = $doc->createElement('ROOT');
             $doc->appendChild($root);
+
+            if (config('bobshop.xml.include_version', true)) {
+                $this->appendBobShopVersion($doc, $root);
+            }
+
+            $productsNode = $doc->createElement('Products');
+            $root->appendChild($productsNode);
 
             Product::query()
                 ->with(['category.parent.parent.parent', 'images'])
                 ->where('is_active', true)
                 ->orderBy('id')
-                ->chunkById(100, function ($products) use ($doc, $root) {
+                ->chunkById(100, function ($products) use ($doc, $productsNode) {
                     foreach ($products as $product) {
                         if (! $product->isBobShopEligible()) {
                             continue;
                         }
 
-                        $this->appendBobShopProduct($doc, $root, $product);
+                        $this->appendBobShopProduct($doc, $productsNode, $product);
                     }
                 });
 
@@ -153,52 +300,100 @@ class FeedService
         });
     }
 
-    protected function appendBobShopProduct(\DOMDocument $doc, \DOMElement $root, Product $product): void
+    protected function appendBobShopVersion(\DOMDocument $doc, \DOMElement $root): void
     {
-        $productNode = $doc->createElement('product');
-        $root->appendChild($productNode);
+        $version = $doc->createElement('Version');
+        $root->appendChild($version);
 
-        $this->appendBobShopText($doc, $productNode, 'code', Str::limit($product->sku, 100, ''));
-        $this->appendBobShopText($doc, $productNode, 'name', $product->googleFeedTitle());
-        $this->appendBobShopText($doc, $productNode, 'category', $product->bobShopCategoryPath());
-        $this->appendBobShopText($doc, $productNode, 'price', number_format($product->effective_price, 2, '.', ''));
+        $this->appendBobShopTextNode($doc, $version, 'PluginVersion', 'Urban Focus Laravel '.app()->version());
+        $this->appendBobShopTextNode(
+            $doc,
+            $version,
+            'ExportCreated',
+            now(config('app.timezone', 'Africa/Johannesburg'))->toIso8601String()
+        );
+    }
 
-        if ($product->is_on_sale) {
-            $this->appendBobShopText($doc, $productNode, 'marketPrice', number_format((float) $product->price, 2, '.', ''));
-        }
+    protected function appendBobShopProduct(\DOMDocument $doc, \DOMElement $productsNode, Product $product): void
+    {
+        $productNode = $doc->createElement('Product');
+        $productsNode->appendChild($productNode);
 
-        $this->appendBobShopText($doc, $productNode, 'availableQuantity', (string) $product->bobShopStockQuantity());
-
-        $description = $doc->createElement('description');
-        $description->appendChild($doc->createCDATASection($product->bobShopDescription()));
-        $productNode->appendChild($description);
-
-        if ($imageUrl = $product->primary_image_url) {
-            $images = $doc->createElement('images');
-            $image = $doc->createElement('image');
-            $image->appendChild($doc->createTextNode($imageUrl));
-            $images->appendChild($image);
-            $productNode->appendChild($images);
-        }
-
-        if ($product->brand) {
-            $attributes = $doc->createElement('attributes');
-            $attribute = $doc->createElement('attribute');
-            $this->appendBobShopText($doc, $attribute, 'name', 'Brand');
-            $this->appendBobShopText($doc, $attribute, 'value', $product->brand);
-            $attributes->appendChild($attribute);
-            $productNode->appendChild($attributes);
-        }
+        $this->appendBobShopCdataNode($doc, $productNode, 'ProductCode', Str::limit($product->sku, 100, ''));
 
         if ($product->hasValidGtin()) {
-            $this->appendBobShopText($doc, $productNode, 'gtin', $product->normalizedGtin());
+            $this->appendBobShopTextNode($doc, $productNode, 'ProductGTIN', $product->normalizedGtin());
+        }
+
+        $this->appendBobShopCdataNode($doc, $productNode, 'ProductName', $product->googleFeedTitle());
+        $this->appendBobShopCdataNode($doc, $productNode, 'Category', $product->bobShopCategoryPath());
+        $this->appendBobShopTextNode($doc, $productNode, 'Price', number_format($product->effective_price, 2, '.', ''));
+
+        if ($product->is_on_sale) {
+            $this->appendBobShopTextNode($doc, $productNode, 'MarketPrice', number_format((float) $product->price, 2, '.', ''));
+        }
+
+        $this->appendBobShopTextNode(
+            $doc,
+            $productNode,
+            'AllowOffers',
+            config('bobshop.xml.allow_offers', false) ? 'true' : 'false'
+        );
+
+        $this->appendBobShopTextNode($doc, $productNode, 'AvailableQty', (string) $product->bobShopStockQuantity());
+        $this->appendBobShopTextNode($doc, $productNode, 'Condition', $product->bobShopCondition());
+
+        $imageUrls = $product->bobShopXmlImageUrls();
+        if ($imageUrls !== []) {
+            $imagesNode = $doc->createElement('Images');
+            $productNode->appendChild($imagesNode);
+
+            foreach ($imageUrls as $imageUrl) {
+                $this->appendBobShopCdataNode($doc, $imagesNode, 'ImageURL', $imageUrl);
+            }
+        }
+
+        $this->appendBobShopCdataNode($doc, $productNode, 'ProductDescription', $product->bobShopXmlDescription());
+
+        if ($product->brand) {
+            $attributesNode = $doc->createElement('ProductAttributes');
+            $productNode->appendChild($attributesNode);
+            $this->appendBobShopTextNode($doc, $attributesNode, 'Brand', $product->brand);
+        }
+
+        $warrantyCode = $product->bobShopWarrantyTypeCode();
+        $this->appendBobShopTextNode($doc, $productNode, 'WarrantyType', $warrantyCode);
+
+        if ($warrantyCode !== '0') {
+            $this->appendBobShopTextNode($doc, $productNode, 'WarrantyText', $product->bobShopWarrantyRemarks());
+        }
+
+        $shippingClass = trim((string) config('bobshop.xml.shipping_product_class', ''));
+        if ($shippingClass !== '') {
+            $this->appendBobShopTextNode($doc, $productNode, 'ShippingProductClass', $shippingClass);
+        }
+
+        $location = trim((string) config('bobshop.xml.location', ''));
+        if ($location !== '') {
+            $this->appendBobShopTextNode($doc, $productNode, 'Location', $location);
+        }
+
+        if ($product->weight) {
+            $this->appendBobShopTextNode($doc, $productNode, 'ProductWeight', number_format((float) $product->weight, 2, '.', ''));
         }
     }
 
-    protected function appendBobShopText(\DOMDocument $doc, \DOMElement $parent, string $name, string $value): void
+    protected function appendBobShopTextNode(\DOMDocument $doc, \DOMElement $parent, string $name, string $value): void
     {
         $node = $doc->createElement($name);
         $node->appendChild($doc->createTextNode($value));
+        $parent->appendChild($node);
+    }
+
+    protected function appendBobShopCdataNode(\DOMDocument $doc, \DOMElement $parent, string $name, string $value): void
+    {
+        $node = $doc->createElement($name);
+        $node->appendChild($doc->createCDATASection($value));
         $parent->appendChild($node);
     }
 
