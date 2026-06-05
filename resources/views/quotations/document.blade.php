@@ -28,19 +28,43 @@
         .totals .amount { text-align: right; }
         .totals .grand td { font-weight: bold; font-size: 16px; border-top: 2px solid #0a1628; padding-top: 10px; }
         .notes { margin-top: 24px; padding: 12px; background: #f9fafb; border-radius: 4px; }
-        .legal-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid #ddd; }
-        .legal-section h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #0a1628; margin: 0 0 12px; }
-        .banking-box { background: #f5f7fa; border: 1px solid #dde3ea; border-radius: 6px; padding: 14px 16px; margin-bottom: 8px; }
-        .banking-box table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .banking-box td { padding: 4px 8px 4px 0; vertical-align: top; }
-        .banking-box td:first-child { color: #666; width: 140px; white-space: nowrap; }
-        .banking-box .reference { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; font-weight: bold; color: #0a1628; }
-        .terms-text { font-size: 12px; color: #444; line-height: 1.55; white-space: pre-wrap; }
-        .footer { margin-top: 24px; padding-top: 12px; font-size: 12px; color: #888; }
+        .legal-section { margin-top: 20px; padding-top: 14px; border-top: 1px solid #ddd; }
+        .legal-section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #0a1628; margin: 0 0 8px; }
+        .legal-section.banking-section { margin-top: 16px; padding-top: 12px; }
+        .legal-section.terms-section { margin-top: 12px; padding-top: 10px; }
+        .banking-box { background: #f5f7fa; border: 1px solid #dde3ea; border-radius: 4px; padding: 10px 12px; margin-bottom: 0; }
+        .banking-box table { width: 100%; border-collapse: collapse; font-size: 11px; line-height: 1.25; }
+        .banking-box td { padding: 2px 8px 2px 0; vertical-align: top; }
+        .banking-box td:first-child { color: #666; width: 120px; white-space: nowrap; }
+        .banking-box .reference { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #ccc; font-weight: bold; font-size: 11px; color: #0a1628; }
+        .terms-text {
+            font-size: 9px;
+            color: #444;
+            line-height: 1.2;
+            white-space: pre-wrap;
+            margin: 0;
+        }
+        .footer { margin-top: 12px; padding-top: 8px; font-size: 10px; color: #888; }
         .badge-expired { color: #b45309; font-weight: bold; }
         @media print {
             .toolbar { display: none; }
-            body { padding: 0; }
+            body { padding: 0; font-size: 12px; line-height: 1.35; }
+            .header { margin-bottom: 18px; padding-bottom: 10px; }
+            .header h1 { font-size: 20px; }
+            .parties { margin-bottom: 16px; }
+            .party p { margin: 0 0 2px; }
+            table.items th, table.items td { padding: 6px 6px; }
+            table.items { margin-bottom: 12px; }
+            .totals td { padding: 3px 0; }
+            .totals .grand td { font-size: 14px; padding-top: 6px; }
+            .notes { margin-top: 12px; padding: 8px; font-size: 11px; }
+            .legal-section { margin-top: 10px; padding-top: 8px; }
+            .legal-section h3 { font-size: 9px; margin-bottom: 4px; }
+            .banking-box { padding: 6px 8px; }
+            .banking-box table { font-size: 9px; line-height: 1.15; }
+            .banking-box .reference { margin-top: 4px; padding-top: 4px; font-size: 9px; }
+            .terms-text { font-size: 7.5px; line-height: 1.12; }
+            .footer { margin-top: 6px; padding-top: 4px; font-size: 8px; }
         }
     </style>
 </head>
@@ -167,7 +191,7 @@
         @endif
 
         @if(!empty($banking))
-            <div class="legal-section">
+            <div class="legal-section banking-section">
                 <h3>Banking details</h3>
                 <div class="banking-box">
                     <table>
@@ -188,7 +212,7 @@
         @endif
 
         @if(!empty($termsText))
-            <div class="legal-section">
+            <div class="legal-section terms-section">
                 <h3>Terms &amp; conditions</h3>
                 <div class="terms-text">{{ $termsText }}</div>
             </div>

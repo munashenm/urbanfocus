@@ -1,24 +1,13 @@
 <?php
 
 $defaultTermsAndConditions = <<<'TEXT'
-TERMS AND CONDITIONS OF SALE & WARRANTY
-
-Please note that all sales are final and subject to the Terms and Conditions of sale and Warranty Policy.
-
-It is the responsibility of the Purchaser to understand the specifications, limitations, applicability and suitable usage of Products.
-
-Product returns will only be accepted under the terms of Warranty specified and not in the event where the Products are deemed to be unsuitable by the Purchaser or damaged.
-
-Urban Focus offers a 1 year warranty on all products.
-
-Please confirm delivery with your sales person as some of our products are imports.
-
-Prices on the website may vary.
-
-Full terms and conditions are available on our website: www.urbanfocus.co.za
-
-Quotation validity
-This quotation is valid until the "Valid until" date shown above. Prices and stock availability are subject to confirmation at the time of order. Errors and omissions excepted (E&OE).
+TERMS & CONDITIONS — All sales are final and subject to our Terms of Sale and Warranty Policy (www.urbanfocus.co.za).
+• Purchaser is responsible for confirming product specifications, suitability and intended use.
+• Returns accepted only per our warranty policy—not for unsuitability, change of mind, or damage after delivery.
+• 1-year warranty on all products unless otherwise stated.
+• Confirm delivery lead times with your sales contact; some products are imports.
+• Website prices may differ from this quotation.
+• Valid until the date shown above; stock and pricing confirmed on order. E&OE.
 TEXT;
 
 return [
@@ -26,7 +15,7 @@ return [
     'default_validity_days' => (int) env('QUOTATION_VALIDITY_DAYS', 14),
     'default_terms' => env(
         'QUOTATION_DEFAULT_TERMS',
-        'Payment: Please use your quotation number as the payment reference. Notify us once payment has been made so we can confirm and process your order.'
+        'Payment: Use your quotation number as reference and notify us once paid.'
     ),
     'terms_and_conditions' => env('QUOTATION_TERMS_AND_CONDITIONS')
         ? str_replace('\\n', "\n", (string) env('QUOTATION_TERMS_AND_CONDITIONS'))
