@@ -1,23 +1,24 @@
 <?php
 
 $defaultTermsAndConditions = <<<'TEXT'
-1. Quotation validity
-This quotation is valid until the "Valid until" date shown above. Prices and stock are subject to confirmation at the time of order.
+TERMS AND CONDITIONS OF SALE & WARRANTY
 
-2. Pricing
-All prices are quoted in South African Rand (ZAR). Prices include VAT at the prevailing rate unless stated otherwise.
+Please note that all sales are final and subject to the Terms and Conditions of sale and Warranty Policy.
 
-3. Payment
-Payment is due as per agreed terms once the quotation is accepted. Goods will only be dispatched after cleared funds are received unless a credit account has been approved in writing.
+It is the responsibility of the Purchaser to understand the specifications, limitations, applicability and suitable usage of Products.
 
-4. Delivery
-Delivery timelines are estimates only and depend on stock availability and courier schedules. Risk passes to the buyer upon handover to the nominated carrier or collection.
+Product returns will only be accepted under the terms of Warranty specified and not in the event where the Products are deemed to be unsuitable by the Purchaser or damaged.
 
-5. Returns & warranty
-Returns and warranty claims are handled in accordance with our standard store policy and manufacturer warranty terms. Software licences and special-order items may not be returnable.
+Urban Focus offers a 1 year warranty on all products.
 
-6. General
-Urban Focus reserves the right to amend or withdraw this quotation without notice prior to written acceptance. Errors and omissions excepted (E&OE).
+Please confirm delivery with your sales person as some of our products are imports.
+
+Prices on the website may vary.
+
+Full terms and conditions are available on our website: www.urbanfocus.co.za
+
+Quotation validity
+This quotation is valid until the "Valid until" date shown above. Prices and stock availability are subject to confirmation at the time of order. Errors and omissions excepted (E&OE).
 TEXT;
 
 return [
@@ -25,7 +26,7 @@ return [
     'default_validity_days' => (int) env('QUOTATION_VALIDITY_DAYS', 14),
     'default_terms' => env(
         'QUOTATION_DEFAULT_TERMS',
-        'Please use your quotation number as the payment reference. Notify us once payment has been made so we can confirm and process your order.'
+        'Payment: Please use your quotation number as the payment reference. Notify us once payment has been made so we can confirm and process your order.'
     ),
     'terms_and_conditions' => env('QUOTATION_TERMS_AND_CONDITIONS')
         ? str_replace('\\n', "\n", (string) env('QUOTATION_TERMS_AND_CONDITIONS'))
