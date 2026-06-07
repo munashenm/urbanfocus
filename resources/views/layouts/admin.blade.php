@@ -16,7 +16,7 @@
         <aside class="admin-sidebar" id="admin-sidebar">
             <div class="admin-brand">
                 <a href="{{ route('admin.dashboard') }}" class="d-flex align-items-center gap-2 text-white text-decoration-none">
-                    <img src="{{ asset('favicon.svg') }}" alt="" width="32" height="32" style="border-radius:6px">
+                    <img src="{{ asset('favicon.svg') }}" alt="" width="32" height="32">
                     <span>Urban Focus</span>
                 </a>
             </div>
