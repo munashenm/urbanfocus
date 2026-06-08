@@ -58,7 +58,9 @@ class Article extends Model
 
     public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(Tag::class)->withTimestamps();
+        // The article_tag pivot table has no created_at/updated_at columns
+        // (see migration 000092), so withTimestamps() would break queries.
+        return $this->belongsToMany(Tag::class);
     }
 
     public function seoTitle(): string
