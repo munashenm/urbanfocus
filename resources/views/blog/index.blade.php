@@ -113,6 +113,8 @@
                 </div>
             </div>
 
+            @include('blog.partials.newsletter')
+
             <div class="blog-sidebar-card blog-sidebar-card--accent">
                 <h2 class="h6 fw-bold mb-2">Need a quote?</h2>
                 <p class="small text-muted mb-3">VAT invoices, bulk pricing and RFQ support for businesses across South Africa.</p>

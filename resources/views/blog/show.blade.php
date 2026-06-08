@@ -85,11 +85,13 @@
                 </div>
             @endif
 
-            <div class="blog-sidebar-card">
+            <div class="blog-sidebar-card mb-4">
                 <h2 class="h6 fw-bold mb-2">Corporate procurement</h2>
                 <p class="small text-muted mb-3">VAT invoices, bulk quotes and RFQ support for businesses across South Africa.</p>
                 <a href="{{ route('b2b.quote') }}" class="btn btn-outline-primary w-100 btn-sm">Request a Quote</a>
             </div>
+
+            @include('blog.partials.newsletter')
         </aside>
     </article>
 
