@@ -23,23 +23,36 @@ class BlogController extends Controller
     public function index(Request $request): View
     {
         $activeCategory = $request->query('category');
+        $search = trim((string) $request->query('q', ''));
         $categories = config('blog.categories', []);
+        $isFiltered = $activeCategory || $search !== '';
 
         $featured = null;
-        if (BlogSchema::hasFeatured()) {
-            $featured = Article::published()
-                ->featured()
-                ->latest('published_at')
-                ->first();
-        }
+        if (! $isFiltered) {
+            if (BlogSchema::hasFeatured()) {
+                $featured = Article::published()
+                    ->featured()
+                    ->latest('published_at')
+                    ->first();
+            }
 
-        if (! $featured) {
-            $featured = Article::published()->latest('published_at')->first();
+            if (! $featured) {
+                $featured = Article::published()->latest('published_at')->first();
+            }
         }
 
         $articlesQuery = BlogSchema::withOptionalRelations(
             Article::published()->inCategory($activeCategory)->latest('published_at')
         );
+
+        if ($search !== '') {
+            $articlesQuery->where(function ($q) use ($search) {
+                $like = '%'.$search.'%';
+                $q->where('title', 'like', $like)
+                    ->orWhere('excerpt', 'like', $like)
+                    ->orWhere('content', 'like', $like);
+            });
+        }
 
         if ($featured) {
             $articlesQuery->where('id', '!=', $featured->id);
@@ -48,13 +61,30 @@ class BlogController extends Controller
         $articles = $articlesQuery->paginate(12)->withQueryString();
         $pagination = $this->seo->paginationMeta($articles);
 
+        $popular = $this->popularArticles($featured?->id);
+
         return view('blog.index', compact(
             'articles',
             'featured',
+            'popular',
             'activeCategory',
+            'search',
             'categories',
             'pagination',
         ));
+    }
+
+    /** @return \Illuminate\Support\Collection<int, Article> */
+    protected function popularArticles(?int $excludeId = null): \Illuminate\Support\Collection
+    {
+        $query = Article::published()
+            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId));
+
+        $query = BlogSchema::hasColumn('views')
+            ? $query->orderByDesc('views')->orderByDesc('published_at')
+            : $query->latest('published_at');
+
+        return $query->take(5)->get();
     }
 
     public function category(string $category): View|\Illuminate\Http\RedirectResponse

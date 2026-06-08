@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="Education technology">
+  <rect width="640" height="360" fill="#0c2a3a"/>
+  <path d="M320 130 L470 180 L320 230 L170 180 Z" fill="#38bdf8" opacity="0.85"/>
+  <path d="M250 198 L250 250 Q320 286 390 250 L390 198 L320 222 Z" fill="#ffffff" opacity="0.16"/>
+  <rect x="468" y="180" width="6" height="60" rx="3" fill="#ffffff" opacity="0.7"/>
+  <circle cx="471" cy="244" r="8" fill="#facc15"/>
+  <text x="48" y="72" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">Education Technology</text>
+</svg>

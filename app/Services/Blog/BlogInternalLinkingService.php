@@ -28,30 +28,46 @@ class BlogInternalLinkingService
         $map = config('blog_automation.internal_link_map', []);
         uksort($map, fn ($a, $b) => strlen($b) <=> strlen($a));
 
-        foreach ($map as $term => $target) {
-            $url = $this->resolveTargetUrl($target);
-            if (! $url) {
-                continue;
-            }
-
-            $pattern = '/\b('.preg_quote($term, '/').')\b/i';
-            if (! preg_match($pattern, strip_tags($html))) {
-                continue;
-            }
-
-            $html = preg_replace_callback($pattern, function (array $m) use ($url) {
-                static $linkedTerms = [];
-                $key = Str::lower($m[1]);
-                if (isset($linkedTerms[$key])) {
-                    return $m[0];
-                }
-                $linkedTerms[$key] = true;
-
-                return '<a href="'.e($url).'">'.$m[1].'</a>';
-            }, $html, 1) ?? $html;
+        // Split out existing anchors so re-running never nests links inside
+        // already-linked text. Captured delimiters land on odd indices.
+        $segments = preg_split('/(<a\b[^>]*>.*?<\/a>)/is', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+        if ($segments === false) {
+            return $html;
         }
 
-        return $html;
+        $linkedTerms = [];
+
+        foreach ($segments as $i => $segment) {
+            if ($i % 2 === 1) {
+                continue;
+            }
+
+            foreach ($map as $term => $target) {
+                if (isset($linkedTerms[Str::lower($term)])) {
+                    continue;
+                }
+
+                $url = $this->resolveTargetUrl($target);
+                if (! $url) {
+                    continue;
+                }
+
+                $pattern = '/\b('.preg_quote($term, '/').')\b/i';
+                $replaced = preg_replace_callback($pattern, function (array $m) use ($url, &$linkedTerms) {
+                    $linkedTerms[Str::lower($m[1])] = true;
+
+                    return '<a href="'.e($url).'">'.$m[1].'</a>';
+                }, $segment, 1);
+
+                if ($replaced !== null) {
+                    $segment = $replaced;
+                }
+            }
+
+            $segments[$i] = $segment;
+        }
+
+        return implode('', $segments);
     }
 
     /** @param array<string, mixed> $target */

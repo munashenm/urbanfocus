@@ -65,9 +65,19 @@ class HomeController extends Controller
             ? Banner::active('home')->take(4)->get()
             : collect();
 
-        $articles = Schema::hasTable('articles')
-            ? Article::published()->latest('published_at')->take(3)->get()
-            : collect();
+        $featuredArticle = null;
+        $articles = collect();
+        if (Schema::hasTable('articles')) {
+            if (Schema::hasColumn('articles', 'is_featured')) {
+                $featuredArticle = Article::published()->where('is_featured', true)->latest('published_at')->first();
+            }
+
+            $latestQuery = Article::published()->latest('published_at');
+            if ($featuredArticle) {
+                $latestQuery->where('id', '!=', $featuredArticle->id);
+            }
+            $articles = $latestQuery->take(3)->get();
+        }
 
         $heroSlides = config('homepage.hero_slides', []);
         $solutionBlocks = config('homepage.solution_blocks', []);
@@ -77,7 +87,7 @@ class HomeController extends Controller
         return view('home', compact(
             'featuredProducts', 'dealProducts', 'topSellers', 'networkingProducts',
             'laptopProducts', 'categories', 'newProducts', 'brands', 'banners',
-            'articles', 'heroSlides', 'solutionBlocks', 'categoryIcons', 'sectionBrands'
+            'articles', 'featuredArticle', 'heroSlides', 'solutionBlocks', 'categoryIcons', 'sectionBrands'
         ));
     }
 

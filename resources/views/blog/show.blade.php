@@ -58,6 +58,8 @@
 
             @include('blog.partials.faq', ['article' => $article])
 
+            @include('blog.partials.share', ['article' => $article])
+
             @if($article->source_url)
                 <p class="small text-muted mt-4 pt-3 border-top">
                     Originally published by {{ $article->source_name ?: 'external source' }} —
@@ -90,6 +92,8 @@
             </div>
         </aside>
     </article>
+
+    @include('blog.partials.quote-cta', ['article' => $article])
 
     @if($related->count())
         <section class="mt-5 pt-4 border-top">

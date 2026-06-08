@@ -206,7 +206,7 @@
 
 @include('partials.testimonials')
 
-@if($articles->count())
+@if(($featuredArticle ?? null) || $articles->count())
 <section class="py-5">
     <div class="container">
         @include('partials.section-header', [
@@ -215,13 +215,20 @@
             'url' => route('blog.index'),
             'linkLabel' => 'View Blog',
         ])
-        <div class="row g-4">
-            @foreach($articles as $article)
-                <div class="col-md-4">
-                    @include('partials.article-card', ['article' => $article])
-                </div>
-            @endforeach
-        </div>
+        @if($featuredArticle ?? null)
+            <div class="mb-4">
+                @include('partials.article-card', ['article' => $featuredArticle, 'featured' => true])
+            </div>
+        @endif
+        @if($articles->count())
+            <div class="row g-4">
+                @foreach($articles as $article)
+                    <div class="col-md-4">
+                        @include('partials.article-card', ['article' => $article])
+                    </div>
+                @endforeach
+            </div>
+        @endif
     </div>
 </section>
 @endif

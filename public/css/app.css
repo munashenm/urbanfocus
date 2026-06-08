@@ -609,6 +609,10 @@ a:hover { color: var(--uf-blue); }
 .blog-category-nav .btn { border-radius: 999px; }
 .blog-cta-panel, .blog-sidebar-card { border: 1px solid var(--uf-gray-200); border-radius: 12px; padding: 1.25rem; background: #fff; }
 .bg-light .blog-cta-panel { background: #fff; }
+.blog-sidebar-card--accent { background: #f8fafc; border-color: var(--uf-primary, #2563eb); }
+.blog-search .form-control { border-right: 0; }
+.blog-share .btn { border-radius: 999px; }
+.blog-quote-cta .card { border-radius: 16px; }
 .article-featured-image img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--uf-gray-200); }
 .brand-hero-logo { max-height: 48px; width: auto; }
 .subcategory-chips .btn { border-radius: 999px; }

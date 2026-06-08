@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="Software and licensing">
+  <rect width="640" height="360" fill="#0f172a"/>
+  <rect x="160" y="96" width="320" height="200" rx="16" fill="#ffffff" opacity="0.08"/>
+  <rect x="160" y="96" width="320" height="44" rx="16" fill="#6366f1" opacity="0.6"/>
+  <circle cx="186" cy="118" r="6" fill="#ffffff" opacity="0.9"/>
+  <circle cx="208" cy="118" r="6" fill="#ffffff" opacity="0.6"/>
+  <circle cx="230" cy="118" r="6" fill="#ffffff" opacity="0.4"/>
+  <rect x="190" y="170" width="120" height="12" rx="6" fill="#c7d2fe"/>
+  <rect x="190" y="196" width="220" height="10" rx="5" fill="#94a3b8"/>
+  <rect x="190" y="216" width="200" height="10" rx="5" fill="#94a3b8"/>
+  <rect x="190" y="246" width="110" height="26" rx="13" fill="#6366f1"/>
+  <text x="48" y="72" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">Software &amp; Licensing</text>
+</svg>

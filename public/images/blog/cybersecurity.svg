@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="Cybersecurity">
+  <rect width="640" height="360" fill="#111827"/>
+  <path d="M320 100 L400 128 L400 196 Q400 250 320 280 Q240 250 240 196 L240 128 Z" fill="#10b981" opacity="0.85"/>
+  <path d="M296 188 L314 206 L348 168" fill="none" stroke="#06281f" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="48" y="72" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">Cybersecurity</text>
+</svg>

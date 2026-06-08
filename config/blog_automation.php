@@ -85,6 +85,11 @@ return [
         'business laptop' => ['type' => 'solution', 'slug' => 'business-laptops-south-africa'],
         'fibre' => ['type' => 'solution', 'slug' => 'fibre-networking-solutions'],
         'cctv' => ['type' => 'solution', 'slug' => 'cctv-equipment-supplier'],
+        'surveillance' => ['type' => 'solution', 'slug' => 'cctv-equipment-supplier'],
+        'corporate it' => ['type' => 'solution', 'slug' => 'corporate-it-supplier-south-africa'],
+        'it procurement' => ['type' => 'solution', 'slug' => 'bulk-it-procurement'],
+        'bulk procurement' => ['type' => 'solution', 'slug' => 'bulk-it-procurement'],
+        'isp' => ['type' => 'solution', 'slug' => 'isp-networking-equipment-south-africa'],
     ],
 
     'product_link_keywords' => [
