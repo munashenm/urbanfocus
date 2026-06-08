@@ -38,5 +38,8 @@ return [
     ],
 
     'max_per_feed' => (int) env('NEWS_MAX_PER_FEED', 3),
-    'publish_as_draft' => env('NEWS_PUBLISH_AS_DRAFT', true),
+
+    // Imported news is published immediately by default. Set
+    // NEWS_PUBLISH_AS_DRAFT=true in .env to import as drafts for manual review.
+    'publish_as_draft' => env('NEWS_PUBLISH_AS_DRAFT', false),
 ];

@@ -152,6 +152,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('coupons', AdminCouponController::class)->except(['show']);
     Route::post('articles/sync-news', [AdminArticleController::class, 'syncNews'])->name('articles.sync');
     Route::post('articles/seed-pillars', [AdminArticleController::class, 'seedPillars'])->name('articles.seed-pillars');
+    Route::post('articles/bulk-publish', [AdminArticleController::class, 'bulkPublish'])->name('articles.bulk-publish');
+    Route::post('articles/bulk-unpublish', [AdminArticleController::class, 'bulkUnpublish'])->name('articles.bulk-unpublish');
+    Route::post('articles/bulk-destroy', [AdminArticleController::class, 'bulkDestroy'])->name('articles.bulk-destroy');
+    Route::post('articles/{article}/toggle-publish', [AdminArticleController::class, 'togglePublish'])->name('articles.toggle-publish');
     Route::resource('articles', AdminArticleController::class)->except(['show']);
     Route::get('blog-strategy', [BlogAutomationController::class, 'index'])->name('blog-strategy.index');
     Route::post('blog-strategy/discover-topics', [BlogAutomationController::class, 'discoverTopics'])->name('blog-strategy.discover');

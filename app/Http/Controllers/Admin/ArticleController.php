@@ -70,6 +70,66 @@ class ArticleController extends Controller
         return redirect()->route('admin.articles.index')->with('success', 'Article deleted.');
     }
 
+    public function togglePublish(Article $article): RedirectResponse
+    {
+        $publish = ! $article->is_published;
+        $article->is_published = $publish;
+
+        if ($publish && empty($article->published_at)) {
+            $article->published_at = now();
+        }
+
+        $article->save();
+
+        return back()->with('success', $publish ? 'Article published.' : 'Article moved to draft.');
+    }
+
+    public function bulkPublish(Request $request): RedirectResponse
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if ($ids === []) {
+            return back()->with('warning', 'No articles selected.');
+        }
+
+        $articles = Article::whereIn('id', $ids)->get();
+        foreach ($articles as $article) {
+            $article->is_published = true;
+            if (empty($article->published_at)) {
+                $article->published_at = now();
+            }
+            $article->save();
+        }
+
+        return back()->with('success', $articles->count().' article(s) published.');
+    }
+
+    public function bulkUnpublish(Request $request): RedirectResponse
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if ($ids === []) {
+            return back()->with('warning', 'No articles selected.');
+        }
+
+        $count = Article::whereIn('id', $ids)->update(['is_published' => false]);
+
+        return back()->with('success', "{$count} article(s) moved to draft.");
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if ($ids === []) {
+            return back()->with('warning', 'No articles selected.');
+        }
+
+        $count = Article::whereIn('id', $ids)->delete();
+
+        return back()->with('success', "{$count} article(s) deleted.");
+    }
+
     public function syncNews(NewsSyncService $sync): RedirectResponse
     {
         $result = $sync->sync();
