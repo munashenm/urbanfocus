@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Concerns\HasAdminRoles;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable
 {
@@ -42,11 +44,23 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
-            'is_active' => 'boolean',
             'last_login_at' => 'datetime',
             'locked_until' => 'datetime',
             'two_factor_enabled_at' => 'datetime',
         ];
+    }
+
+    protected function isActive(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                if (! Schema::hasColumn($this->getTable(), 'is_active')) {
+                    return true;
+                }
+
+                return (bool) $value;
+            },
+        );
     }
 
     public function orders(): HasMany

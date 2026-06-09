@@ -6,7 +6,8 @@
  * 1. Copy urbanfocus/deploy/clear-cache.php → public_html/clear-cache.php
  * 2. Visit: https://www.urbanfocus.co.za/clear-cache.php?key=YOUR_SECRET
  * 3. Optional migrations: add &migrate=1 to the URL
- * 4. DELETE this file immediately after use
+ * 4. Optional role seed: add &seed=1 (after migrate)
+ * 5. DELETE this file immediately after use
  *
  * Standalone migrate script: urbanfocus/deploy/migrate.php (copy to public_html/migrate.php)
  * Blog diagnostic: urbanfocus/deploy/diagnose-blog.php
@@ -71,6 +72,20 @@ if (file_exists($laravelRoot.'/vendor/autoload.php')) {
             echo $exitCode === 0 ? "\n✓ Migrations complete.\n" : "\n✗ Migration exit code: {$exitCode}\n";
         } catch (Throwable $e) {
             echo 'Migration ERROR: '.$e->getMessage()."\n";
+        }
+    }
+
+    if (isset($_GET['seed'])) {
+        echo "\n=== Seeding roles & permissions ===\n";
+        try {
+            $exitCode = $kernel->call('db:seed', [
+                '--class' => 'Database\\Seeders\\RolePermissionSeeder',
+                '--force' => true,
+            ]);
+            echo $kernel->output();
+            echo $exitCode === 0 ? "\n✓ Roles seeded.\n" : "\n✗ Seed exit code: {$exitCode}\n";
+        } catch (Throwable $e) {
+            echo 'Seed ERROR: '.$e->getMessage()."\n";
         }
     }
 

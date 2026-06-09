@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Support\AdminRbac;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,7 +38,7 @@ class LoginController extends Controller
 
         $user = User::where('email', $credentials['email'])->first();
 
-        if ($user && ! $user->is_active) {
+        if ($user && ! AdminRbac::userIsActive($user)) {
             RateLimiter::hit($throttleKey, 60);
 
             return back()->withErrors(['email' => 'This account has been deactivated.'])->onlyInput('email');

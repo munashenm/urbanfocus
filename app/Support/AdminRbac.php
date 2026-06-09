@@ -16,10 +16,14 @@ class AdminRbac
             return $ready;
         }
 
-        $ready = Schema::hasTable('roles')
-            && Schema::hasTable('permissions')
-            && Schema::hasTable('role_permission')
-            && Schema::hasTable('user_role');
+        try {
+            $ready = Schema::hasTable('roles')
+                && Schema::hasTable('permissions')
+                && Schema::hasTable('role_permission')
+                && Schema::hasTable('user_role');
+        } catch (\Throwable) {
+            $ready = false;
+        }
 
         return $ready;
     }

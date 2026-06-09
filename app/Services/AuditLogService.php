@@ -5,11 +5,16 @@ namespace App\Services;
 use App\Models\AuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Schema;
 
 class AuditLogService
 {
-    public function log(string $action, ?Model $subject = null, array $properties = []): AuditLog
+    public function log(string $action, ?Model $subject = null, array $properties = []): ?AuditLog
     {
+        if (! Schema::hasTable('audit_logs')) {
+            return null;
+        }
+
         return AuditLog::create([
             'user_id' => auth()->id(),
             'action' => $action,
