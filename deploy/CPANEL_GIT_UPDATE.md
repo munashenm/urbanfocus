@@ -145,3 +145,4 @@ After Plan B setup, `public_html` should only contain:
 | `.env` missing after clone | Copy from backup or `.env.example` |
 | Pull blocked on `deploy/clear-cache.php` | Delete `urbanfocus/deploy/clear-cache.php`, pull again, copy to `public_html` and set key there only |
 | `/blog/category/*` 500 | Run migrate (`clear-cache.php?migrate=1`). Category column must exist — migration `000091` |
+| Admin 403 after login | Run migrations, then `seed-roles.php` (see `deploy/seed-roles.php`) |
