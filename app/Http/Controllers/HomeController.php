@@ -72,7 +72,11 @@ class HomeController extends Controller
                 $featuredArticle = Article::published()->where('is_featured', true)->latest('published_at')->first();
             }
 
-            $latestQuery = Article::published()->latest('published_at');
+            $latestQuery = Article::published();
+            if (Schema::hasColumn('articles', 'category')) {
+                $latestQuery->where('category', '!=', 'news');
+            }
+            $latestQuery->latest('published_at');
             if ($featuredArticle) {
                 $latestQuery->where('id', '!=', $featuredArticle->id);
             }

@@ -37,12 +37,26 @@ class BlogController extends Controller
             }
 
             if (! $featured) {
-                $featured = Article::published()->latest('published_at')->first();
+                $featured = Article::published()
+                    ->when(
+                        BlogSchema::hasColumn('category'),
+                        fn ($q) => $q->where('category', '!=', 'news')
+                    )
+                    ->latest('published_at')
+                    ->first();
             }
         }
 
+        $base = Article::published()->inCategory($activeCategory);
+
+        // Keep imported news below our sales/SEO articles in the main feed,
+        // unless the visitor explicitly filters to the news category.
+        if ($activeCategory !== 'news' && BlogSchema::hasColumn('category')) {
+            $base->orderByRaw("CASE WHEN category = 'news' THEN 1 ELSE 0 END");
+        }
+
         $articlesQuery = BlogSchema::withOptionalRelations(
-            Article::published()->inCategory($activeCategory)->latest('published_at')
+            $base->latest('published_at')
         );
 
         if ($search !== '') {

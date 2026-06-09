@@ -610,6 +610,242 @@ HTML),
 <p><a href="/b2b/quote">Ask about refurbished stock</a> · <a href="/contact">Contact Urban Focus</a></p>
 HTML),
             ],
+            [
+                'slug' => 'dell-vs-hp-business-laptops',
+                'title' => 'Dell vs HP: Which Business Laptop Brand Is Better?',
+                'category' => 'laptops',
+                'days_ago' => 12,
+                'excerpt' => 'Dell Latitude vs HP EliteBook for South African businesses — build quality, support, security and value compared to help you choose.',
+                'meta_title' => 'Dell vs HP Business Laptops Compared | Urban Focus',
+                'meta_description' => 'Dell Latitude or HP EliteBook for your business? Compare durability, security, support and value for South African fleets with Urban Focus.',
+                'content' => $this->html(<<<'HTML'
+<p><strong>Quick answer:</strong> Both Dell and HP make excellent business laptops. Dell Latitude leads on manageability and serviceability; HP EliteBook stands out on premium design and built-in security. Pick one and standardise.</p>
+<h2>Head-to-head</h2>
+<table class="table table-bordered">
+<thead><tr><th>Factor</th><th>Dell Latitude</th><th>HP EliteBook</th></tr></thead>
+<tbody>
+<tr><td>Build &amp; design</td><td>Solid, business-grade</td><td>Premium, lightweight</td></tr>
+<tr><td>Security</td><td>Strong</td><td>HP Wolf Security suite</td></tr>
+<tr><td>Manageability</td><td>Excellent tooling</td><td>Very good</td></tr>
+<tr><td>Warranty options</td><td>Comprehensive</td><td>Comprehensive</td></tr>
+</tbody>
+</table>
+<h2>Which should you choose?</h2>
+<ul>
+<li><strong>Choose Dell Latitude</strong> for serviceability and fleet management</li>
+<li><strong>Choose HP EliteBook</strong> for premium design and security features</li>
+<li><strong>Considering Lenovo too?</strong> <a href="/blog/lenovo-vs-dell-business-laptops-comparison">Read our Lenovo vs Dell comparison</a></li>
+</ul>
+<h2>Get business pricing</h2>
+<p>We supply Dell and HP with VAT invoices and bulk pricing. <a href="/solutions/business-laptops-south-africa">Browse business laptops</a> · <a href="/b2b/quote">Request a quote</a></p>
+HTML),
+            ],
+            [
+                'slug' => 'best-office-printers-south-african-businesses',
+                'title' => 'Best Office Printers for South African Businesses',
+                'category' => 'business',
+                'days_ago' => 13,
+                'excerpt' => 'How to choose the best office printer for your South African business — laser vs inkjet, mono vs colour, running costs and volumes.',
+                'meta_title' => 'Best Office Printers for Business in South Africa | Urban Focus',
+                'meta_description' => 'Choose the right office printer: laser vs inkjet, mono vs colour, running costs and print volumes for South African businesses. Guide by Urban Focus.',
+                'content' => $this->html(<<<'HTML'
+<p><strong>Quick answer:</strong> Most offices are best served by a laser multifunction printer (MFP) — low cost per page, fast, and combining print, scan and copy in one device.</p>
+<h2>Laser vs inkjet for the office</h2>
+<ul>
+<li><strong>Laser:</strong> lower cost per page, faster, best for text and volume</li>
+<li><strong>Inkjet:</strong> cheaper upfront, better for occasional colour/photo work</li>
+</ul>
+<h2>Match the printer to your volume</h2>
+<table class="table table-bordered">
+<thead><tr><th>Monthly volume</th><th>Recommended</th></tr></thead>
+<tbody>
+<tr><td>Low (under 1,000 pages)</td><td>Desktop laser MFP</td></tr>
+<tr><td>Medium (1,000–5,000)</td><td>Workgroup laser MFP</td></tr>
+<tr><td>High (5,000+)</td><td>Departmental MFP with high-yield toner</td></tr>
+</tbody>
+</table>
+<h2>Watch the running costs</h2>
+<p>The purchase price is only part of the story — compare toner yield and cost per page. High-yield cartridges lower long-term costs significantly.</p>
+<p><a href="/b2b/quote">Request printer pricing</a> · <a href="/contact">Ask us for a recommendation</a></p>
+HTML),
+            ],
+            [
+                'slug' => 'poe-security-cameras-business-buying-guide',
+                'title' => 'PoE Security Cameras for Business: A Buying Guide',
+                'category' => 'cctv',
+                'days_ago' => 14,
+                'excerpt' => 'A practical guide to PoE security cameras and NVR systems for South African businesses — resolution, coverage, storage and installation.',
+                'meta_title' => 'PoE Security Cameras for Business Buying Guide | Urban Focus',
+                'meta_description' => 'Choose PoE security cameras and NVRs for your business: resolution, coverage, storage and installation tips for South Africa from Urban Focus.',
+                'content' => $this->html(<<<'HTML'
+<p><strong>Quick answer:</strong> PoE (Power over Ethernet) cameras run power and data over a single cable, making them ideal for reliable, scalable business surveillance paired with an NVR.</p>
+<h2>Why PoE for business?</h2>
+<ul>
+<li>One cable for power and data — simpler installation</li>
+<li>Reliable, centrally powered (works with UPS backup)</li>
+<li>Scales easily with PoE switches</li>
+</ul>
+<h2>What to look for</h2>
+<table class="table table-bordered">
+<thead><tr><th>Spec</th><th>Recommendation</th></tr></thead>
+<tbody>
+<tr><td>Resolution</td><td>4MP–8MP for clear detail</td></tr>
+<tr><td>Night vision</td><td>IR or colour night vision</td></tr>
+<tr><td>Storage</td><td>NVR with surveillance-grade HDD</td></tr>
+<tr><td>Coverage</td><td>Mix of dome and bullet cameras</td></tr>
+</tbody>
+</table>
+<h2>Plan power and network</h2>
+<p>Size your PoE switch and NVR for the number of cameras plus room to grow, and add UPS backup for load shedding. <a href="/blog/best-networking-equipment-small-businesses">See our networking guide</a>.</p>
+<p><a href="/b2b/quote">Request a CCTV quote</a> · <a href="/contact">Talk to our team</a></p>
+HTML),
+            ],
+            [
+                'slug' => 'best-monitors-office-productivity',
+                'title' => 'Best Monitors for Office Productivity',
+                'category' => 'guides',
+                'days_ago' => 15,
+                'excerpt' => 'Choosing the best office monitors for productivity — size, resolution, dual setups and ergonomics for South African businesses.',
+                'meta_title' => 'Best Monitors for Office Productivity | Urban Focus',
+                'meta_description' => 'Boost productivity with the right office monitors: size, resolution, dual-screen setups and ergonomics. Buying guide from Urban Focus.',
+                'content' => $this->html(<<<'HTML'
+<p><strong>Quick answer:</strong> For most office work a 24"–27" Full HD or QHD monitor is ideal — and a dual-monitor setup can boost productivity noticeably.</p>
+<h2>Size and resolution</h2>
+<ul>
+<li><strong>24" Full HD:</strong> the affordable office standard</li>
+<li><strong>27" QHD:</strong> more screen space for multitasking</li>
+<li><strong>Ultrawide:</strong> great for finance, design and trading desks</li>
+</ul>
+<h2>Why dual monitors?</h2>
+<p>Two screens reduce window-switching and speed up workflows for admin, finance and support roles — often the cheapest productivity upgrade you can make.</p>
+<h2>Don't forget ergonomics</h2>
+<ul>
+<li>Height-adjustable stands or monitor arms</li>
+<li>Eye-care features (flicker-free, low blue light)</li>
+<li>The right connectors (HDMI, DisplayPort, USB-C)</li>
+</ul>
+<p><a href="/b2b/quote">Request monitor pricing</a> · <a href="/shop">Shop monitors</a></p>
+HTML),
+            ],
+            [
+                'slug' => 'best-all-in-one-pcs-business',
+                'title' => 'Best All-in-One PCs for Business',
+                'category' => 'business',
+                'days_ago' => 16,
+                'excerpt' => 'Are all-in-one PCs right for your business? Compare AIOs vs desktops vs laptops for reception, admin and clean office setups.',
+                'meta_title' => 'Best All-in-One PCs for Business | Urban Focus',
+                'meta_description' => 'All-in-one PCs vs desktops vs laptops for business — space-saving, tidy setups for reception and admin. Buying guide from Urban Focus.',
+                'content' => $this->html(<<<'HTML'
+<p><strong>Quick answer:</strong> All-in-one (AIO) PCs combine the screen and computer in one tidy unit — ideal for reception desks, admin stations and clean, cable-free office setups.</p>
+<h2>AIO vs desktop vs laptop</h2>
+<table class="table table-bordered">
+<thead><tr><th>Type</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>All-in-one</td><td>Tidy desks, reception, fixed admin stations</td></tr>
+<tr><td>Desktop tower</td><td>Upgradability and performance</td></tr>
+<tr><td>Laptop</td><td>Mobility and hybrid work</td></tr>
+</tbody>
+</table>
+<h2>What to look for in a business AIO</h2>
+<ul>
+<li>Core i5/Ryzen 5 or better, 16GB RAM, SSD</li>
+<li>Full HD or higher display</li>
+<li>Webcam and good connectivity for video calls</li>
+</ul>
+<h2>Where AIOs shine</h2>
+<p>Reception areas, boardrooms and roles that never move — fewer cables, a smaller footprint and a professional look.</p>
+<p><a href="/b2b/quote">Request a quote</a> · <a href="/contact">Ask which fits your office</a></p>
+HTML),
+            ],
+            [
+                'slug' => 'ups-backup-power-load-shedding-business',
+                'title' => 'UPS & Backup Power for Load Shedding: A Business Guide',
+                'category' => 'business',
+                'days_ago' => 17,
+                'excerpt' => 'Keep your business running through load shedding — how to choose the right UPS and backup power for computers, networks and CCTV.',
+                'meta_title' => 'UPS & Backup Power for Load Shedding | Urban Focus',
+                'meta_description' => 'Protect your business from load shedding: choose the right UPS for PCs, networks and CCTV. Sizing and buying guide from Urban Focus.',
+                'content' => $this->html(<<<'HTML'
+<p><strong>Quick answer:</strong> A correctly sized UPS keeps your routers, computers and CCTV running through load shedding and protects equipment from power surges — essential kit for South African businesses.</p>
+<h2>Why every business needs backup power</h2>
+<ul>
+<li>Keep internet, Wi‑Fi and phones online during outages</li>
+<li>Prevent data loss from sudden shutdowns</li>
+<li>Protect hardware from surges and spikes</li>
+</ul>
+<h2>What to put on backup first</h2>
+<table class="table table-bordered">
+<thead><tr><th>Priority</th><th>Equipment</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Router, switch and Wi‑Fi (keep connectivity)</td></tr>
+<tr><td>2</td><td>Key workstations / point of sale</td></tr>
+<tr><td>3</td><td>CCTV / security systems</td></tr>
+</tbody>
+</table>
+<h2>Sizing your UPS</h2>
+<p>Add up the wattage of the devices you need to protect and choose a UPS with enough capacity and runtime. For longer outages, consider inverter/battery solutions.</p>
+<p><a href="/b2b/quote">Request a backup power quote</a> · <a href="/contact">Ask us to size your UPS</a></p>
+HTML),
+            ],
+            [
+                'slug' => 'wifi-6-business-networks-explained',
+                'title' => 'Wi-Fi 6 for Business Networks Explained',
+                'category' => 'networking',
+                'days_ago' => 18,
+                'excerpt' => 'What Wi-Fi 6 means for your business — faster speeds, more devices and better performance, and whether it is worth upgrading.',
+                'meta_title' => 'Wi-Fi 6 for Business Explained | Urban Focus',
+                'meta_description' => 'Is Wi-Fi 6 worth it for your business? Understand the benefits — speed, capacity and efficiency — and how to upgrade. Guide by Urban Focus.',
+                'content' => $this->html(<<<'HTML'
+<p><strong>Quick answer:</strong> Wi-Fi 6 handles more devices at once with better speed and efficiency than older standards — well worth it for busy offices, schools and venues.</p>
+<h2>What Wi-Fi 6 brings</h2>
+<ul>
+<li><strong>More capacity</strong> — handles many devices without slowing down</li>
+<li><strong>Better efficiency</strong> — improved battery life on connected devices</li>
+<li><strong>Faster real-world speeds</strong> in dense environments</li>
+</ul>
+<h2>Do you need to upgrade?</h2>
+<table class="table table-bordered">
+<thead><tr><th>Situation</th><th>Recommendation</th></tr></thead>
+<tbody>
+<tr><td>Lots of devices / staff</td><td>Upgrade to Wi-Fi 6</td></tr>
+<tr><td>Congested or slow Wi-Fi</td><td>Upgrade APs to Wi-Fi 6</td></tr>
+<tr><td>Small office, few devices</td><td>Upgrade when refreshing hardware</td></tr>
+</tbody>
+</table>
+<h2>Plan the upgrade properly</h2>
+<p>Wi-Fi 6 access points need adequate switching and cabling to deliver full performance. <a href="/blog/best-networking-equipment-small-businesses">See our networking guide</a>.</p>
+<p><a href="/solutions/ubiquiti-supplier-south-africa">Shop Wi-Fi 6 access points</a> · <a href="/b2b/quote">Request a network quote</a></p>
+HTML),
+            ],
+            [
+                'slug' => 'docking-stations-explained-business-workstation',
+                'title' => 'Docking Stations Explained: Build a Better Workstation',
+                'category' => 'guides',
+                'days_ago' => 19,
+                'excerpt' => 'How docking stations turn a laptop into a full desktop workstation — USB-C vs Thunderbolt, multi-monitor support and what to buy.',
+                'meta_title' => 'Docking Stations Explained for Business | Urban Focus',
+                'meta_description' => 'Turn laptops into full workstations with the right docking station: USB-C vs Thunderbolt, multi-monitor support and buying tips from Urban Focus.',
+                'content' => $this->html(<<<'HTML'
+<p><strong>Quick answer:</strong> A docking station lets staff connect a laptop to monitors, keyboard, mouse, network and power with one cable — the key to a productive hybrid-work desk.</p>
+<h2>Why docks boost productivity</h2>
+<ul>
+<li>One cable to connect everything — plug in and go</li>
+<li>Drive dual or triple monitors from a laptop</li>
+<li>Wired network, charging and peripherals in one</li>
+</ul>
+<h2>USB-C vs Thunderbolt docks</h2>
+<table class="table table-bordered">
+<thead><tr><th>Type</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>USB-C dock</td><td>Most business laptops, dual monitors</td></tr>
+<tr><td>Thunderbolt dock</td><td>High bandwidth, triple monitors, power users</td></tr>
+</tbody>
+</table>
+<h2>Match the dock to your laptops</h2>
+<p>Check your laptops' ports and display support before buying, and standardise on one dock model for easy hot-desking. Pair with the right <a href="/blog/best-monitors-office-productivity">office monitors</a>.</p>
+<p><a href="/b2b/quote">Request docking station pricing</a> · <a href="/shop">Shop accessories</a></p>
+HTML),
+            ],
         ];
     }
 
