@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Concerns\LogsAdminActivity;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\User;
+use App\Support\AdminRbac;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,11 +16,7 @@ class CustomerController extends Controller
 
     public function index(Request $request): View
     {
-        $query = User::query()
-            ->whereDoesntHave('roles')
-            ->where('is_admin', false)
-            ->withCount('orders')
-            ->latest();
+        $query = AdminRbac::customersQuery()->withCount('orders')->latest();
 
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {

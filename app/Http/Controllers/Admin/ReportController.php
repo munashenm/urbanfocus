@@ -7,7 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\Quote;
-use App\Models\User;
+use App\Support\AdminRbac;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -20,7 +20,7 @@ class ReportController extends Controller
         return view('admin.reports.index', [
             'salesTotal' => (float) Order::where('payment_status', 'paid')->sum('total'),
             'ordersCount' => Order::count(),
-            'customersCount' => User::whereDoesntHave('roles')->where('is_admin', false)->count(),
+            'customersCount' => AdminRbac::customersQuery()->count(),
             'rfqCount' => Quote::count(),
             'quotationCount' => Quotation::count(),
             'lowStockCount' => Product::where('manage_stock', true)->where('stock_quantity', '<=', 5)->count(),
@@ -99,7 +99,7 @@ class ReportController extends Controller
             $handle = fopen('php://output', 'w');
             fputcsv($handle, ['Name', 'Email', 'Phone', 'Company', 'Orders', 'Registered']);
 
-            User::whereDoesntHave('roles')->where('is_admin', false)->withCount('orders')->chunk(200, function ($users) use ($handle) {
+            AdminRbac::customersQuery()->withCount('orders')->chunk(200, function ($users) use ($handle) {
                 foreach ($users as $user) {
                     fputcsv($handle, [
                         $user->name,

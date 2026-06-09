@@ -29,6 +29,7 @@
         <div class="admin-content">
             @include('partials.admin-topbar')
             <main class="admin-main">
+                @include('admin.partials.rbac-setup-alert')
                 @foreach (['success' => 'success', 'warning' => 'warning', 'error' => 'danger', 'info' => 'info'] as $key => $class)
                     @if(session($key))
                         <div class="alert alert-{{ $class }} alert-dismissible fade show" role="alert">

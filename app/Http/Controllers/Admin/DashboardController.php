@@ -8,7 +8,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\Quote;
-use App\Models\User;
+use App\Support\AdminRbac;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -21,7 +21,7 @@ class DashboardController extends Controller
         $stats = [
             'products' => Product::count(),
             'orders' => Order::count(),
-            'customers' => User::whereDoesntHave('roles')->where('is_admin', false)->count(),
+            'customers' => AdminRbac::customersQuery()->count(),
             'revenue' => (float) Order::where('payment_status', 'paid')->sum('total'),
             'pending_orders' => Order::whereIn('status', ['pending', 'pending_payment', 'processing'])->count(),
             'pending_payment' => Order::where('payment_status', 'pending')->count(),
@@ -32,11 +32,7 @@ class DashboardController extends Controller
 
         $recentOrders = Order::latest()->take(8)->get();
         $recentQuotations = Quotation::latest()->take(5)->get();
-        $recentCustomers = User::whereDoesntHave('roles')
-            ->where('is_admin', false)
-            ->latest()
-            ->take(5)
-            ->get();
+        $recentCustomers = AdminRbac::customersQuery()->latest()->take(5)->get();
 
         $lowStockProducts = Product::where('manage_stock', true)
             ->where('stock_quantity', '<=', 5)

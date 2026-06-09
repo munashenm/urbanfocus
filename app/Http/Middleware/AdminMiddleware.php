@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\AdminRbac;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,7 +17,7 @@ class AdminMiddleware
             abort(403, 'Unauthorized');
         }
 
-        if (! $user->is_active) {
+        if (! AdminRbac::userIsActive($user)) {
             auth()->logout();
             abort(403, 'Your account has been deactivated.');
         }
