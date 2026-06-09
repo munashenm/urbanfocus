@@ -38,7 +38,7 @@ class DashboardController extends Controller
             ->where('stock_quantity', '<=', 5)
             ->orderBy('stock_quantity')
             ->take(8)
-            ->get(['id', 'name', 'sku', 'stock_quantity', 'in_stock']);
+            ->get(['id', 'slug', 'name', 'sku', 'stock_quantity', 'in_stock']);
 
         $topProducts = DB::table('order_items')
             ->select('product_name', 'product_sku', DB::raw('SUM(quantity) as qty_sold'))

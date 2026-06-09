@@ -112,10 +112,17 @@
             <div class="card-header bg-white fw-semibold">Stock alerts</div>
             <div class="list-group list-group-flush">
                 @forelse($lowStockProducts as $product)
-                    <a href="{{ route('admin.products.edit', $product) }}" class="list-group-item list-group-item-action d-flex justify-content-between">
-                        <span>{{ $product->name }}</span>
-                        <span class="badge bg-warning text-dark">{{ $product->stock_quantity }} left</span>
-                    </a>
+                    @if($product->slug)
+                        <a href="{{ route('admin.products.edit', $product) }}" class="list-group-item list-group-item-action d-flex justify-content-between">
+                            <span>{{ $product->name }}</span>
+                            <span class="badge bg-warning text-dark">{{ $product->stock_quantity }} left</span>
+                        </a>
+                    @else
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>{{ $product->name }}</span>
+                            <span class="badge bg-warning text-dark">{{ $product->stock_quantity }} left</span>
+                        </div>
+                    @endif
                 @empty
                     <div class="list-group-item text-muted">All stocked products look healthy.</div>
                 @endforelse
