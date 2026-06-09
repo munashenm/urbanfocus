@@ -79,6 +79,9 @@ foreach (glob($laravelRoot.'/storage/framework/views/*.php') ?: [] as $file) {
 }
 echo "Bootstrap + view caches cleared.\n";
 
+require $laravelRoot.'/deploy/cpanel-asset-sync.php';
+cpanel_sync_public_assets($laravelRoot, dirname(__DIR__).'/public_html');
+
 if (! file_exists($laravelRoot.'/vendor/autoload.php')) {
     exit("\nSTOP: vendor/ missing.\n");
 }

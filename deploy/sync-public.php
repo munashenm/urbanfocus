@@ -33,8 +33,15 @@ if (! is_dir($sourcePublic)) {
     exit('Error: urbanfocus/public not found.');
 }
 
+require __DIR__.'/cpanel-asset-sync.php';
+
 header('Content-Type: text/html; charset=utf-8');
 echo '<pre>';
+
+echo "Source: {$sourcePublic}\n";
+echo "Target: {$targetPublic}\n\n";
+
+$total = cpanel_sync_public_assets($laravelRoot, $targetPublic);
 
 function copyDirectory(string $source, string $dest): int
 {
@@ -72,23 +79,14 @@ function copyDirectory(string $source, string $dest): int
     return $count;
 }
 
-echo "Source: {$sourcePublic}\n";
-echo "Target: {$targetPublic}\n\n";
+// Legacy deep sync for nested image folders (already handled for top-level by cpanel_sync_public_assets)
+$extra = 0;
+$extra += copyDirectory($sourcePublic.'/images', $targetPublic.'/images');
 
-$total = 0;
-$total += copyDirectory($sourcePublic.'/images', $targetPublic.'/images');
-$total += copyDirectory($sourcePublic.'/css', $targetPublic.'/css');
-$total += copyDirectory($sourcePublic.'/js', $targetPublic.'/js');
-
-foreach (['favicon.svg', 'favicon.png', 'robots.txt'] as $file) {
-    $src = $sourcePublic.'/'.$file;
-    if (file_exists($src)) {
-        copy($src, $targetPublic.'/'.$file);
-        echo "Copied: {$targetPublic}/{$file}\n";
-        $total++;
-    }
+echo "\nDone. {$total} top-level asset(s) synced";
+if ($extra > 0) {
+    echo ", {$extra} nested file(s)";
 }
-
-echo "\nDone. {$total} file(s) synced.\n";
-echo "Test: ".(getenv('APP_URL') ?: 'https://www.urbanfocus.co.za')."/images/logo.png\n";
+echo ".\n";
+echo "Test admin CSS: ".(getenv('APP_URL') ?: 'https://www.urbanfocus.co.za')."/css/admin.css\n";
 echo "\nDELETE public_html/sync-public.php now.\n</pre>";

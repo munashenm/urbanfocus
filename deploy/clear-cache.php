@@ -59,6 +59,9 @@ if ($sitemapFiles === []) {
     echo "No sitemap files.\n";
 }
 
+require $laravelRoot.'/deploy/cpanel-asset-sync.php';
+cpanel_sync_public_assets($laravelRoot, dirname(__DIR__).'/public_html');
+
 if (file_exists($laravelRoot.'/vendor/autoload.php')) {
     require $laravelRoot.'/vendor/autoload.php';
     $app = require_once $laravelRoot.'/bootstrap/app.php';
