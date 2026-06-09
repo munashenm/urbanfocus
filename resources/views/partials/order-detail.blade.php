@@ -23,10 +23,12 @@
             <p><strong>Payment:</strong> {{ ucfirst($order->payment_status) }} ({{ strtoupper($order->payment_method) }})</p>
             <p class="small text-muted mb-0">Placed {{ $order->created_at->format('d M Y H:i') }}</p>
             @auth
-                @if(auth()->user()->isAdmin() || auth()->id() === $order->user_id)
+                @if(auth()->user()->isAdmin() || ($order->isPaid() && auth()->id() === $order->user_id))
                     <p class="mt-3 mb-0">
-                        <a href="{{ route('orders.invoice', $order) }}" class="btn btn-outline-primary btn-sm" target="_blank">View Invoice</a>
+                        <a href="{{ route('orders.invoice', $order) }}" class="btn btn-outline-primary btn-sm" target="_blank">{{ $order->isPaid() ? 'View Invoice' : 'View Proforma' }}</a>
                     </p>
+                @elseif(auth()->id() === $order->user_id && ! $order->isPaid())
+                    <p class="mt-3 mb-0 small text-muted">Your tax invoice will be available once payment is confirmed.</p>
                 @endif
             @endauth
             <hr>

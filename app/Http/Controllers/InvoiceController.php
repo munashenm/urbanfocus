@@ -22,5 +22,6 @@ class InvoiceController extends Controller
         }
 
         abort_unless($order->user_id === auth()->id(), 403);
+        abort_unless($order->isPaid(), 403, 'Your tax invoice will be available once payment has been confirmed.');
     }
 }

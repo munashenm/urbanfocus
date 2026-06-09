@@ -125,10 +125,6 @@ class SeoService
             $schema['sameAs'] = $sameAs;
         }
 
-        if ($vat = config('business.vat_number')) {
-            $schema['taxID'] = $vat;
-        }
-
         return $schema;
     }
 

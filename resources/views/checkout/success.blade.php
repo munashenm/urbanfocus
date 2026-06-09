@@ -29,7 +29,9 @@
         <div class="mt-4 d-flex flex-wrap justify-content-center gap-2">
             <a href="{{ route('shop.index') }}" class="btn btn-primary">Continue Shopping</a>
             @auth
-                <a href="{{ route('orders.invoice', $order) }}" class="btn btn-outline-secondary" target="_blank">View Invoice</a>
+                @if($order->isPaid())
+                    <a href="{{ route('orders.invoice', $order) }}" class="btn btn-outline-secondary" target="_blank">View Invoice</a>
+                @endif
                 <a href="{{ route('account.orders.show', $order) }}" class="btn btn-outline-primary">View Order</a>
             @else
                 <a href="{{ route('orders.track') }}" class="btn btn-outline-primary">Track This Order</a>

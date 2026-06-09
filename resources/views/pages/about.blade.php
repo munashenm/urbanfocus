@@ -41,12 +41,6 @@
                 @include('partials.business-address', ['block' => true, 'showLabel' => false, 'class' => 'mb-3'])
                 <p class="mb-2"><strong>Phone:</strong> <a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phone') }}</a></p>
                 <p class="mb-2"><strong>Email:</strong> <a href="mailto:{{ config('business.email') }}">{{ config('business.email') }}</a></p>
-                @if(config('business.vat_number') || config('business.company_reg'))
-                    <p class="mb-2 small text-muted">
-                        @if(config('business.vat_number'))<span class="d-block">VAT: {{ config('business.vat_number') }}</span>@endif
-                        @if(config('business.company_reg'))<span class="d-block">Company Reg: {{ config('business.company_reg') }}</span>@endif
-                    </p>
-                @endif
                 <p class="mb-3"><strong>Hours:</strong> {{ config('business.hours') }}</p>
                 <a href="{{ route('b2b.quote') }}" class="btn btn-outline-primary w-100 mb-2">Request a Quote</a>
                 <a href="{{ route('contact') }}" class="btn btn-primary w-100">Send a Message</a>

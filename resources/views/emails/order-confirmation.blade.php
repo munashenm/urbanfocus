@@ -61,7 +61,11 @@
 
         <p style="margin-top:20px">Track your order anytime at <a href="{{ route('orders.track') }}">{{ route('orders.track') }}</a> using your order number and email.</p>
         @if($order->user_id)
-            <p><a href="{{ route('login') }}">Log in to your account</a> to view and print your invoice.</p>
+            @if($order->isPaid())
+                <p><a href="{{ route('login') }}">Log in to your account</a> to view and print your tax invoice.</p>
+            @else
+                <p><a href="{{ route('login') }}">Log in to your account</a> to track your order. Your tax invoice will be available once payment is confirmed.</p>
+            @endif
         @endif
         <p>Questions? Contact us at <a href="mailto:{{ config('app.email') }}">{{ config('app.email') }}</a> or {{ config('app.phone') }}.</p>
     </div>
