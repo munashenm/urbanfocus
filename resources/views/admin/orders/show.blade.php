@@ -41,15 +41,15 @@
                 @csrf @method('PUT')
                 <div class="mb-3"><label class="form-label">Order Status</label>
                     <select name="status" class="form-select">
-                        @foreach(['pending','processing','shipped','completed','cancelled'] as $s)
-                            <option value="{{ $s }}" @selected($order->status === $s)>{{ ucfirst($s) }}</option>
+                        @foreach($statuses as $value => $label)
+                            <option value="{{ $value }}" @selected($order->status === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="mb-3"><label class="form-label">Payment Status</label>
                     <select name="payment_status" class="form-select">
-                        @foreach(['pending','paid','failed','refunded'] as $s)
-                            <option value="{{ $s }}" @selected($order->payment_status === $s)>{{ ucfirst($s) }}</option>
+                        @foreach($paymentStatuses as $value => $label)
+                            <option value="{{ $value }}" @selected($order->payment_status === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>

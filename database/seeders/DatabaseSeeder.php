@@ -17,12 +17,14 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'admin@urbanfocus.co.za'],
             [
-                'name' => 'Admin',
+                'name' => 'Super Admin',
                 'password' => Hash::make('ChangeMe123!'),
                 'is_admin' => true,
+                'is_active' => true,
             ]
         );
 
+        $this->call(RolePermissionSeeder::class);
         $this->call(CategorySeeder::class);
 
         if (Product::count() === 0) {

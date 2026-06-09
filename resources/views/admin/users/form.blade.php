@@ -9,7 +9,7 @@
 
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="card"><div class="card-body">
+            <div class="card admin-card"><div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Full Name *</label>
@@ -27,23 +27,37 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-check mt-4">
-                            <input type="hidden" name="is_admin" value="0">
-                            <input type="checkbox" name="is_admin" value="1" class="form-check-input" id="is_admin" @checked(old('is_admin', $user->is_admin)) @disabled($user->exists && $user->id === auth()->id())>
-                            <label class="form-check-label" for="is_admin">Administrator access</label>
+                            <input type="hidden" name="is_active" value="0">
+                            <input type="checkbox" name="is_active" value="1" class="form-check-input" id="is_active" @checked(old('is_active', $user->is_active ?? true)) @disabled($user->exists && $user->id === auth()->id())>
+                            <label class="form-check-label" for="is_active">Active account</label>
                         </div>
-                        @if($user->exists && $user->id === auth()->id())
-                            <p class="small text-muted mb-0">You cannot remove your own admin access here.</p>
-                        @endif
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label d-block">Roles</label>
+                        <div class="row g-2">
+                            @foreach($roles as $role)
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="roles[]" value="{{ $role->slug }}" id="role_{{ $role->id }}" @checked(in_array($role->slug, old('roles', $user->exists ? $user->roles->pluck('slug')->all() : []))) @disabled($user->exists && $user->id === auth()->id() && $role->slug === 'super-admin')>
+                                        <label class="form-check-label" for="role_{{ $role->id }}"><strong>{{ $role->name }}</strong><br><small class="text-muted">{{ $role->description }}</small></label>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        @error('roles')<div class="text-danger small">{{ $message }}</div>@enderror
                     </div>
                 </div>
             </div></div>
         </div>
 
         <div class="col-lg-4">
-            <div class="card"><div class="card-body">
+            <div class="card admin-card"><div class="card-body">
                 <h3 class="h6 fw-bold">Password</h3>
                 @if($user->exists)
-                    <p class="small text-muted">Passwords are encrypted and cannot be viewed. Leave blank to keep the current password, or enter a new one to reset it.</p>
+                    <p class="small text-muted">Leave blank to keep the current password.</p>
+                    @if($user->last_login_at)
+                        <p class="small text-muted">Last login: {{ $user->last_login_at->format('d M Y H:i') }}</p>
+                    @endif
                     <div class="mb-3">
                         <label class="form-label">New Password</label>
                         <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" minlength="8">

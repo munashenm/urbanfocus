@@ -2,29 +2,54 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\LogsAdminActivity;
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\ImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProductController extends Controller
 {
+    use LogsAdminActivity;
+
     public function __construct(protected ImageService $images) {}
 
     public function index(Request $request): View
     {
         $query = Product::with(['category', 'images'])->latest();
 
+        if ($request->get('status') === 'archived') {
+            $query->onlyTrashed();
+        } else {
+            $query->whereNull('products.deleted_at');
+
+            if ($status = $request->get('status')) {
+                $query->publicationStatus($status);
+            }
+        }
+
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%");
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('brand', 'like', "%{$search}%");
             });
+        }
+
+        if ($categoryId = $request->get('category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($brand = $request->get('brand')) {
+            $query->where('brand', $brand);
         }
 
         if ($issue = $request->get('merchant_issue')) {
@@ -33,66 +58,109 @@ class ProductController extends Controller
 
         $products = $query->paginate(20)->withQueryString();
         $merchantIssueLabels = Product::googleMerchantIssueLabels();
+        $categories = Category::orderBy('name')->get(['id', 'name']);
+        $brands = Brand::where('is_active', true)->orderBy('name')->pluck('name');
 
-        return view('admin.products.index', compact('products', 'merchantIssueLabels'));
+        return view('admin.products.index', compact('products', 'merchantIssueLabels', 'categories', 'brands'));
     }
 
     public function create(): View
     {
-        $categories = Category::orderBy('name')->get();
-
-        return view('admin.products.form', ['product' => new Product, 'categories' => $categories]);
+        return view('admin.products.form', $this->formData(new Product([
+            'manage_stock' => true,
+            'in_stock' => true,
+            'stock_quantity' => 0,
+        ])));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateProduct($request);
         $validated = $this->normalizeProductFields($validated);
+        $publicationStatus = $validated['publication_status'] ?? 'draft';
+        unset($validated['publication_status']);
         $validated['slug'] = $this->uniqueSlug($validated['slug'] ?? null, $validated['name']);
 
         try {
             $product = Product::create($validated);
+            $product->applyPublicationStatus($publicationStatus);
             $this->handleImages($request, $product);
+            $this->audit('products.create', $product);
         } catch (\Throwable $e) {
             report($e);
 
             return back()->withInput()->with('error', 'Could not save product. '.$e->getMessage());
         }
 
-        return redirect()->route('admin.products.index')->with('success', 'Product created.');
+        return redirect()->route('admin.products.edit', $product)->with('success', 'Product created.');
     }
 
     public function edit(Product $product): View
     {
         $product->load('images');
-        $categories = Category::orderBy('name')->get();
 
-        return view('admin.products.form', compact('product', 'categories'));
+        return view('admin.products.form', $this->formData($product));
     }
 
     public function update(Request $request, Product $product): RedirectResponse
     {
         $validated = $this->validateProduct($request, $product->id);
         $validated = $this->normalizeProductFields($validated);
+        $publicationStatus = $validated['publication_status'] ?? $product->publicationStatus();
+        unset($validated['publication_status']);
         $validated['slug'] = $this->uniqueSlug($validated['slug'] ?? null, $validated['name'], $product->id);
 
         try {
             $product->update($validated);
+            $product->applyPublicationStatus($publicationStatus);
             $this->handleImages($request, $product);
+            $this->audit('products.update', $product);
         } catch (\Throwable $e) {
             report($e);
 
             return back()->withInput()->with('error', 'Could not save product. '.$e->getMessage());
         }
 
-        return redirect()->route('admin.products.index')->with('success', 'Product updated.');
+        return redirect()->route('admin.products.edit', $product)->with('success', 'Product updated.');
     }
 
     public function destroy(Product $product): RedirectResponse
     {
         $this->deleteProduct($product);
+        $this->audit('products.delete', $product);
 
         return redirect()->route('admin.products.index')->with('success', 'Product deleted.');
+    }
+
+    public function duplicate(Product $product): RedirectResponse
+    {
+        $product->load('images');
+
+        $copy = $product->replicate(['views', 'woocommerce_id', 'deleted_at']);
+        $copy->name = $product->name.' (Copy)';
+        $copy->sku = $product->sku
+            ? Str::limit($product->sku, 90, '').'-'.Str::upper(Str::random(4))
+            : null;
+        $copy->slug = $this->uniqueSlug(null, $copy->name);
+        $copy->is_active = false;
+        $copy->save();
+
+        foreach ($product->images as $image) {
+            $newPath = $this->copyImagePath($image->path, $copy->id);
+            if ($newPath) {
+                ProductImage::create([
+                    'product_id' => $copy->id,
+                    'path' => $newPath,
+                    'alt_text' => $image->alt_text ?: $copy->name,
+                    'sort_order' => $image->sort_order,
+                    'is_primary' => $image->is_primary,
+                ]);
+            }
+        }
+
+        $this->audit('products.duplicate', $copy, ['source_id' => $product->id]);
+
+        return redirect()->route('admin.products.edit', $copy)->with('success', 'Product duplicated as a draft.');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -104,7 +172,7 @@ class ProductController extends Controller
 
         $deleted = 0;
 
-        Product::query()
+        Product::withTrashed()
             ->whereIn('id', $validated['ids'])
             ->with('images')
             ->each(function (Product $product) use (&$deleted) {
@@ -112,9 +180,114 @@ class ProductController extends Controller
                 $deleted++;
             });
 
+        $this->audit('products.bulk_delete', null, ['count' => $deleted]);
+
         return redirect()
-            ->route('admin.products.index', $request->only(['q', 'merchant_issue', 'page']))
+            ->route('admin.products.index', $request->only(['q', 'merchant_issue', 'status', 'category_id', 'brand', 'page']))
             ->with('success', "{$deleted} product(s) deleted.");
+    }
+
+    public function bulkUpdate(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:products,id',
+            'action' => 'required|in:publish,draft,archive,delete',
+        ]);
+
+        $products = Product::withTrashed()->whereIn('id', $validated['ids'])->get();
+        $count = 0;
+
+        foreach ($products as $product) {
+            match ($validated['action']) {
+                'publish' => $product->applyPublicationStatus('published'),
+                'draft' => $product->applyPublicationStatus('draft'),
+                'archive' => $product->applyPublicationStatus('archived'),
+                'delete' => $this->deleteProduct($product),
+            };
+            $count++;
+        }
+
+        $this->audit('products.bulk_update', null, ['action' => $validated['action'], 'count' => $count]);
+
+        return back()->with('success', "{$count} product(s) updated.");
+    }
+
+    public function destroyImage(Product $product, ProductImage $image): RedirectResponse
+    {
+        abort_unless($image->product_id === $product->id, 404);
+
+        $this->images->delete($image->path);
+        $image->delete();
+
+        if (! $product->images()->where('is_primary', true)->exists()) {
+            $product->images()->orderBy('sort_order')->first()?->update(['is_primary' => true]);
+        }
+
+        return back()->with('success', 'Image removed.');
+    }
+
+    public function setPrimaryImage(Product $product, ProductImage $image): RedirectResponse
+    {
+        abort_unless($image->product_id === $product->id, 404);
+
+        $product->images()->update(['is_primary' => false]);
+        $image->update(['is_primary' => true]);
+
+        return back()->with('success', 'Primary image updated.');
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $filename = 'products-'.now()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($request) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, [
+                'SKU', 'Name', 'Brand', 'Category', 'Regular Price', 'Sale Price',
+                'Stock Qty', 'In Stock', 'Status', 'Featured', 'Deal', 'Google Category',
+            ]);
+
+            $query = Product::with('category')->latest();
+            if ($request->get('status') === 'archived') {
+                $query->onlyTrashed();
+            } elseif ($status = $request->get('status')) {
+                $query->publicationStatus($status);
+            }
+
+            $query->chunk(200, function ($products) use ($handle) {
+                foreach ($products as $product) {
+                    fputcsv($handle, [
+                        $product->sku,
+                        $product->name,
+                        $product->brand,
+                        $product->category?->name,
+                        $product->price,
+                        $product->sale_price,
+                        $product->stock_quantity,
+                        $product->in_stock ? 'yes' : 'no',
+                        $product->publicationStatus(),
+                        $product->is_featured ? 'yes' : 'no',
+                        $product->is_deal ? 'yes' : 'no',
+                        $product->google_product_category,
+                    ]);
+                }
+            });
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    protected function formData(Product $product): array
+    {
+        return [
+            'product' => $product,
+            'categories' => Category::orderBy('name')->get(),
+            'brands' => Brand::where('is_active', true)->orderBy('name')->pluck('name'),
+            'publicationStatuses' => Product::publicationStatuses(),
+            'pricesIncludeVat' => (bool) config('app.prices_include_vat', true),
+            'vatRate' => (float) config('app.vat_rate', 15),
+        ];
     }
 
     protected function deleteProduct(Product $product): void
@@ -156,8 +329,11 @@ class ProductController extends Controller
             'is_featured' => 'boolean',
             'is_deal' => 'boolean',
             'deal_label' => 'nullable|string|max:50',
-            'is_active' => 'boolean',
+            'publication_status' => 'required|in:draft,published,archived',
             'images.*' => 'nullable|image|max:5120',
+            'image_urls' => 'nullable|string',
+            'remove_image_ids' => 'nullable|array',
+            'remove_image_ids.*' => 'integer|exists:product_images,id',
         ]);
     }
 
@@ -183,6 +359,8 @@ class ProductController extends Controller
             }
         }
 
+        unset($data['image_urls'], $data['remove_image_ids']);
+
         return $data;
     }
 
@@ -192,7 +370,7 @@ class ProductController extends Controller
         $candidate = $base;
         $suffix = 1;
 
-        while (Product::where('slug', $candidate)
+        while (Product::withTrashed()->where('slug', $candidate)
             ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
             ->exists()) {
             $candidate = $base.'-'.$suffix++;
@@ -203,25 +381,74 @@ class ProductController extends Controller
 
     protected function handleImages(Request $request, Product $product): void
     {
-        if (! $request->hasFile('images')) {
-            return;
+        if ($request->filled('remove_image_ids')) {
+            ProductImage::query()
+                ->where('product_id', $product->id)
+                ->whereIn('id', $request->input('remove_image_ids', []))
+                ->each(function (ProductImage $image) {
+                    $this->images->delete($image->path);
+                    $image->delete();
+                });
         }
 
-        $sortOrder = $product->images()->max('sort_order') ?? 0;
+        $sortOrder = (int) ($product->images()->max('sort_order') ?? 0);
 
-        foreach ($request->file('images') as $index => $file) {
-            if (! $file || ! $file->isValid()) {
-                continue;
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $index => $file) {
+                if (! $file || ! $file->isValid()) {
+                    continue;
+                }
+
+                $path = $this->images->storeProductImage($file, $product->id);
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'path' => $path,
+                    'alt_text' => $product->name,
+                    'sort_order' => ++$sortOrder,
+                    'is_primary' => $product->images()->count() === 0 && $index === 0,
+                ]);
             }
-
-            $path = $this->images->storeProductImage($file, $product->id);
-            ProductImage::create([
-                'product_id' => $product->id,
-                'path' => $path,
-                'alt_text' => $product->name,
-                'sort_order' => ++$sortOrder,
-                'is_primary' => $product->images()->count() === 0 && $index === 0,
-            ]);
         }
+
+        if ($request->filled('image_urls')) {
+            foreach (preg_split('/\r\n|\r|\n/', $request->input('image_urls')) as $url) {
+                $url = trim($url);
+                if ($url === '' || ! filter_var($url, FILTER_VALIDATE_URL)) {
+                    continue;
+                }
+
+                $path = $this->images->storeProductImageFromUrl($url, $product->id);
+                if ($path) {
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'path' => $path,
+                        'alt_text' => $product->name,
+                        'sort_order' => ++$sortOrder,
+                        'is_primary' => $product->images()->count() === 0,
+                    ]);
+                }
+            }
+        }
+    }
+
+    protected function copyImagePath(string $path, int $productId): ?string
+    {
+        if (! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $extension = pathinfo($path, PATHINFO_EXTENSION) ?: 'jpg';
+        $newPath = 'products/'.$productId.'/'.Str::uuid().'.'.$extension;
+
+        Storage::disk('public')->copy($path, $newPath);
+        $contents = Storage::disk('public')->get($newPath);
+        $target = public_path('storage/'.$newPath);
+        $directory = dirname($target);
+        if (! is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        file_put_contents($target, $contents);
+
+        return $newPath;
     }
 }

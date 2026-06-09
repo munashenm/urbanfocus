@@ -10,8 +10,15 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! auth()->check() || ! auth()->user()->isAdmin()) {
+        $user = auth()->user();
+
+        if (! $user || ! $user->canAccessAdmin()) {
             abort(403, 'Unauthorized');
+        }
+
+        if (! $user->is_active) {
+            auth()->logout();
+            abort(403, 'Your account has been deactivated.');
         }
 
         return $next($request);

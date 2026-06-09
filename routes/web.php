@@ -34,6 +34,12 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\QuoteController as AdminQuoteController;
 use App\Http\Controllers\Admin\QuotationController as AdminQuotationController;
+use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
+use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\RoleController as AdminRoleController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -125,52 +131,99 @@ Route::get('/feeds/bobshop.csv', [SeoController::class, 'bobShopBulkloadCsv'])->
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
-    Route::post('products/bulk-destroy', [AdminProductController::class, 'bulkDestroy'])->name('products.bulk-destroy');
-    Route::resource('products', AdminProductController::class)->except(['show']);
-    Route::post('categories/bulk-destroy', [AdminCategoryController::class, 'bulkDestroy'])->name('categories.bulk-destroy');
-    Route::resource('categories', AdminCategoryController::class)->except(['show']);
-    Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
-    Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
-    Route::put('orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
-    Route::get('catalog', [AdminCatalogController::class, 'index'])->name('catalog.index');
-    Route::post('catalog/import', [AdminCatalogController::class, 'import'])->name('catalog.import');
-    Route::post('catalog/import/preview', [AdminCatalogController::class, 'importPreview'])->name('catalog.import-preview');
-    Route::post('catalog/clear-products', [AdminCatalogController::class, 'clearProducts'])->name('catalog.clear-products');
-    Route::post('catalog/remove-non-it', [AdminCatalogController::class, 'removeNonIt'])->name('catalog.remove-non-it');
-    Route::post('catalog/consolidate-categories', [AdminCatalogController::class, 'consolidateCategories'])->name('catalog.consolidate-categories');
-    Route::post('catalog/optimize-seo', [AdminCatalogController::class, 'optimizeSeo'])->name('catalog.optimize-seo');
-    Route::get('catalog/export', [AdminCatalogController::class, 'export'])->name('catalog.export');
-    Route::get('catalog/export/woocommerce', [AdminCatalogController::class, 'exportWooCommerce'])->name('catalog.export.woocommerce');
-    Route::get('catalog/export/ineligible', [AdminCatalogController::class, 'exportIneligible'])->name('catalog.export-ineligible');
-    Route::post('catalog/bulk-fix-merchant', [AdminCatalogController::class, 'bulkFixMerchant'])->name('catalog.bulk-fix-merchant');
-    Route::post('catalog/api-key', [AdminCatalogController::class, 'regenerateApiKey'])->name('catalog.api-key');
-    Route::get('import', fn () => redirect()->route('admin.catalog.index'))->name('import.index');
-    Route::post('import', [AdminCatalogController::class, 'import'])->name('import.store');
-    Route::resource('users', AdminUserController::class)->except(['show']);
-    Route::resource('brands', AdminBrandController::class)->except(['show']);
-    Route::resource('banners', AdminBannerController::class)->except(['show']);
-    Route::resource('coupons', AdminCouponController::class)->except(['show']);
-    Route::post('articles/sync-news', [AdminArticleController::class, 'syncNews'])->name('articles.sync');
-    Route::post('articles/seed-pillars', [AdminArticleController::class, 'seedPillars'])->name('articles.seed-pillars');
-    Route::post('articles/bulk-publish', [AdminArticleController::class, 'bulkPublish'])->name('articles.bulk-publish');
-    Route::post('articles/bulk-unpublish', [AdminArticleController::class, 'bulkUnpublish'])->name('articles.bulk-unpublish');
-    Route::post('articles/bulk-destroy', [AdminArticleController::class, 'bulkDestroy'])->name('articles.bulk-destroy');
-    Route::post('articles/{article}/toggle-publish', [AdminArticleController::class, 'togglePublish'])->name('articles.toggle-publish');
-    Route::resource('articles', AdminArticleController::class)->except(['show']);
-    Route::get('blog-strategy', [BlogAutomationController::class, 'index'])->name('blog-strategy.index');
-    Route::post('blog-strategy/discover-topics', [BlogAutomationController::class, 'discoverTopics'])->name('blog-strategy.discover');
-    Route::post('blog-strategy/sync-gsc', [BlogAutomationController::class, 'syncSearchConsole'])->name('blog-strategy.sync-gsc');
-    Route::post('blog-strategy/topics/{topic}/draft', [BlogAutomationController::class, 'draftFromTopic'])->name('blog-strategy.draft');
-    Route::get('social', [AdminSocialController::class, 'index'])->name('social.index');
-    Route::post('social/publish', [AdminSocialController::class, 'publish'])->name('social.publish');
-    Route::post('social/retry-failed', [AdminSocialController::class, 'retryFailed'])->name('social.retry-failed');
-    Route::post('social/queue-all', [AdminSocialController::class, 'queueAll'])->name('social.queue-all');
-    Route::post('social/webhooks/{webhookLog}/retry', [AdminSocialController::class, 'retryWebhook'])->name('social.webhook-retry');
-    Route::get('quotes', [AdminQuoteController::class, 'index'])->name('quotes.index');
-    Route::get('quotes/{quote}', [AdminQuoteController::class, 'show'])->name('quotes.show');
-    Route::put('quotes/{quote}', [AdminQuoteController::class, 'update'])->name('quotes.update');
-    Route::get('quotations/products/search', [AdminQuotationController::class, 'productSearch'])->name('quotations.products.search');
-    Route::get('quotations/{quotation}/print', [AdminQuotationController::class, 'print'])->name('quotations.print');
-    Route::get('quotations/{quotation}/download', [AdminQuotationController::class, 'download'])->name('quotations.download');
-    Route::resource('quotations', AdminQuotationController::class);
+
+    Route::middleware('permission:products.view,products.create,products.edit,products.delete')->group(function () {
+        Route::post('products/bulk-destroy', [AdminProductController::class, 'bulkDestroy'])->middleware('permission:products.delete')->name('products.bulk-destroy');
+        Route::post('products/bulk-update', [AdminProductController::class, 'bulkUpdate'])->middleware('permission:products.edit')->name('products.bulk-update');
+        Route::get('products/export/csv', [AdminProductController::class, 'export'])->name('products.export');
+        Route::post('products/{product}/duplicate', [AdminProductController::class, 'duplicate'])->middleware('permission:products.create')->name('products.duplicate');
+        Route::delete('products/{product}/images/{image}', [AdminProductController::class, 'destroyImage'])->middleware('permission:products.edit')->name('products.images.destroy');
+        Route::patch('products/{product}/images/{image}/primary', [AdminProductController::class, 'setPrimaryImage'])->middleware('permission:products.edit')->name('products.images.primary');
+        Route::resource('products', AdminProductController::class)->except(['show'])->withTrashed();
+        Route::post('categories/bulk-destroy', [AdminCategoryController::class, 'bulkDestroy'])->middleware('permission:products.delete')->name('categories.bulk-destroy');
+        Route::resource('categories', AdminCategoryController::class)->except(['show']);
+        Route::resource('brands', AdminBrandController::class)->except(['show']);
+        Route::get('inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');
+        Route::get('catalog', [AdminCatalogController::class, 'index'])->name('catalog.index');
+        Route::post('catalog/import', [AdminCatalogController::class, 'import'])->middleware('permission:products.create')->name('catalog.import');
+        Route::post('catalog/import/preview', [AdminCatalogController::class, 'importPreview'])->middleware('permission:products.create')->name('catalog.import-preview');
+        Route::post('catalog/clear-products', [AdminCatalogController::class, 'clearProducts'])->middleware('permission:products.delete')->name('catalog.clear-products');
+        Route::post('catalog/remove-non-it', [AdminCatalogController::class, 'removeNonIt'])->middleware('permission:products.delete')->name('catalog.remove-non-it');
+        Route::post('catalog/consolidate-categories', [AdminCatalogController::class, 'consolidateCategories'])->middleware('permission:products.edit')->name('catalog.consolidate-categories');
+        Route::post('catalog/optimize-seo', [AdminCatalogController::class, 'optimizeSeo'])->middleware('permission:products.edit')->name('catalog.optimize-seo');
+        Route::get('catalog/export', [AdminCatalogController::class, 'export'])->name('catalog.export');
+        Route::get('catalog/export/woocommerce', [AdminCatalogController::class, 'exportWooCommerce'])->name('catalog.export.woocommerce');
+        Route::get('catalog/export/ineligible', [AdminCatalogController::class, 'exportIneligible'])->name('catalog.export-ineligible');
+        Route::post('catalog/bulk-fix-merchant', [AdminCatalogController::class, 'bulkFixMerchant'])->middleware('permission:products.edit')->name('catalog.bulk-fix-merchant');
+        Route::post('catalog/api-key', [AdminCatalogController::class, 'regenerateApiKey'])->middleware('permission:settings.manage')->name('catalog.api-key');
+        Route::get('import', fn () => redirect()->route('admin.catalog.index'))->name('import.index');
+        Route::post('import', [AdminCatalogController::class, 'import'])->middleware('permission:products.create')->name('import.store');
+    });
+
+    Route::middleware('permission:orders.view,orders.edit,orders.refund')->group(function () {
+        Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
+        Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+        Route::put('orders/{order}', [AdminOrderController::class, 'update'])->middleware('permission:orders.edit')->name('orders.update');
+    });
+
+    Route::middleware('permission:customers.view,customers.edit')->group(function () {
+        Route::get('customers', [AdminCustomerController::class, 'index'])->name('customers.index');
+        Route::get('customers/{customer}', [AdminCustomerController::class, 'show'])->name('customers.show');
+        Route::put('customers/{customer}', [AdminCustomerController::class, 'update'])->middleware('permission:customers.edit')->name('customers.update');
+    });
+
+    Route::middleware('permission:rfqs.view,rfqs.create,rfqs.edit,quotations.create')->group(function () {
+        Route::get('quotes', [AdminQuoteController::class, 'index'])->name('quotes.index');
+        Route::get('quotes/{quote}', [AdminQuoteController::class, 'show'])->name('quotes.show');
+        Route::put('quotes/{quote}', [AdminQuoteController::class, 'update'])->middleware('permission:rfqs.edit')->name('quotes.update');
+        Route::get('quotations/products/search', [AdminQuotationController::class, 'productSearch'])->name('quotations.products.search');
+        Route::get('quotations/{quotation}/print', [AdminQuotationController::class, 'print'])->name('quotations.print');
+        Route::get('quotations/{quotation}/download', [AdminQuotationController::class, 'download'])->name('quotations.download');
+        Route::resource('quotations', AdminQuotationController::class);
+    });
+
+    Route::middleware('permission:products.edit')->group(function () {
+        Route::resource('coupons', AdminCouponController::class)->except(['show']);
+        Route::resource('banners', AdminBannerController::class)->except(['show']);
+        Route::post('articles/sync-news', [AdminArticleController::class, 'syncNews'])->name('articles.sync');
+        Route::post('articles/seed-pillars', [AdminArticleController::class, 'seedPillars'])->name('articles.seed-pillars');
+        Route::post('articles/bulk-publish', [AdminArticleController::class, 'bulkPublish'])->name('articles.bulk-publish');
+        Route::post('articles/bulk-unpublish', [AdminArticleController::class, 'bulkUnpublish'])->name('articles.bulk-unpublish');
+        Route::post('articles/bulk-destroy', [AdminArticleController::class, 'bulkDestroy'])->name('articles.bulk-destroy');
+        Route::post('articles/{article}/toggle-publish', [AdminArticleController::class, 'togglePublish'])->name('articles.toggle-publish');
+        Route::resource('articles', AdminArticleController::class)->except(['show']);
+        Route::get('blog-strategy', [BlogAutomationController::class, 'index'])->name('blog-strategy.index');
+        Route::post('blog-strategy/discover-topics', [BlogAutomationController::class, 'discoverTopics'])->name('blog-strategy.discover');
+        Route::post('blog-strategy/sync-gsc', [BlogAutomationController::class, 'syncSearchConsole'])->name('blog-strategy.sync-gsc');
+        Route::post('blog-strategy/topics/{topic}/draft', [BlogAutomationController::class, 'draftFromTopic'])->name('blog-strategy.draft');
+        Route::get('social', [AdminSocialController::class, 'index'])->name('social.index');
+        Route::post('social/publish', [AdminSocialController::class, 'publish'])->name('social.publish');
+        Route::post('social/retry-failed', [AdminSocialController::class, 'retryFailed'])->name('social.retry-failed');
+        Route::post('social/queue-all', [AdminSocialController::class, 'queueAll'])->name('social.queue-all');
+        Route::post('social/webhooks/{webhookLog}/retry', [AdminSocialController::class, 'retryWebhook'])->name('social.webhook-retry');
+    });
+
+    Route::middleware('permission:reports.view')->group(function () {
+        Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/export', [AdminReportController::class, 'export'])->name('reports.export');
+    });
+
+    Route::middleware('permission:users.manage')->group(function () {
+        Route::resource('users', AdminUserController::class)->except(['show']);
+    });
+
+    Route::middleware('permission:roles.manage')->group(function () {
+        Route::get('roles', [AdminRoleController::class, 'index'])->name('roles.index');
+        Route::get('roles/{role}/edit', [AdminRoleController::class, 'edit'])->name('roles.edit');
+        Route::put('roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
+    });
+
+    Route::middleware('permission:settings.manage')->group(function () {
+        Route::get('settings', [AdminSettingsController::class, 'index'])->name('settings.index');
+        Route::put('settings', [AdminSettingsController::class, 'update'])->name('settings.update');
+    });
+
+    Route::middleware('permission:audit_logs.view')->group(function () {
+        Route::get('audit-logs', [AdminAuditLogController::class, 'index'])->name('audit-logs.index');
+    });
 });

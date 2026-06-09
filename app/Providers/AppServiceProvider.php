@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Observers\ArticleObserver;
 use App\Observers\ProductObserver;
 use App\View\Composers\LayoutComposer;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
@@ -36,5 +37,8 @@ class AppServiceProvider extends ServiceProvider
 
         Product::observe(ProductObserver::class);
         Article::observe(ArticleObserver::class);
+
+        Blade::if('permission', fn (string $permission): bool => auth()->check() && auth()->user()->hasPermission($permission));
+        Blade::if('anypermission', fn (...$permissions): bool => auth()->check() && auth()->user()->hasAnyPermission($permissions));
     }
 }

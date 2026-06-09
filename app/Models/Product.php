@@ -186,7 +186,7 @@ class Product extends Model
 
     public function isAvailable(): bool
     {
-        if (! $this->is_active) {
+        if ($this->trashed() || ! $this->is_active) {
             return false;
         }
 
@@ -195,6 +195,76 @@ class Product extends Model
         }
 
         return $this->stock_quantity > 0;
+    }
+
+    public function publicationStatus(): string
+    {
+        if ($this->trashed()) {
+            return 'archived';
+        }
+
+        return $this->is_active ? 'published' : 'draft';
+    }
+
+    public static function publicationStatuses(): array
+    {
+        return [
+            'draft' => 'Draft',
+            'published' => 'Published',
+            'archived' => 'Archived',
+        ];
+    }
+
+    public function publicationStatusLabel(): string
+    {
+        return self::publicationStatuses()[$this->publicationStatus()] ?? ucfirst($this->publicationStatus());
+    }
+
+    public function applyPublicationStatus(string $status): void
+    {
+        match ($status) {
+            'published' => $this->publishProduct(),
+            'draft' => $this->draftProduct(),
+            'archived' => $this->archiveProduct(),
+            default => null,
+        };
+    }
+
+    protected function publishProduct(): void
+    {
+        if ($this->trashed()) {
+            $this->restore();
+        }
+
+        $this->update(['is_active' => true]);
+    }
+
+    protected function draftProduct(): void
+    {
+        if ($this->trashed()) {
+            $this->restore();
+        }
+
+        $this->update(['is_active' => false]);
+    }
+
+    protected function archiveProduct(): void
+    {
+        $this->update(['is_active' => false]);
+
+        if (! $this->trashed()) {
+            $this->delete();
+        }
+    }
+
+    public function scopePublicationStatus($query, string $status)
+    {
+        return match ($status) {
+            'published' => $query->where('is_active', true),
+            'draft' => $query->where('is_active', false),
+            'archived' => $query->onlyTrashed(),
+            default => $query,
+        };
     }
 
     public function scopeAvailableInStock($query)
