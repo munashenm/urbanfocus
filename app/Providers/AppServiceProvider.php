@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\Product;
 use App\Observers\ArticleObserver;
 use App\Observers\ProductObserver;
+use App\Support\PublicAssetSync;
 use App\View\Composers\LayoutComposer;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
@@ -27,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        PublicAssetSync::syncIfNeeded();
+
         Schema::defaultStringLength(191);
         Paginator::useBootstrapFive();
         View::composer(['partials.header', 'partials.footer'], LayoutComposer::class);

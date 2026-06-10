@@ -89,7 +89,7 @@
                             <td><input type="checkbox" class="form-check-input bulk-select" form="bulk-products-form" name="ids[]" value="{{ $product->id }}"></td>
                             <td>
                                 @if($product->primary_image_url)
-                                    <img src="{{ $product->primary_image_url }}" alt="" class="admin-product-thumb">
+                                    <img src="{{ $product->primary_image_url }}" alt="" class="admin-product-thumb" width="48" height="48">
                                 @else
                                     <span class="admin-product-thumb admin-product-thumb--empty">📦</span>
                                 @endif
