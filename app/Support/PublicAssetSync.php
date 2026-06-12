@@ -32,11 +32,14 @@ class PublicAssetSync
             return;
         }
 
-        if (is_file($canaryTarget) && filemtime($canarySource) <= filemtime($canaryTarget)) {
-            return;
+        if (! is_file($canaryTarget) || filemtime($canarySource) > filemtime($canaryTarget)) {
+            self::syncAll($sourceRoot, $publicPath);
         }
+    }
 
-        foreach (['css', 'js'] as $dir) {
+    public static function syncAll(string $sourceRoot, string $publicPath): void
+    {
+        foreach (['css', 'js', 'images'] as $dir) {
             self::copyDirectory($sourceRoot.'/'.$dir, $publicPath.'/'.$dir);
         }
 
@@ -55,11 +58,50 @@ class PublicAssetSync
             return;
         }
 
-        foreach (glob($sourceDir.'/*') ?: [] as $file) {
-            if (is_file($file)) {
-                self::copyFile($file, $targetDir.'/'.basename($file));
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($sourceDir, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            $relative = substr($item->getPathname(), strlen($sourceDir) + 1);
+            $target = $targetDir.'/'.$relative;
+
+            if ($item->isDir()) {
+                if (! is_dir($target) && ! mkdir($target, 0755, true)) {
+                    continue;
+                }
+
+                continue;
             }
+
+            self::copyFile($item->getPathname(), $target);
         }
+    }
+
+    public static function ensureFile(string $relativePath): void
+    {
+        $relativePath = ltrim(str_replace('\\', '/', $relativePath), '/');
+
+        if ($relativePath === '' || str_contains($relativePath, '..')) {
+            return;
+        }
+
+        $source = base_path('public/'.$relativePath);
+        $target = public_path($relativePath);
+
+        if (! is_file($source)) {
+            return;
+        }
+
+        $sourceRoot = realpath(base_path('public'));
+        $targetRoot = realpath(public_path());
+
+        if ($sourceRoot && $targetRoot && $sourceRoot === $targetRoot) {
+            return;
+        }
+
+        self::copyFile($source, $target);
     }
 
     protected static function copyFile(string $source, string $target): void

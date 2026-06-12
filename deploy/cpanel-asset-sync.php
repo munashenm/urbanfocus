@@ -25,22 +25,7 @@ function cpanel_sync_public_assets(string $laravelRoot, string $publicHtml): int
         }
 
         $targetDir = $publicHtml.'/'.$dir;
-        if (! is_dir($targetDir)) {
-            mkdir($targetDir, 0755, true);
-            echo "Created: {$targetDir}\n";
-        }
-
-        foreach (glob($sourceDir.'/*') ?: [] as $file) {
-            if (! is_file($file)) {
-                continue;
-            }
-
-            $target = $targetDir.'/'.basename($file);
-            if (copy($file, $target)) {
-                echo 'Copied: '.basename($file)."\n";
-                $copied++;
-            }
-        }
+        $copied += cpanel_copy_public_tree($sourceDir, $targetDir);
     }
 
     foreach (['favicon.svg', 'favicon.png', 'robots.txt'] as $file) {
@@ -64,6 +49,49 @@ function cpanel_sync_public_assets(string $laravelRoot, string $publicHtml): int
     }
 
     echo $copied > 0 ? "✓ Synced {$copied} asset file(s).\n\n" : "No asset files copied.\n\n";
+
+    return $copied;
+}
+
+/**
+ * Recursively copy a public asset tree (e.g. images/brands, images/partners).
+ */
+function cpanel_copy_public_tree(string $sourceDir, string $targetDir): int
+{
+    $copied = 0;
+
+    if (! is_dir($targetDir)) {
+        mkdir($targetDir, 0755, true);
+        echo "Created: {$targetDir}\n";
+    }
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($sourceDir, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+
+    foreach ($iterator as $item) {
+        $relative = substr($item->getPathname(), strlen($sourceDir) + 1);
+        $target = $targetDir.'/'.$relative;
+
+        if ($item->isDir()) {
+            if (! is_dir($target)) {
+                mkdir($target, 0755, true);
+            }
+
+            continue;
+        }
+
+        $targetParent = dirname($target);
+        if (! is_dir($targetParent)) {
+            mkdir($targetParent, 0755, true);
+        }
+
+        if (copy($item->getPathname(), $target)) {
+            echo 'Copied: '.$relative."\n";
+            $copied++;
+        }
+    }
 
     return $copied;
 }

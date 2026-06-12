@@ -20,6 +20,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\SeoLandingController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\PublicAssetController;
 use App\Http\Controllers\StorageController;
 use App\Http\Controllers\Admin\SocialController as AdminSocialController;
 use App\Http\Controllers\Admin\BlogAutomationController;
@@ -61,6 +62,12 @@ Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name(
 Route::post('/product/{product:slug}/stock-alert', [StockAlertController::class, 'store'])->middleware('throttle:10,1')->name('products.stock-alert');
 
 Route::get('/storage/{path}', [StorageController::class, 'show'])->where('path', '.*')->name('storage.serve');
+
+Route::get('/css/{path}', fn (string $path) => app(PublicAssetController::class)->show($path, 'css'))->where('path', '.*')->name('assets.css');
+Route::get('/js/{path}', fn (string $path) => app(PublicAssetController::class)->show($path, 'js'))->where('path', '.*')->name('assets.js');
+Route::get('/images/{path}', fn (string $path) => app(PublicAssetController::class)->show($path, 'images'))->where('path', '.*')->name('assets.images');
+Route::get('/favicon.svg', fn () => app(PublicAssetController::class)->show('favicon.svg'));
+Route::get('/favicon.png', fn () => app(PublicAssetController::class)->show('favicon.png'));
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('cart.add');

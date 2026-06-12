@@ -88,11 +88,7 @@
                         <tr>
                             <td><input type="checkbox" class="form-check-input bulk-select" form="bulk-products-form" name="ids[]" value="{{ $product->id }}"></td>
                             <td>
-                                @if($product->primary_image_url)
-                                    <img src="{{ $product->primary_image_url }}" alt="" class="admin-product-thumb" width="48" height="48">
-                                @else
-                                    <span class="admin-product-thumb admin-product-thumb--empty">📦</span>
-                                @endif
+                                <img src="{{ $product->display_image_url }}" alt="" class="admin-product-thumb" width="48" height="48" loading="lazy">
                             </td>
                             <td>
                                 <a href="{{ route('admin.products.edit', $product) }}" class="fw-semibold text-decoration-none">{{ $product->name }}</a>

@@ -165,13 +165,13 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ public_asset_url('js/chart.umd.min.js') }}"></script>
 <script>
 (() => {
     const labels = @json($salesChart->pluck('day'));
     const values = @json($salesChart->pluck('total'));
     const ctx = document.getElementById('salesChart');
-    if (!ctx) return;
+    if (!ctx || typeof Chart === 'undefined') return;
     new Chart(ctx, {
         type: 'line',
         data: {

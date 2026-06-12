@@ -36,6 +36,11 @@ class AppServiceProvider extends ServiceProvider
 
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
+
+            // Match asset()/route() URLs to the host the visitor actually used (www vs apex).
+            if (! $this->app->runningInConsole() && request()->getHost()) {
+                URL::forceRootUrl('https://'.request()->getHttpHost());
+            }
         }
 
         Product::observe(ProductObserver::class);

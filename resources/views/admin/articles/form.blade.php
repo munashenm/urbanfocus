@@ -94,6 +94,11 @@
                 @endif
                 <div class="mb-3">
                     <label class="form-label">Featured image URL</label>
+                    @if($article->displayImageUrl() && ! str_contains($article->displayImageUrl(), 'product-placeholder'))
+                        <div class="mb-2">
+                            <img src="{{ $article->displayImageUrl() }}" alt="" class="admin-product-thumb" style="width:auto;max-width:240px;height:auto;max-height:120px;" loading="lazy">
+                        </div>
+                    @endif
                     <input type="text" name="image" class="form-control" value="{{ old('image', $article->image) }}" placeholder="https://… or storage path">
                 </div>
                 @if($blogFeatures['toc'] ?? false)

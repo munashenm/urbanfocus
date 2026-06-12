@@ -1,5 +1,36 @@
 <?php
 
+if (! function_exists('public_asset_version')) {
+    /** Cache-busting version for a file in Laravel's public directory. */
+    function public_asset_version(string $path): ?int
+    {
+        $path = ltrim(str_replace('\\', '/', $path), '/');
+
+        foreach ([public_path($path), base_path('public/'.$path)] as $file) {
+            if (is_file($file)) {
+                return filemtime($file) ?: null;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (! function_exists('public_asset_url')) {
+    /**
+     * URL for static public assets (css, js, images).
+     * Works on cPanel when files live in Laravel's public/ but the web root is public_html.
+     */
+    function public_asset_url(string $path): string
+    {
+        $path = ltrim(str_replace('\\', '/', $path), '/');
+        $url = asset($path);
+        $version = public_asset_version($path);
+
+        return $version ? $url.'?v='.$version : $url;
+    }
+}
+
 if (! function_exists('storage_public_url')) {
     /**
      * Public URL for files in storage/app/public.

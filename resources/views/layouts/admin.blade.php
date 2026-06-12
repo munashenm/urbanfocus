@@ -6,8 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin') - Urban Focus</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="{{ asset('css/admin.css') }}" rel="stylesheet">
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link href="{{ public_asset_url('css/admin.css') }}" rel="stylesheet">
+    <link rel="icon" href="{{ public_asset_url('favicon.svg') }}" type="image/svg+xml">
     @stack('head')
 </head>
 <body class="admin-body">
@@ -16,7 +16,7 @@
         <aside class="admin-sidebar" id="admin-sidebar">
             <div class="admin-brand">
                 <a href="{{ route('admin.dashboard') }}" class="admin-brand-link">
-                    <img src="{{ asset('favicon.svg') }}" alt="" width="28" height="28">
+                    <img src="{{ public_asset_url('favicon.svg') }}" alt="" width="28" height="28">
                     <div>
                         <strong>Urban Focus</strong>
                         <small>Administration</small>
