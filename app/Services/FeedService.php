@@ -6,6 +6,8 @@ use App\Models\Article;
 use App\Models\Product;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use SimpleXMLElement;
+use XMLWriter;
 
 class FeedService
 {
@@ -14,7 +16,7 @@ class FeedService
      */
     public function blogRssXml(): string
     {
-        return Cache::remember('feeds.blog-rss.xml', config('seo.cache.feed_ttl', 1800), function () {
+        return Cache::remember('feeds.blog-rss.xml', $this->feedCacheTtl(), function () {
             $articles = Article::published()
                 ->with('author')
                 ->orderByDesc('published_at')
@@ -22,7 +24,7 @@ class FeedService
                 ->limit(50)
                 ->get();
 
-            $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"></rss>');
+            $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"></rss>');
             $channel = $xml->addChild('channel');
             $channel->addChild('title', $this->xmlEscape('Urban Focus Blog'));
             $channel->addChild('link', config('app.url'));
@@ -45,61 +47,178 @@ class FeedService
 
     /**
      * Facebook Catalog (product) feed, served at /facebook-feed.xml.
-     * Uses the RSS + g: namespace format Facebook Commerce Manager expects.
      */
     public function facebookCatalogXml(): string
     {
-        return Cache::remember('feeds.facebook-catalog.xml', config('seo.cache.feed_ttl', 1800), function () {
-            $products = Product::with(['category', 'images'])
-                ->where('is_active', true)
-                ->get();
-
-            $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"></rss>');
+        return Cache::remember('feeds.facebook-catalog.xml', $this->feedCacheTtl(), function () {
+            $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"></rss>');
             $channel = $xml->addChild('channel');
             $channel->addChild('title', $this->xmlEscape('Urban Focus Facebook Catalog'));
             $channel->addChild('link', config('app.url'));
             $channel->addChild('description', $this->xmlEscape('Product catalog for Facebook & Instagram Shops — Urban Focus South Africa.'));
 
-            foreach ($products as $product) {
-                if (! $product->isGoogleMerchantEligible()) {
-                    continue;
-                }
+            Product::query()
+                ->with(['category', 'images'])
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->chunkById(200, function ($products) use ($channel) {
+                    foreach ($products as $product) {
+                        if (! $product->isGoogleMerchantEligible()) {
+                            continue;
+                        }
 
-                $this->appendFacebookItem($channel, $product);
-            }
+                        $this->appendFacebookItem($channel, $product);
+                    }
+                });
 
             return $xml->asXML();
         });
     }
 
+    /**
+     * Google Merchant Center RSS 2.0 feed with g: namespace.
+     */
     public function googleMerchantXml(): string
     {
-        return Cache::remember('feeds.google-merchant.xml', config('seo.cache.feed_ttl', 1800), function () {
-            $products = Product::with(['category', 'images'])
-                ->where('is_active', true)
-                ->get();
-
-            $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"></rss>');
-            $channel = $xml->addChild('channel');
-            $channel->addChild('title', 'Urban Focus Products');
-            $channel->addChild('link', config('app.url'));
-            $channel->addChild('description', 'IT products from Urban Focus South Africa');
-
-            foreach ($products as $product) {
-                if (! $product->isGoogleMerchantEligible()) {
-                    continue;
-                }
-
-                $this->appendGoogleMerchantItem($channel, $product);
-            }
-
-            return $xml->asXML();
+        return Cache::remember('feeds.google-merchant.xml', $this->feedCacheTtl(), function () {
+            return $this->buildMerchantCenterRss(
+                'Urban Focus Products',
+                'IT products from Urban Focus South Africa'
+            );
         });
+    }
+
+    /**
+     * PriceCheck.co.za XML feed (Google Shopping RSS 2.0 format).
+     */
+    public function priceCheckXml(): string
+    {
+        return Cache::remember('feeds.pricecheck.xml', $this->feedCacheTtl(), function () {
+            return $this->buildMerchantCenterRss(
+                'Urban Focus PriceCheck Feed',
+                'PriceCheck.co.za product feed for Urban Focus South Africa'
+            );
+        });
+    }
+
+    protected function buildMerchantCenterRss(string $channelTitle, string $channelDescription): string
+    {
+        $writer = new XMLWriter;
+        $writer->openMemory();
+        $writer->startDocument('1.0', 'UTF-8');
+        $writer->startElement('rss');
+        $writer->writeAttribute('version', '2.0');
+        $writer->writeAttribute('xmlns:g', 'http://base.google.com/ns/1.0');
+        $writer->startElement('channel');
+        $writer->writeElement('title', $channelTitle);
+        $writer->writeElement('link', url('/'));
+        $writer->writeElement('description', $channelDescription);
+
+        Product::query()
+            ->where('is_active', true)
+            ->with(['images', 'category'])
+            ->orderBy('id')
+            ->chunkById(200, function ($products) use ($writer) {
+                foreach ($products as $product) {
+                    if (! $product->isGoogleMerchantEligible()) {
+                        continue;
+                    }
+
+                    $this->writeGoogleMerchantItem($writer, $product);
+                }
+            });
+
+        $writer->endElement();
+        $writer->endElement();
+        $writer->endDocument();
+
+        return $writer->outputMemory();
+    }
+
+    protected function writeGoogleMerchantItem(XMLWriter $writer, Product $product): void
+    {
+        $writer->startElement('item');
+        $this->writeGoogleElement($writer, 'id', $product->googleFeedId());
+        $this->writeGoogleElement($writer, 'title', $product->googleFeedTitle());
+        $this->writeGoogleElement($writer, 'description', $product->googleFeedDescription());
+        $this->writeGoogleElement($writer, 'link', $this->feedAbsoluteUrl(route('products.show', $product)));
+        $this->writeGoogleElement($writer, 'image_link', $this->feedAbsoluteUrl($product->primary_image_url));
+
+        foreach ($product->googleFeedAdditionalImages() as $imageUrl) {
+            $this->writeGoogleElement($writer, 'additional_image_link', $this->feedAbsoluteUrl($imageUrl));
+        }
+
+        $this->writeGoogleElement($writer, 'availability', $product->googleFeedAvailability());
+        $this->writeGoogleElement($writer, 'condition', config('google-merchant.condition', 'new'));
+        $this->writeGoogleElement($writer, 'brand', $product->brand ?: 'Urban Focus');
+
+        if ($product->is_on_sale) {
+            $this->writeGoogleElement($writer, 'price', $this->formatPrice((float) $product->price));
+            $this->writeGoogleElement($writer, 'sale_price', $this->formatPrice((float) $product->sale_price));
+        } else {
+            $this->writeGoogleElement($writer, 'price', $this->formatPrice((float) $product->price));
+        }
+
+        if ($category = $product->googleProductCategory()) {
+            $this->writeGoogleElement($writer, 'google_product_category', $category);
+        }
+
+        if ($product->category) {
+            $this->writeGoogleElement($writer, 'product_type', $product->category->name);
+        }
+
+        if ($product->hasValidGtin()) {
+            $this->writeGoogleElement($writer, 'gtin', $product->normalizedGtin());
+        } elseif ($mpn = $product->googleFeedMpn()) {
+            $this->writeGoogleElement($writer, 'mpn', $mpn);
+        } else {
+            $this->writeGoogleElement($writer, 'identifier_exists', 'no');
+        }
+
+        if ($product->sku) {
+            $this->writeGoogleElement($writer, 'sku', $product->sku);
+        }
+
+        if ($product->weight) {
+            $this->writeGoogleElement($writer, 'shipping_weight', number_format((float) $product->weight, 2, '.', '').' kg');
+        }
+
+        $this->writeGoogleShipping($writer);
+        $this->writeGoogleReturnPolicy($writer);
+        $writer->endElement();
+    }
+
+    protected function writeGoogleElement(XMLWriter $writer, string $name, string $value): void
+    {
+        $writer->startElementNS('g', $name, 'http://base.google.com/ns/1.0');
+        $writer->text($value);
+        $writer->endElement();
+    }
+
+    protected function writeGoogleShipping(XMLWriter $writer): void
+    {
+        $shipping = config('google-merchant.shipping');
+        $price = $shipping['price'] ?? config('shipping.flat_rate', 0);
+
+        $writer->startElementNS('g', 'shipping', 'http://base.google.com/ns/1.0');
+        $this->writeGoogleElement($writer, 'country', $shipping['country'] ?? 'ZA');
+        $this->writeGoogleElement($writer, 'service', $shipping['service'] ?? 'Standard Courier');
+        $this->writeGoogleElement($writer, 'price', $this->formatPrice((float) $price));
+        $writer->endElement();
+    }
+
+    protected function writeGoogleReturnPolicy(XMLWriter $writer): void
+    {
+        $label = config('google-merchant.return_policy_label');
+
+        if ($label) {
+            $this->writeGoogleElement($writer, 'return_policy_label', $label);
+        }
     }
 
     public function priceCheckCsv(): string
     {
-        return Cache::remember('feeds.pricecheck.csv', config('seo.cache.feed_ttl', 1800), function () {
+        return Cache::remember('feeds.pricecheck.csv', $this->feedCacheTtl(), function () {
             $lines = ['SKU,Product Name,Brand,Price,Stock,URL,Category'];
 
             Product::query()
@@ -110,11 +229,11 @@ class FeedService
                     foreach ($products as $product) {
                         $lines[] = implode(',', [
                             $this->csvEscape($product->sku ?: $product->id),
-                            $this->csvEscape($product->name),
+                            $this->csvEscape($product->googleFeedTitle()),
                             $this->csvEscape($product->brand ?: 'Urban Focus'),
                             number_format($product->effective_price, 2, '.', ''),
-                            $product->isAvailable() ? 'In Stock' : 'Out of Stock',
-                            route('products.show', $product),
+                            $product->googleFeedAvailability() === 'in_stock' ? 'In Stock' : 'Out of Stock',
+                            $this->feedAbsoluteUrl(route('products.show', $product)),
                             $this->csvEscape($product->category?->name ?? ''),
                         ]);
                     }
@@ -129,7 +248,7 @@ class FeedService
      */
     public function bobShopBulkloadCsv(): string
     {
-        return Cache::remember('feeds.bobshop.bulkload.csv', config('seo.cache.feed_ttl', 1800), function () {
+        return Cache::remember('feeds.bobshop.bulkload.csv', $this->feedCacheTtl(), function () {
             $handle = fopen('php://temp', 'r+');
 
             if ($handle === false) {
@@ -249,11 +368,11 @@ class FeedService
         $urls = [];
 
         if ($product->primary_image_url) {
-            $urls[] = $product->primary_image_url;
+            $urls[] = $this->feedAbsoluteUrl($product->primary_image_url);
         }
 
         foreach ($product->googleFeedAdditionalImages() as $imageUrl) {
-            $urls[] = $imageUrl;
+            $urls[] = $this->feedAbsoluteUrl($imageUrl);
         }
 
         if ($urls === [] && config('bobshop.bulkload.use_placeholder_image', true)) {
@@ -268,7 +387,7 @@ class FeedService
      */
     public function bobShopXml(): string
     {
-        return Cache::remember('feeds.bobshop.xml', config('seo.cache.feed_ttl', 1800), function () {
+        return Cache::remember('feeds.bobshop.xml', $this->feedCacheTtl(), function () {
             $doc = new \DOMDocument('1.0', 'UTF-8');
             $doc->formatOutput = false;
 
@@ -349,7 +468,7 @@ class FeedService
             $productNode->appendChild($imagesNode);
 
             foreach ($imageUrls as $imageUrl) {
-                $this->appendBobShopCdataNode($doc, $imagesNode, 'ImageURL', $imageUrl);
+                $this->appendBobShopCdataNode($doc, $imagesNode, 'ImageURL', $this->feedAbsoluteUrl($imageUrl));
             }
         }
 
@@ -397,77 +516,7 @@ class FeedService
         $parent->appendChild($node);
     }
 
-    protected function appendGoogleMerchantItem(\SimpleXMLElement $channel, Product $product): void
-    {
-        $ns = 'http://base.google.com/ns/1.0';
-        $item = $channel->addChild('item');
-
-        $this->addGoogleChild($item, 'id', $product->googleFeedId(), $ns);
-        $this->addGoogleChild($item, 'title', $product->googleFeedTitle(), $ns);
-        $this->addGoogleChild($item, 'description', $product->googleFeedDescription(), $ns);
-        $this->addGoogleChild($item, 'link', route('products.show', $product), $ns);
-        $this->addGoogleChild($item, 'image_link', $product->primary_image_url, $ns);
-
-        foreach ($product->googleFeedAdditionalImages() as $imageUrl) {
-            $this->addGoogleChild($item, 'additional_image_link', $imageUrl, $ns);
-        }
-
-        $this->addGoogleChild($item, 'availability', $product->isAvailable() ? 'in_stock' : 'out_of_stock', $ns);
-        $this->addGoogleChild($item, 'condition', config('google-merchant.condition', 'new'), $ns);
-        $this->addGoogleChild($item, 'brand', $product->brand ?: 'Urban Focus', $ns);
-
-        if ($product->is_on_sale) {
-            $this->addGoogleChild($item, 'price', $this->formatPrice($product->price), $ns);
-            $this->addGoogleChild($item, 'sale_price', $this->formatPrice($product->sale_price), $ns);
-        } else {
-            $this->addGoogleChild($item, 'price', $this->formatPrice($product->price), $ns);
-        }
-
-        if ($category = $product->googleProductCategory()) {
-            $this->addGoogleChild($item, 'google_product_category', $category, $ns);
-        }
-
-        if ($product->category) {
-            $this->addGoogleChild($item, 'product_type', $product->category->name, $ns);
-        }
-
-        if ($product->hasValidGtin()) {
-            $this->addGoogleChild($item, 'gtin', $product->normalizedGtin(), $ns);
-        } elseif ($product->sku) {
-            $this->addGoogleChild($item, 'mpn', $product->sku, $ns);
-        } else {
-            $this->addGoogleChild($item, 'identifier_exists', 'no', $ns);
-        }
-
-        if ($product->weight) {
-            $this->addGoogleChild($item, 'shipping_weight', number_format((float) $product->weight, 2, '.', '').' kg', $ns);
-        }
-
-        $this->appendShipping($item, $ns);
-        $this->appendReturnPolicy($item, $ns);
-    }
-
-    protected function appendReturnPolicy(\SimpleXMLElement $item, string $ns): void
-    {
-        $label = config('google-merchant.return_policy_label');
-
-        if ($label) {
-            $this->addGoogleChild($item, 'return_policy_label', $label, $ns);
-        }
-    }
-
-    protected function appendShipping(\SimpleXMLElement $item, string $ns): void
-    {
-        $shipping = config('google-merchant.shipping');
-        $price = $shipping['price'] ?? config('shipping.flat_rate', 0);
-
-        $shippingNode = $item->addChild('shipping', null, $ns);
-        $shippingNode->addChild('country', $shipping['country'] ?? 'ZA', $ns);
-        $shippingNode->addChild('service', $shipping['service'] ?? 'Standard Courier', $ns);
-        $shippingNode->addChild('price', $this->formatPrice((float) $price), $ns);
-    }
-
-    protected function appendBlogItem(\SimpleXMLElement $channel, Article $article): void
+    protected function appendBlogItem(SimpleXMLElement $channel, Article $article): void
     {
         $url = route('blog.show', $article);
         $item = $channel->addChild('item');
@@ -490,7 +539,7 @@ class FeedService
         $node->appendChild($node->ownerDocument->createCDATASection($body));
     }
 
-    protected function appendFacebookItem(\SimpleXMLElement $channel, Product $product): void
+    protected function appendFacebookItem(SimpleXMLElement $channel, Product $product): void
     {
         $ns = 'http://base.google.com/ns/1.0';
         $item = $channel->addChild('item');
@@ -498,15 +547,15 @@ class FeedService
         $this->addGoogleChild($item, 'id', $product->googleFeedId(), $ns);
         $this->addGoogleChild($item, 'title', $product->googleFeedTitle(), $ns);
         $this->addGoogleChild($item, 'description', $product->googleFeedDescription(), $ns);
-        $this->addGoogleChild($item, 'link', route('products.show', $product), $ns);
-        $this->addGoogleChild($item, 'image_link', $product->primary_image_url, $ns);
+        $this->addGoogleChild($item, 'link', $this->feedAbsoluteUrl(route('products.show', $product)), $ns);
+        $this->addGoogleChild($item, 'image_link', $this->feedAbsoluteUrl($product->primary_image_url), $ns);
 
         foreach ($product->googleFeedAdditionalImages() as $imageUrl) {
-            $this->addGoogleChild($item, 'additional_image_link', $imageUrl, $ns);
+            $this->addGoogleChild($item, 'additional_image_link', $this->feedAbsoluteUrl($imageUrl), $ns);
         }
 
-        // Facebook expects the space-separated availability vocabulary.
-        $this->addGoogleChild($item, 'availability', $product->isAvailable() ? 'in stock' : 'out of stock', $ns);
+        $availability = $product->googleFeedAvailability() === 'in_stock' ? 'in stock' : 'out of stock';
+        $this->addGoogleChild($item, 'availability', $availability, $ns);
         $this->addGoogleChild($item, 'condition', config('google-merchant.condition', 'new'), $ns);
         $this->addGoogleChild($item, 'price', $this->formatPrice((float) $product->price), $ns);
 
@@ -526,9 +575,22 @@ class FeedService
 
         if ($product->hasValidGtin()) {
             $this->addGoogleChild($item, 'gtin', $product->normalizedGtin(), $ns);
-        } elseif ($product->sku) {
-            $this->addGoogleChild($item, 'mpn', $product->sku, $ns);
+        } elseif ($mpn = $product->googleFeedMpn()) {
+            $this->addGoogleChild($item, 'mpn', $mpn, $ns);
         }
+    }
+
+    protected function feedAbsoluteUrl(?string $url): string
+    {
+        if (! $url) {
+            return '';
+        }
+
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            return $url;
+        }
+
+        return url($url);
     }
 
     protected function xmlEscape(string $value): string
@@ -538,7 +600,7 @@ class FeedService
         return htmlspecialchars(trim($value), ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
 
-    protected function addGoogleChild(\SimpleXMLElement $parent, string $name, string $value, string $ns): void
+    protected function addGoogleChild(SimpleXMLElement $parent, string $name, string $value, string $ns): void
     {
         $parent->addChild($name, htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8'), $ns);
     }
@@ -556,5 +618,10 @@ class FeedService
         }
 
         return $value;
+    }
+
+    protected function feedCacheTtl(): int
+    {
+        return (int) config('seo.cache.feed_ttl', 21600);
     }
 }

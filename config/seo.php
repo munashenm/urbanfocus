@@ -25,7 +25,7 @@ return [
 
     'cache' => [
         'sitemap_ttl' => (int) env('SEO_SITEMAP_CACHE_TTL', 3600),
-        'feed_ttl' => (int) env('SEO_FEED_CACHE_TTL', 1800),
+        'feed_ttl' => (int) env('SEO_FEED_CACHE_TTL', 21600),
     ],
 
     'indexing' => [

@@ -321,7 +321,23 @@ class Product extends Model
 
     public function googleFeedTitle(): string
     {
-        return Str::limit($this->name, config('google-merchant.title_max_length', 150), '');
+        $parts = array_filter([$this->brand, $this->sku, $this->name]);
+
+        return Str::limit(implode(' ', $parts), config('google-merchant.title_max_length', 150), '');
+    }
+
+    public function googleFeedMpn(): ?string
+    {
+        return $this->model_number ?: $this->sku ?: null;
+    }
+
+    public function googleFeedAvailability(): string
+    {
+        if ($this->manage_stock) {
+            return $this->stock_quantity > 0 ? 'in_stock' : 'out_of_stock';
+        }
+
+        return $this->in_stock ? 'in_stock' : 'out_of_stock';
     }
 
     public function googleFeedDescription(): string

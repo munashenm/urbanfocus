@@ -205,6 +205,7 @@ class SeoService
         Cache::forget('feeds.bobshop.xml');
         Cache::forget('feeds.bobshop.bulkload.csv');
         Cache::forget('feeds.pricecheck.csv');
+        Cache::forget('feeds.pricecheck.xml');
 
         if (config('seo.indexing.ping_search_engines')) {
             $this->pingSearchEngines();

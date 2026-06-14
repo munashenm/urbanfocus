@@ -107,6 +107,17 @@ class SeoController extends Controller
         }
     }
 
+    public function priceCheckXmlFeed(FeedService $feed): Response
+    {
+        try {
+            return response($feed->priceCheckXml(), 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response('Feed temporarily unavailable.', 503, ['Content-Type' => 'text/plain']);
+        }
+    }
+
     protected function emptySitemap(): string
     {
         return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>';

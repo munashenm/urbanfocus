@@ -134,6 +134,7 @@ Route::get('/sitemap-images.xml', [SeoController::class, 'imageSitemap'])->name(
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::get('/feeds/google-merchant.xml', [SeoController::class, 'googleMerchantFeed'])->name('feeds.google');
 Route::get('/feeds/pricecheck.csv', [SeoController::class, 'priceCheckFeed'])->name('feeds.pricecheck');
+Route::get('/feeds/pricecheck.xml', [SeoController::class, 'priceCheckXmlFeed'])->name('feeds.pricecheck.xml');
 Route::get('/feeds/bobshop.xml', [SeoController::class, 'bobShopXmlFeed'])->name('feeds.bobshop');
 Route::get('/feeds/bobshop.csv', [SeoController::class, 'bobShopBulkloadCsv'])->name('feeds.bobshop.csv');
 

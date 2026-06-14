@@ -34,6 +34,7 @@ class CatalogController extends Controller
             ['name' => 'Bob Shop product feed (XML)', 'url' => route('feeds.bobshop'), 'format' => 'XML'],
             ['name' => 'Bob Shop BulkLoad CSV', 'url' => route('feeds.bobshop.csv'), 'format' => 'CSV'],
             ['name' => 'PriceCheck comparison CSV', 'url' => route('feeds.pricecheck'), 'format' => 'CSV'],
+            ['name' => 'PriceCheck product feed (XML)', 'url' => route('feeds.pricecheck.xml'), 'format' => 'XML'],
             ['name' => 'XML Sitemap', 'url' => route('sitemap'), 'format' => 'XML'],
         ];
 
