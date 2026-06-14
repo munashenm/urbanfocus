@@ -207,6 +207,10 @@ class SeoService
         Cache::forget('feeds.pricecheck.csv');
         Cache::forget('feeds.pricecheck.xml');
 
+        foreach (glob(storage_path('app/feeds/*.xml')) ?: [] as $file) {
+            @unlink($file);
+        }
+
         if (config('seo.indexing.ping_search_engines')) {
             $this->pingSearchEngines();
         }

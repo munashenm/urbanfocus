@@ -59,6 +59,17 @@ if ($sitemapFiles === []) {
     echo "No sitemap files.\n";
 }
 
+echo "\n=== Delete generated feed files ===\n";
+$feedFiles = glob($laravelRoot.'/storage/app/feeds/*.xml') ?: [];
+foreach ($feedFiles as $file) {
+    if (@unlink($file)) {
+        echo "Deleted: ".basename($file)."\n";
+    }
+}
+if ($feedFiles === []) {
+    echo "No feed files.\n";
+}
+
 require $laravelRoot.'/deploy/cpanel-asset-sync.php';
 cpanel_sync_public_assets($laravelRoot, dirname(__DIR__).'/public_html');
 

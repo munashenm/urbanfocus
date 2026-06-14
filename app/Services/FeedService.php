@@ -80,7 +80,7 @@ class FeedService
      */
     public function googleMerchantXml(): string
     {
-        return Cache::remember('feeds.google-merchant.xml', $this->feedCacheTtl(), function () {
+        return $this->rememberFeed('google-merchant.xml', function () {
             return $this->buildMerchantCenterRss(
                 'Urban Focus Products',
                 'IT products from Urban Focus South Africa'
@@ -93,12 +93,63 @@ class FeedService
      */
     public function priceCheckXml(): string
     {
-        return Cache::remember('feeds.pricecheck.xml', $this->feedCacheTtl(), function () {
+        return $this->rememberFeed('pricecheck.xml', function () {
             return $this->buildMerchantCenterRss(
                 'Urban Focus PriceCheck Feed',
                 'PriceCheck.co.za product feed for Urban Focus South Africa'
             );
         });
+    }
+
+    /**
+     * Persist large product feeds on disk to avoid DB cache size limits and fetch stampedes.
+     */
+    protected function rememberFeed(string $filename, callable $callback): string
+    {
+        $ttl = $this->feedCacheTtl();
+        $path = storage_path('app/feeds/'.$filename);
+        $legacyCacheKey = 'feeds.'.str_replace('.xml', '', $filename).'.xml';
+
+        $cached = is_file($path) ? file_get_contents($path) : false;
+        $fresh = is_file($path) && (time() - filemtime($path)) < $ttl;
+
+        if ($fresh && is_string($cached) && $cached !== '') {
+            return $cached;
+        }
+
+        $lock = Cache::lock('feed-build:'.$filename, 300);
+
+        if (! $lock->get()) {
+            if (is_string($cached) && $cached !== '') {
+                return $cached;
+            }
+
+            $lock->block(90);
+        }
+
+        try {
+            if (is_file($path) && (time() - filemtime($path)) < $ttl) {
+                $cached = file_get_contents($path);
+
+                return is_string($cached) && $cached !== '' ? $cached : $callback();
+            }
+
+            set_time_limit(300);
+            @ini_set('memory_limit', '512M');
+
+            $xml = $callback();
+
+            if (! is_dir(dirname($path))) {
+                @mkdir(dirname($path), 0755, true);
+            }
+
+            file_put_contents($path, $xml);
+            Cache::forget($legacyCacheKey);
+
+            return $xml;
+        } finally {
+            optional($lock)->release();
+        }
     }
 
     protected function buildMerchantCenterRss(string $channelTitle, string $channelDescription): string
@@ -124,7 +175,11 @@ class FeedService
                         continue;
                     }
 
-                    $this->writeGoogleMerchantItem($writer, $product);
+                    try {
+                        $this->writeGoogleMerchantItem($writer, $product);
+                    } catch (\Throwable $e) {
+                        report($e);
+                    }
                 }
             });
 
@@ -191,13 +246,21 @@ class FeedService
     protected function writeGoogleElement(XMLWriter $writer, string $name, string $value): void
     {
         $writer->startElementNS('g', $name, 'http://base.google.com/ns/1.0');
-        $writer->text($value);
+        $writer->text($this->feedXmlText($value));
         $writer->endElement();
+    }
+
+    protected function feedXmlText(string $value): string
+    {
+        $value = preg_replace('/\s+/u', ' ', strip_tags($value)) ?? '';
+        $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+
+        return trim($value);
     }
 
     protected function writeGoogleShipping(XMLWriter $writer): void
     {
-        $shipping = config('google-merchant.shipping');
+        $shipping = config('google-merchant.shipping') ?? [];
         $price = $shipping['price'] ?? config('shipping.flat_rate', 0);
 
         $writer->startElementNS('g', 'shipping', 'http://base.google.com/ns/1.0');
