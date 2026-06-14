@@ -4,7 +4,7 @@
 @section('meta_description', $product->seoDescription())
 @section('meta_keywords', $product->seoKeywords())
 @section('canonical', route('products.show', $product))
-@section('og_title', $product->name)
+@section('og_title', $product->seoTitle())
 @section('og_description', $product->seoDescription())
 @section('og_type', 'product')
 @if($product->primary_image_url)

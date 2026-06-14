@@ -122,9 +122,16 @@ class Product extends Model
             return $this->attributes['meta_title'];
         }
 
-        $brand = $this->brand ? $this->brand.' ' : '';
+        $parts = array_filter([
+            $this->brand,
+            $this->model_number ?: $this->sku,
+            $this->name,
+        ]);
 
-        return Str::limit($brand.$this->name.' — Buy in South Africa | Urban Focus', 70, '');
+        $title = implode(' ', $parts).' | South Africa Stock';
+        $title = preg_replace('/\s+/u', ' ', trim($title)) ?? '';
+
+        return Str::limit($title, 70, '');
     }
 
     public function seoDescription(): string
@@ -140,18 +147,19 @@ class Product extends Model
             ]);
         }
 
-        $source = strip_tags($this->short_description ?: $this->description ?: '');
+        $subject = implode(' ', array_filter([
+            $this->brand,
+            $this->model_number ?: $this->sku,
+        ]));
 
-        if ($source === '') {
-            $source = ($this->brand ? 'Buy '.$this->brand.' ' : '').$this->name;
+        if ($subject === '') {
+            $subject = $this->name;
         }
 
-        return seo_meta_description($source, [
-            'type' => 'product',
-            'name' => $this->name,
-            'brand' => $this->brand,
-            'category' => $this->category?->name,
-        ]);
+        $description = 'Buy the genuine '.$subject.' in South Africa. Authorized supply with full warranty, nationwide delivery, and corporate VAT invoices available.';
+        $description = preg_replace('/\s+/u', ' ', trim($description)) ?? '';
+
+        return Str::limit($description, (int) config('seo.defaults.max_description_length', 160), '');
     }
 
     public function seoKeywords(): string
