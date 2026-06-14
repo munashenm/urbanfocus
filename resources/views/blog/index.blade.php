@@ -2,6 +2,9 @@
 
 @section('title', config('blog.index_title'))
 @section('meta_description', config('blog.index_description'))
+@if(request('q'))
+@section('meta_robots', 'noindex, follow')
+@endif
 @if(!empty($pagination['canonical']))
 @section('canonical', $pagination['canonical'])
 @endif

@@ -2,10 +2,10 @@
 
 @section('title', $category->meta_title ?: $category->name.' | Urban Focus')
 @section('meta_description', $category->seoDescription())
-
-@push('head')
-    <link rel="canonical" href="{{ $canonicalUrl }}">
-@endpush
+@section('canonical', $canonicalUrl)
+@if(request()->hasAny(['brand', 'price_min', 'price_max']) || (request('sort') && request('sort') !== 'newest'))
+@section('meta_robots', 'noindex, follow')
+@endif
 
 @include('partials.pagination-seo')
 

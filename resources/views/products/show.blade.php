@@ -36,7 +36,7 @@
             @if($product->images->count() > 1)
                 <div class="d-flex gap-2 mt-3 flex-wrap product-thumbs">
                     @foreach($product->images as $img)
-                        <img src="{{ $img->url }}" alt="" width="72" height="72" loading="lazy" class="product-thumb {{ $loop->first ? 'active' : '' }}">
+                        <img src="{{ $img->url }}" alt="{{ $product->imageAlt() }}" width="72" height="72" loading="lazy" class="product-thumb {{ $loop->first ? 'active' : '' }}">
                     @endforeach
                 </div>
             @endif

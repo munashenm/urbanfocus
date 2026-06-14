@@ -2,7 +2,7 @@
 
 @section('title', 'Shop IT Products | Urban Focus')
 @section('meta_description', seo_meta_description('Browse laptops, desktops, networking, storage and software from Urban Focus.', ['type' => 'category', 'name' => 'IT products']))
-@if(request('q'))
+@if(request()->hasAny(['q', 'category', 'brand', 'deals', 'price_min', 'price_max']) || (request('sort') && request('sort') !== 'newest'))
 @section('meta_robots', 'noindex, follow')
 @endif
 

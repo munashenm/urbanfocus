@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Register | Urban Focus')
+@section('meta_robots', 'noindex, nofollow')
 
 @section('content')
 <div class="container py-5">

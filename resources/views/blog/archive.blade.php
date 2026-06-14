@@ -2,9 +2,8 @@
 
 @section('title', ($archiveTitle ?? 'Blog').' | Urban Focus')
 @section('meta_description', $archiveDescription ?? config('blog.index_description'))
-@if(!empty($pagination['canonical']))
-@section('canonical', $pagination['canonical'])
-@endif
+@php $paginationMeta = $pagination ?? null; @endphp
+@include('partials.pagination-seo')
 
 @section('content')
 <div class="page-hero">
