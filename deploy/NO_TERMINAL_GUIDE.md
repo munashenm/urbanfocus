@@ -266,6 +266,55 @@ Repeat for **`urbanfocus/bootstrap/cache`** → **775**
 
 ---
 
+## STEP 13 — Category reorganization (no Terminal)
+
+Use this after pulling the latest code that adds the new 9-category tree.
+
+### A. Back up the database
+
+1. cPanel → **phpMyAdmin**
+2. Select your Urban Focus database
+3. **Export** → Quick → SQL → **Go**
+4. Save the file on your PC
+
+### B. Run migrations
+
+1. File Manager → open **`urbanfocus/deploy/`**
+2. Copy **`migrate.php`** → **`public_html/migrate.php`**
+3. Edit **`public_html/migrate.php`** → set `MIGRATE_KEY` to a long random secret (16+ characters)
+4. In your browser visit:
+
+   `https://www.urbanfocus.co.za/migrate.php?key=YOUR_SECRET`
+
+5. Wait for **✓ Migrations complete**
+6. **Delete** `public_html/migrate.php`
+
+### C. Preview and run category reorganization
+
+1. Copy **`urbanfocus/deploy/reorganize-categories.php`** → **`public_html/reorganize-categories.php`**
+2. Edit the file → set `REORG_KEY` to another long secret
+3. Open the help page (shows all links):
+
+   `https://www.urbanfocus.co.za/reorganize-categories.php?key=YOUR_SECRET`
+
+4. **Preview** (no changes):
+
+   `https://www.urbanfocus.co.za/reorganize-categories.php?key=YOUR_SECRET&dry-run=1`
+
+5. **Test 10 products**:
+
+   `https://www.urbanfocus.co.za/reorganize-categories.php?key=YOUR_SECRET&run=1&limit=10`
+
+6. **Full migration** (all products):
+
+   `https://www.urbanfocus.co.za/reorganize-categories.php?key=YOUR_SECRET&run=1`
+
+7. **Delete** `public_html/reorganize-categories.php` when done
+
+This remaps products into the new main/subcategory structure, creates 301 redirects for old category URLs, and deactivates empty legacy categories. **No products are deleted.**
+
+---
+
 ## Troubleshooting (no Terminal)
 
 ### "Forbidden" on setup.php
