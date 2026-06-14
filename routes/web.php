@@ -57,6 +57,7 @@ Route::get('/blog/tag/{tag:slug}', [BlogController::class, 'tag'])->name('blog.t
 Route::get('/blog/author/{author:slug}', [BlogController::class, 'author'])->name('blog.author');
 Route::get('/blog/{article:slug}', [BlogController::class, 'show'])->name('blog.show');
 Route::get('/search/suggest', [SearchController::class, 'suggest'])->name('search.suggest');
+Route::get('/category/{parent:slug}/{child:slug}', [CategoryController::class, 'showChild'])->name('categories.show.child');
 Route::get('/category/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::post('/product/{product:slug}/stock-alert', [StockAlertController::class, 'store'])->middleware('throttle:10,1')->name('products.stock-alert');
@@ -147,6 +148,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::delete('products/{product}/images/{image}', [AdminProductController::class, 'destroyImage'])->middleware('permission:products.edit')->name('products.images.destroy');
         Route::patch('products/{product}/images/{image}/primary', [AdminProductController::class, 'setPrimaryImage'])->middleware('permission:products.edit')->name('products.images.primary');
         Route::resource('products', AdminProductController::class)->except(['show'])->withTrashed();
+        Route::get('categories/{category}/children', [AdminCategoryController::class, 'children'])->name('categories.children');
         Route::post('categories/bulk-destroy', [AdminCategoryController::class, 'bulkDestroy'])->middleware('permission:products.delete')->name('categories.bulk-destroy');
         Route::resource('categories', AdminCategoryController::class)->except(['show']);
         Route::resource('brands', AdminBrandController::class)->except(['show']);

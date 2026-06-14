@@ -734,11 +734,23 @@ class Product extends Model
         ];
 
         if ($this->category) {
+            $this->category->loadMissing('parent');
+            $position = 2;
+
+            if ($this->category->parent) {
+                $items[] = [
+                    '@type' => 'ListItem',
+                    'position' => $position++,
+                    'name' => $this->category->parent->name,
+                    'item' => $this->category->parent->url(),
+                ];
+            }
+
             $items[] = [
                 '@type' => 'ListItem',
-                'position' => 2,
+                'position' => $position,
                 'name' => $this->category->name,
-                'item' => route('categories.show', $this->category),
+                'item' => $this->category->url(),
             ];
         }
 

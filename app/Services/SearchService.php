@@ -57,7 +57,7 @@ class SearchService
             ->get()
             ->map(fn (Category $c) => [
                 'name' => $c->name,
-                'url' => route('categories.show', $c),
+                'url' => $c->url(),
             ])
             ->all();
 
@@ -152,11 +152,11 @@ class SearchService
                 'slug' => $col['slug'],
                 'icon' => $col['icon'],
                 'url' => $category
-                    ? route('categories.show', $category)
+                    ? $category->url()
                     : route('shop.index', ['category' => $col['slug']]),
                 'children' => $category?->children->map(fn ($c) => [
                     'name' => $c->name,
-                    'url' => route('categories.show', $c),
+                    'url' => $c->url(),
                 ])->all() ?? [],
             ];
         })->all();

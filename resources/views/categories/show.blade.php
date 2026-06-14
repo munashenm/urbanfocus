@@ -3,6 +3,10 @@
 @section('title', $category->meta_title ?: $category->name.' | Urban Focus')
 @section('meta_description', $category->seoDescription())
 
+@push('head')
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+@endpush
+
 @include('partials.pagination-seo')
 
 @section('content')
@@ -11,10 +15,13 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
             <li class="breadcrumb-item"><a href="{{ route('shop.index') }}">Shop</a></li>
-            @if($category->parent)
-                <li class="breadcrumb-item"><a href="{{ route('categories.show', $category->parent) }}">{{ $category->parent->name }}</a></li>
-            @endif
-            <li class="breadcrumb-item active">{{ $category->name }}</li>
+            @foreach($category->breadcrumbChain() as $index => $crumb)
+                @if($index === count($category->breadcrumbChain()) - 1)
+                    <li class="breadcrumb-item active">{{ $crumb['name'] }}</li>
+                @else
+                    <li class="breadcrumb-item"><a href="{{ $crumb['category']->url() }}">{{ $crumb['name'] }}</a></li>
+                @endif
+            @endforeach
         </ol>
     </nav>
 
@@ -28,7 +35,7 @@
             <p class="small text-muted mb-2">Browse {{ $category->parent->name }}</p>
             <div class="category-sibling-scroll d-flex gap-2 pb-1">
                 @foreach($siblingCategories as $sibling)
-                    <a href="{{ route('categories.show', $sibling) }}" class="category-sibling-pill {{ $sibling->id === $category->id ? 'is-active' : '' }}">{{ $sibling->name }}</a>
+                    <a href="{{ $sibling->url() }}" class="category-sibling-pill {{ $sibling->id === $category->id ? 'is-active' : '' }}">{{ $sibling->name }}</a>
                 @endforeach
             </div>
         </nav>
@@ -41,7 +48,7 @@
             @endif
 
             @include('partials.shop-filters', [
-                'filterAction' => route('categories.show', $category),
+                'filterAction' => $category->url(),
                 'showCategoryFilter' => false,
                 'categories' => collect(),
                 'embedded' => true,
@@ -78,7 +85,7 @@
     "@type": "CollectionPage",
     "name": {{ json_encode($category->name) }},
     "description": {{ json_encode($category->description ?: 'Browse '.$category->name.' at Urban Focus') }},
-    "url": "{{ route('categories.show', $category) }}"
+    "url": "{{ $canonicalUrl }}"
 }
 </script>
 @if(!empty($breadcrumbSchema))

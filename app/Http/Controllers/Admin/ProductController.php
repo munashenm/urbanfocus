@@ -76,6 +76,7 @@ class ProductController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateProduct($request);
+        $validated['category_id'] = $this->resolveCategoryIdFromRequest($request);
         $validated = $this->normalizeProductFields($validated);
         $publicationStatus = $validated['publication_status'] ?? 'draft';
         unset($validated['publication_status']);
@@ -105,6 +106,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): RedirectResponse
     {
         $validated = $this->validateProduct($request, $product->id);
+        $validated['category_id'] = $this->resolveCategoryIdFromRequest($request);
         $validated = $this->normalizeProductFields($validated);
         $publicationStatus = $validated['publication_status'] ?? $product->publicationStatus();
         unset($validated['publication_status']);
@@ -280,9 +282,34 @@ class ProductController extends Controller
 
     protected function formData(Product $product): array
     {
+        $product->loadMissing('category.parent');
+
+        $parentCategories = Category::topLevel()->active()->orderBy('sort_order')->get();
+        $childrenByParent = Category::query()
+            ->whereNotNull('parent_id')
+            ->active()
+            ->orderBy('sort_order')
+            ->get()
+            ->groupBy('parent_id');
+
+        $selectedParentId = old('parent_category_id');
+        $selectedChildId = old('category_id', $product->category_id);
+
+        if ($selectedParentId === null && $product->category) {
+            if ($product->category->parent_id) {
+                $selectedParentId = $product->category->parent_id;
+            } else {
+                $selectedParentId = $product->category_id;
+                $selectedChildId = null;
+            }
+        }
+
         return [
             'product' => $product,
-            'categories' => Category::orderBy('name')->get(),
+            'parentCategories' => $parentCategories,
+            'childrenByParent' => $childrenByParent,
+            'selectedParentId' => $selectedParentId,
+            'selectedChildId' => $selectedChildId,
             'brands' => Brand::where('is_active', true)->orderBy('name')->pluck('name'),
             'publicationStatuses' => Product::publicationStatuses(),
             'pricesIncludeVat' => (bool) config('app.prices_include_vat', true),
@@ -303,6 +330,7 @@ class ProductController extends Controller
     {
         return $request->validate([
             'category_id' => 'nullable|exists:categories,id',
+            'parent_category_id' => 'nullable|exists:categories,id',
             'sku' => 'nullable|string|max:100|unique:products,sku,'.$id,
             'model_number' => 'nullable|string|max:100',
             'name' => 'required|string|max:255',
@@ -359,9 +387,22 @@ class ProductController extends Controller
             }
         }
 
-        unset($data['image_urls'], $data['remove_image_ids']);
+        unset($data['image_urls'], $data['remove_image_ids'], $data['parent_category_id']);
 
         return $data;
+    }
+
+    protected function resolveCategoryIdFromRequest(Request $request): ?int
+    {
+        if ($request->filled('category_id')) {
+            return (int) $request->input('category_id');
+        }
+
+        if ($request->filled('parent_category_id')) {
+            return (int) $request->input('parent_category_id');
+        }
+
+        return null;
     }
 
     protected function uniqueSlug(?string $slug, string $name, ?int $ignoreId = null): string

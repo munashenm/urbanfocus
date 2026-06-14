@@ -4,7 +4,7 @@
     <ul class="category-subnav-list list-unstyled mb-0">
         @foreach($categories as $item)
             <li>
-                <a href="{{ route('categories.show', $item) }}" class="category-subnav-link">{{ $item->name }}</a>
+                <a href="{{ $item->url() }}" class="category-subnav-link">{{ $item->name }}</a>
             </li>
         @endforeach
     </ul>

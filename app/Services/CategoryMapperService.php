@@ -72,7 +72,7 @@ class CategoryMapperService
             }
         }
 
-        return $this->displayPath('peripherals');
+        return $this->displayPath('computing-office/computer-accessories');
     }
 
     public function pathFromEsquireHead(string $head): string
@@ -89,7 +89,7 @@ class CategoryMapperService
             }
         }
 
-        $slugPath ??= 'peripherals';
+        $slugPath ??= 'computing-office/computer-accessories';
 
         return $this->displayPath($slugPath);
     }
@@ -104,7 +104,7 @@ class CategoryMapperService
             }
         }
 
-        return $this->displayPath('peripherals');
+        return $this->displayPath('computing-office/computer-accessories');
     }
 
     public function pathFromAstrumCategory(string $category): string
@@ -112,7 +112,7 @@ class CategoryMapperService
         $category = html_entity_decode(trim($category), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         if ($category === '') {
-            return $this->displayPath('peripherals');
+            return $this->displayPath('computing-office/computer-accessories');
         }
 
         $slugPath = $this->astrumCategoryMap()[$category] ?? null;
@@ -126,7 +126,7 @@ class CategoryMapperService
             }
         }
 
-        $slugPath ??= 'peripherals';
+        $slugPath ??= 'computing-office/computer-accessories';
 
         return $this->displayPath($slugPath);
     }
@@ -155,91 +155,91 @@ class CategoryMapperService
 
         if ($name !== '') {
             if (preg_match('/\b(gaming laptop|g15|rog strix|omen|nitro|legion)\b/i', $name)) {
-                return 'laptops-notebooks/gaming-laptops';
+                return 'gaming-entertainment/gaming-laptops';
             }
 
             if (preg_match('/\b(laptop|notebook|chromebook|thinkpad|latitude|elitebook|probook|ideapad|vostro|inspiron|xps)\b/i', $name)) {
-                return 'laptops-notebooks/business-laptops';
+                return 'computing-office/laptops';
             }
 
             if (preg_match('/\b(server|poweredge|proliant|thinksystem|rack\s*server)\b/i', $name)) {
-                return 'servers/rack-servers';
+                return 'computing-office/desktops';
             }
 
             if (preg_match('/\b(nas|synology|qnap|storage\s*array)\b/i', $name)) {
-                return 'servers/nas-storage';
+                return 'computing-office/storage-devices';
             }
 
             if (preg_match('/\b(printer|laserjet|inkjet|mfp|multifunction|toner|cartridge)\b/i', $name)) {
                 return preg_match('/\b(toner|cartridge|ink)\b/i', $name)
-                    ? 'printers/ink-toner'
-                    : 'printers/laser-printers';
+                    ? 'business-retail/receipt-printers'
+                    : 'computing-office/printers';
             }
 
             if (preg_match('/\b(microsoft 365|office 365|windows 11|windows 10|antivirus|kaspersky|eset|norton)\b/i', $name)) {
-                return 'software-licensing';
+                return 'computing-office/software';
             }
 
             if (preg_match('/\b(nvr|dvr|recorder|bullet|dome|ptz|ip cam|cctv|hikvision|dahua)\b/i', $name)) {
                 return preg_match('/\b(nvr|dvr|recorder)\b/i', $name)
-                    ? 'cctv-security/nvr-dvr'
-                    : 'cctv-security/ip-cameras';
+                    ? 'security-surveillance/nvr-systems'
+                    : 'security-surveillance/ip-cameras';
             }
 
             if (preg_match('/\b(phone|voip|sip|doorphone|intercom|pbx|yeastar)\b/i', $name)) {
                 return preg_match('/\b(pbx|gateway|yeastar)\b/i', $name)
-                    ? 'telephony-voip/pbx-gateways'
-                    : 'telephony-voip/ip-phones';
+                    ? 'networking-connectivity/routers'
+                    : 'security-surveillance/intercom-systems';
             }
 
             if (preg_match('/\b(ssd|nvme|hard drive|hdd|ram|memory|motherboard|graphics|gpu|processor|cpu)\b/i', $name)) {
-                return 'components-storage';
+                return 'computing-office/storage-devices';
             }
 
             if (preg_match('/\b(ups|inverter|surge|pdu)\b/i', $name)) {
                 return preg_match('/\b(ups|inverter)\b/i', $name)
-                    ? 'ups-power/ups-systems'
-                    : 'ups-power/pdus-cables';
+                    ? 'solar-power/ups-systems'
+                    : 'solar-power/power-backup-solutions';
             }
 
             if (preg_match('/\b(switch|sw\.|catalyst| crs)\b/i', $name)) {
-                return 'networking/network-switches';
+                return 'networking-connectivity/switches';
             }
 
             if (preg_match('/\b(router|routerboard|hap|hex|cap\s|rb[0-9]|gateway|unifi\s*cloud)\b/i', $name)) {
-                return 'networking/routers-gateways';
+                return 'networking-connectivity/routers';
             }
 
             if (preg_match('/\b(access point|u6-|u7-|unifi|omada|wap|wireless)\b/i', $name)) {
-                return 'networking/access-points';
+                return 'networking-connectivity/access-points';
             }
 
             if (preg_match('/\b(battery|ups)\b/i', $name)) {
-                return 'ups-power/pdus-cables';
+                return 'solar-power/batteries';
             }
 
             if (preg_match('/\b(rack|cabinet|bracket|mount|tripod|stand off)\b/i', $name)) {
-                return 'networking/cabinets-racks';
+                return 'networking-connectivity/network-cabinets';
             }
 
             if (preg_match('/\b(cable|patch|sfp|fibre|fiber|pigtail|transceiver|optic)\b/i', $name)) {
                 return preg_match('/\b(sfp|fibre|fiber|transceiver|optic)\b/i', $name)
-                    ? 'networking/fibre-sfp'
-                    : 'peripherals/cables-adapters';
+                    ? 'networking-connectivity/fibre-equipment'
+                    : 'networking-connectivity/network-cables';
             }
 
             if (preg_match('/\b(monitor|display)\b/i', $name)) {
-                return 'monitors-displays/office-monitors';
+                return 'computing-office/monitors';
             }
 
             if (preg_match('/\b(keyboard|mouse|webcam|headset|dock)\b/i', $name)) {
-                return 'peripherals';
+                return 'computing-office/computer-accessories';
             }
         }
 
         if ($text !== '') {
             if (preg_match('/\b(laptop|notebook)\b/i', $text) && preg_match('/\b(dell|hp|lenovo)\b/i', $brand)) {
-                return 'laptops-notebooks/business-laptops';
+                return 'computing-office/laptops';
             }
         }
 
@@ -254,7 +254,7 @@ class CategoryMapperService
             }
         }
 
-        return $slugPath ?? 'peripherals';
+        return $slugPath ?? 'computing-office/computer-accessories';
     }
 
     public function resolveCategoryId(string $categories): ?int
@@ -265,11 +265,22 @@ class CategoryMapperService
             return null;
         }
 
+        return $this->resolveCategoryIdFromPath($slugPath);
+    }
+
+    public function resolveCategoryIdFromPath(string $slugPath): ?int
+    {
+        $slugPath = $this->translateLegacyPath(trim($slugPath, '/'));
+
+        if ($slugPath === '') {
+            return null;
+        }
+
         [$parentSlug, $childSlug] = array_pad(explode('/', $slugPath, 2), 2, null);
 
         $this->ensureCanonicalTree();
 
-        $parent = Category::where('slug', $parentSlug)->first();
+        $parent = Category::where('slug', $parentSlug)->whereNull('parent_id')->first();
 
         if (! $parent) {
             return null;
@@ -286,12 +297,15 @@ class CategoryMapperService
 
     public function ensureCanonicalTree(): void
     {
-        foreach (config('category_map.tree', []) as $order => $parentData) {
+        foreach (config('category_tree.tree', config('category_map.tree', [])) as $order => $parentData) {
             $parent = Category::updateOrCreate(
                 ['slug' => $parentData['slug']],
                 [
                     'name' => $parentData['name'],
                     'parent_id' => null,
+                    'description' => $parentData['description'] ?? null,
+                    'meta_title' => $parentData['meta_title'] ?? null,
+                    'meta_description' => $parentData['meta_description'] ?? null,
                     'sort_order' => $order,
                     'is_active' => true,
                 ]
@@ -303,6 +317,9 @@ class CategoryMapperService
                     [
                         'name' => $childData['name'],
                         'parent_id' => $parent->id,
+                        'description' => $childData['description'] ?? null,
+                        'meta_title' => $childData['meta_title'] ?? null,
+                        'meta_description' => $childData['meta_description'] ?? null,
                         'sort_order' => $childOrder,
                         'is_active' => true,
                     ]
@@ -316,7 +333,7 @@ class CategoryMapperService
     {
         $slugs = [];
 
-        foreach (config('category_map.tree', []) as $parent) {
+        foreach (config('category_tree.tree', config('category_map.tree', [])) as $parent) {
             $slugs[] = $parent['slug'];
             foreach ($parent['children'] ?? [] as $child) {
                 $slugs[] = $child['slug'];
@@ -423,8 +440,36 @@ class CategoryMapperService
 
         $this->treeBySlug = [];
 
-        foreach (config('category_map.tree', []) as $parent) {
+        foreach (config('category_tree.tree', config('category_map.tree', [])) as $parent) {
             $this->treeBySlug[$parent['slug']] = $parent;
         }
+    }
+
+    protected function translateLegacyPath(string $path): string
+    {
+        $pathMap = config('category_tree.legacy_path_map', []);
+
+        if (isset($pathMap[$path])) {
+            return $pathMap[$path];
+        }
+
+        [$parentSlug, $childSlug] = array_pad(explode('/', $path, 2), 2, null);
+        $slugMap = config('category_tree.legacy_slug_map', []);
+
+        if ($childSlug && isset($slugMap[$childSlug])) {
+            return $slugMap[$childSlug];
+        }
+
+        if ($parentSlug && isset($slugMap[$parentSlug])) {
+            $mapped = $slugMap[$parentSlug];
+
+            if (! $childSlug || str_contains($mapped, '/')) {
+                return $mapped;
+            }
+
+            return $mapped.'/'.$childSlug;
+        }
+
+        return $path;
     }
 }

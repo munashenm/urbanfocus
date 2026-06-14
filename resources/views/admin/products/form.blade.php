@@ -245,13 +245,26 @@
                 <div class="card-header bg-white fw-semibold">Product organisation</div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label">Category</label>
-                        <select name="category_id" class="form-select">
-                            <option value="">Uncategorised</option>
-                            @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" @selected(old('category_id', $product->category_id) == $cat->id)>{{ $cat->name }}</option>
+                        <label class="form-label">Main category</label>
+                        <select name="parent_category_id" id="parent-category" class="form-select">
+                            <option value="">Select main category</option>
+                            @foreach($parentCategories as $parent)
+                                <option value="{{ $parent->id }}" @selected((string) $selectedParentId === (string) $parent->id)>{{ $parent->name }}</option>
                             @endforeach
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Subcategory</label>
+                        <select name="category_id" id="subcategory" class="form-select">
+                            <option value="">Select subcategory</option>
+                        </select>
+                        <div class="form-text" id="category-path-preview">
+                            @if($product->category)
+                                {{ $product->category->fullPathLabel() }}
+                            @else
+                                Choose a main category, then a subcategory.
+                            @endif
+                        </div>
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Brand</label>
@@ -273,4 +286,48 @@
         <form id="duplicate-form" action="{{ route('admin.products.duplicate', $product) }}" method="POST" class="d-none">@csrf</form>
     @endpermission
 @endif
+
+@push('scripts')
+<script>
+(() => {
+    const childrenByParent = @json($childrenByParent->map(fn ($items) => $items->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values()));
+    const parentSelect = document.getElementById('parent-category');
+    const childSelect = document.getElementById('subcategory');
+    const preview = document.getElementById('category-path-preview');
+    const selectedParent = @json($selectedParentId);
+    const selectedChild = @json($selectedChildId);
+
+    function renderChildren(parentId) {
+        childSelect.innerHTML = '<option value="">Select subcategory</option>';
+        const children = childrenByParent[parentId] || [];
+        children.forEach(child => {
+            const opt = document.createElement('option');
+            opt.value = child.id;
+            opt.textContent = child.name;
+            if (String(child.id) === String(selectedChild)) opt.selected = true;
+            childSelect.appendChild(opt);
+        });
+        updatePreview();
+    }
+
+    function updatePreview() {
+        const parentName = parentSelect.selectedOptions[0]?.textContent?.trim() || '';
+        const childName = childSelect.selectedOptions[0]?.textContent?.trim() || '';
+        if (!parentSelect.value) {
+            preview.textContent = 'Choose a main category, then a subcategory.';
+            return;
+        }
+        preview.textContent = childSelect.value ? `${parentName} > ${childName}` : parentName;
+    }
+
+    parentSelect?.addEventListener('change', () => renderChildren(parentSelect.value));
+    childSelect?.addEventListener('change', updatePreview);
+
+    if (selectedParent) {
+        parentSelect.value = selectedParent;
+        renderChildren(selectedParent);
+    }
+})();
+</script>
+@endpush
 @endsection

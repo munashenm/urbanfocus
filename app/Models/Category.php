@@ -58,6 +58,63 @@ class Category extends Model
         return $this->products()->where('is_active', true);
     }
 
+    public function isTopLevel(): bool
+    {
+        return $this->parent_id === null;
+    }
+
+    public function urlPath(): string
+    {
+        if ($this->parent_id && $this->parent) {
+            return $this->parent->slug.'/'.$this->slug;
+        }
+
+        return $this->slug;
+    }
+
+    public function url(): string
+    {
+        $this->loadMissing('parent');
+
+        if ($this->parent_id && $this->parent) {
+            return route('categories.show.child', [
+                'parent' => $this->parent->slug,
+                'child' => $this->slug,
+            ]);
+        }
+
+        return route('categories.show', $this);
+    }
+
+    /** @return list<array{name: string, category: self}> */
+    public function breadcrumbChain(): array
+    {
+        $chain = [];
+        $current = $this;
+
+        while ($current) {
+            array_unshift($chain, ['name' => $current->name, 'category' => $current]);
+            $current = $current->parent;
+        }
+
+        return $chain;
+    }
+
+    public function fullPathLabel(): string
+    {
+        return collect($this->breadcrumbChain())->pluck('name')->implode(' > ');
+    }
+
+    public function scopeTopLevel($query)
+    {
+        return $query->whereNull('parent_id');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
     public function getRouteKeyName(): string
     {
         return 'slug';

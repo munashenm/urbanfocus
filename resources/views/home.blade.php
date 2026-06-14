@@ -106,7 +106,7 @@
         <div class="row g-3">
             @foreach($categories as $category)
                 <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-                    <a href="{{ route('categories.show', $category) }}" class="category-card category-card--premium">
+                    <a href="{{ $category->url() }}" class="category-card category-card--premium">
                         <span class="category-card-icon">{{ $categoryIcons[$category->slug] ?? '📦' }}</span>
                         <span class="category-card-title">{{ $category->name }}</span>
                         @if($category->children->count())
@@ -127,7 +127,7 @@
             @foreach($solutionBlocks as $block)
                 @php $cat = $categories->firstWhere('slug', $block['category_slug']); @endphp
                 <div class="col-md-6 col-lg-3">
-                    <a href="{{ $cat ? route('categories.show', $cat) : route('shop.index', ['category' => $block['category_slug']]) }}" class="solution-block-card">
+                    <a href="{{ $cat ? $cat->url() : route('shop.index', ['category' => $block['category_slug']]) }}" class="solution-block-card">
                         <span class="solution-block-icon">{{ $categoryIcons[$block['category_slug']] ?? '⚡' }}</span>
                         <h3 class="h5 fw-bold mb-1">{{ $block['title'] }}</h3>
                         <p class="small text-muted mb-2">{{ $block['subtitle'] }}</p>

@@ -18,11 +18,11 @@ class SeoService
         return $this->rememberSitemap('sitemap.main.v3', function () {
             $urls = $this->baseUrls();
 
-            Category::where('is_active', true)->visibleInCatalog()->get()->each(function (Category $category) use (&$urls) {
+            Category::where('is_active', true)->visibleInCatalog()->with('parent')->get()->each(function (Category $category) use (&$urls) {
                 $urls[] = [
-                    'loc' => route('categories.show', $category),
+                    'loc' => $category->url(),
                     'changefreq' => 'weekly',
-                    'priority' => '0.8',
+                    'priority' => $category->parent_id ? '0.75' : '0.8',
                 ];
             });
 

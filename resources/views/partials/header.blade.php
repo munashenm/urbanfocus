@@ -81,6 +81,33 @@
                         <li><a class="dropdown-item" href="{{ route('b2b.source') }}">Source a Product</a></li>
                     </ul>
                 </li>
+                <li class="nav-item d-lg-none w-100">
+                    <div class="accordion accordion-flush mobile-shop-accordion" id="mobileShopAccordion">
+                        <div class="accordion-item border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2 px-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileShopCategories">
+                                    Shop by category
+                                </button>
+                            </h2>
+                            <div id="mobileShopCategories" class="accordion-collapse collapse" data-bs-parent="#mobileShopAccordion">
+                                <div class="accordion-body px-0 pt-0">
+                                    @foreach($megaMenuCategories ?? [] as $col)
+                                        <div class="mb-2">
+                                            <a href="{{ $col['url'] }}" class="fw-semibold text-decoration-none d-block mb-1">{{ $col['label'] }}</a>
+                                            @if(count($col['children']))
+                                                <ul class="list-unstyled ps-2 mb-0 small">
+                                                    @foreach($col['children'] as $child)
+                                                        <li class="mb-1"><a href="{{ $child['url'] }}" class="text-muted text-decoration-none">{{ $child['name'] }}</a></li>
+                                                    @endforeach
+                                                </ul>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
                 <li class="nav-item d-none d-lg-block"><a class="nav-link {{ request()->routeIs('blog.*') ? 'active' : '' }}" href="{{ route('blog.index') }}">Blog</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">About</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact</a></li>

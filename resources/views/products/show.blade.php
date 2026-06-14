@@ -18,7 +18,11 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
             @if($product->category)
-                <li class="breadcrumb-item"><a href="{{ route('categories.show', $product->category) }}">{{ $product->category->name }}</a></li>
+                @php $product->category->loadMissing('parent'); @endphp
+                @if($product->category->parent)
+                    <li class="breadcrumb-item"><a href="{{ $product->category->parent->url() }}">{{ $product->category->parent->name }}</a></li>
+                @endif
+                <li class="breadcrumb-item"><a href="{{ $product->category->url() }}">{{ $product->category->name }}</a></li>
             @endif
             <li class="breadcrumb-item active">{{ $product->name }}</li>
         </ol>

@@ -3,58 +3,60 @@
 @section('page_title', 'Categories')
 
 @section('content')
-<div class="d-flex justify-content-end mb-4">
-    <a href="{{ route('admin.categories.create') }}" class="btn btn-primary btn-sm">Add Category</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <p class="text-muted small mb-0">9 main categories with subcategories. Products should be assigned to a subcategory where possible.</p>
+    <div class="d-flex gap-2">
+        <a href="{{ route('admin.categories.create') }}" class="btn btn-outline-primary btn-sm">Add main category</a>
+        <a href="{{ route('admin.categories.create', ['parent_id' => $parents->first()?->id]) }}" class="btn btn-primary btn-sm">Add subcategory</a>
+    </div>
 </div>
-
-<form id="bulk-categories-form" method="POST" action="{{ route('admin.categories.bulk-destroy') }}" onsubmit="return confirm('Delete the selected categories? Products in those categories will become uncategorized.')">
-    @csrf
-    @include('partials.admin-bulk-bar', ['deleteLabel' => 'Delete selected categories'])
-</form>
 
 <div class="card">
     <div class="table-responsive">
         <table class="table mb-0 align-middle">
             <thead>
                 <tr>
-                    <th style="width:2.5rem">
-                        <input type="checkbox" class="form-check-input" id="bulk-select-all" aria-label="Select all categories on this page">
-                    </th>
-                    <th>Name</th>
+                    <th>Category</th>
                     <th>Slug</th>
-                    <th>Parent</th>
                     <th>Products</th>
+                    <th>Order</th>
                     <th>Status</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($categories as $category)
-                    <tr>
-                        <td>
-                            <input type="checkbox" class="form-check-input bulk-select" form="bulk-categories-form" name="ids[]" value="{{ $category->id }}" aria-label="Select {{ $category->name }}">
+                @forelse($parents as $parent)
+                    <tr class="table-light">
+                        <td class="fw-semibold">
+                            {{ $parent->name }}
+                            <span class="badge bg-primary-subtle text-primary-emphasis ms-1">Main</span>
                         </td>
-                            <td>{{ $category->name }}</td>
-                            <td>{{ $category->slug }}</td>
-                            <td>{{ $category->parent?->name ?? '—' }}</td>
-                            <td>{{ $category->products_count }}</td>
-                            <td>@if($category->is_active)<span class="badge bg-success">Active</span>@else<span class="badge bg-secondary">Inactive</span>@endif</td>
+                        <td><code>{{ $parent->slug }}</code></td>
+                        <td>{{ $parent->products_count }}</td>
+                        <td>{{ $parent->sort_order }}</td>
+                        <td>@if($parent->is_active)<span class="badge bg-success">Active</span>@else<span class="badge bg-secondary">Disabled</span>@endif</td>
+                        <td class="text-end text-nowrap">
+                            <a href="{{ route('admin.categories.create', ['parent_id' => $parent->id]) }}" class="btn btn-sm btn-outline-secondary">Add sub</a>
+                            <a href="{{ route('admin.categories.edit', $parent) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                        </td>
+                    </tr>
+                    @foreach($parent->children as $child)
+                        <tr>
+                            <td class="ps-4">↳ {{ $child->name }}</td>
+                            <td><code>{{ $parent->slug }}/{{ $child->slug }}</code></td>
+                            <td>{{ $child->products_count }}</td>
+                            <td>{{ $child->sort_order }}</td>
+                            <td>@if($child->is_active)<span class="badge bg-success">Active</span>@else<span class="badge bg-secondary">Disabled</span>@endif</td>
                             <td class="text-end text-nowrap">
-                                <a href="{{ route('admin.categories.edit', $category) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                                <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this category? Products will become uncategorized.')">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                </form>
+                                <a href="{{ route('admin.categories.edit', $child) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                             </td>
                         </tr>
-                    @empty
-                        <tr><td colspan="7" class="text-muted text-center py-4">No categories found.</td></tr>
-                    @endforelse
+                    @endforeach
+                @empty
+                    <tr><td colspan="6" class="text-muted text-center py-4">No categories found. Run <code>php artisan categories:reorganize --run</code> to seed the canonical tree.</td></tr>
+                @endforelse
             </tbody>
         </table>
     </div>
 </div>
-
-<div class="mt-3">{{ $categories->links() }}</div>
-<p class="small text-muted mt-2">Bulk select applies to the current page only ({{ $categories->count() }} of {{ $categories->total() }} shown).</p>
 @endsection
