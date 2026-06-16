@@ -33,10 +33,13 @@
                                     <td><input type="number" name="quantities[{{ $item['product']->id }}]" value="{{ $item['quantity'] }}" min="0" class="form-control form-control-sm"></td>
                                     <td class="fw-semibold">R {{ number_format($item['line_total'], 2) }}</td>
                                     <td>
-                                        <a href="{{ route('cart.remove', $item['product']) }}" class="btn btn-sm btn-outline-danger" onclick="event.preventDefault(); document.getElementById('remove-{{ $item['product']->id }}').submit();">&times;</a>
-                                        <form id="remove-{{ $item['product']->id }}" action="{{ route('cart.remove', $item['product']) }}" method="POST" class="d-none">
-                                            @csrf @method('DELETE')
-                                        </form>
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-danger"
+                                            formaction="{{ route('cart.remove', $item['product']) }}"
+                                            formmethod="POST"
+                                            aria-label="Remove {{ $item['product']->name }}"
+                                        >&times;</button>
                                     </td>
                                 </tr>
                             @endforeach
