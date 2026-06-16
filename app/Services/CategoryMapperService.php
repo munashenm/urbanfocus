@@ -158,8 +158,14 @@ class CategoryMapperService
                 return 'gaming-entertainment/gaming-laptops';
             }
 
-            if (preg_match('/\b(laptop|notebook|chromebook|thinkpad|latitude|elitebook|probook|ideapad|vostro|inspiron|xps)\b/i', $name)) {
+            if (preg_match('/\b(laptop|notebook|chromebook|thinkpad|latitude|elitebook|probook|ideapad|vostro|inspiron|xps|macbook|surface book|surface laptop|precision|vivobook|pavilion|envy|spectre|yoga)\b/i', $name)) {
                 return 'computing-office/laptops';
+            }
+
+            if (preg_match('/\b(interactive|smart board|smartboard|touch screen|interactive display|digital signage|led display|interactive flat panel)\b/i', $name)) {
+                return preg_match('/\b(bus|taxi|vehicle)\b/i', $name)
+                    ? 'digital-signage/bus-advertising-screens'
+                    : 'digital-signage/interactive-displays';
             }
 
             if (preg_match('/\b(server|poweredge|proliant|thinksystem|rack\s*server)\b/i', $name)) {

@@ -125,9 +125,15 @@
 
     <div class="col-lg-6">
         <div class="card h-100 border-success"><div class="card-body">
+            <h2 class="h5 fw-bold text-success">Assign Product Categories</h2>
+            <p class="small text-muted">Place uncategorised products and legacy imports (e.g. old Laptops &amp; Notebooks) into the current category tree using product name, brand and keywords. Laptops map to <strong>Computing &amp; Office Technology → Laptops</strong>.</p>
+            <p class="small text-muted mb-3">cPanel: <code>deploy/assign-product-categories.php</code> · CLI: <code>php artisan catalog:optimize-seo</code></p>
+            <form action="{{ route('admin.catalog.assign-categories') }}" method="POST" class="mb-3" onsubmit="return confirm('Assign categories for all products that need it?')">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-primary">Assign All Product Categories</button>
+            </form>
             <h2 class="h5 fw-bold text-success">Optimize Product SEO</h2>
-            <p class="small text-muted">Assign categories to uncategorized products, generate SEO titles (brand + model + specs), meta descriptions and image alt tags. Run after CSV imports.</p>
-            <p class="small text-muted mb-3">CLI: <code>php artisan catalog:optimize-seo</code> · add <code>--dry-run</code> to preview.</p>
+            <p class="small text-muted">Assign categories (if needed), then generate SEO titles, meta descriptions and image alt tags. Run after CSV imports.</p>
             <form action="{{ route('admin.catalog.optimize-seo') }}" method="POST" onsubmit="return confirm('Optimize SEO metadata for all products? This may take a few minutes on large catalogs.')">
                 @csrf
                 <button type="submit" class="btn btn-sm btn-success">Run SEO Optimization</button>

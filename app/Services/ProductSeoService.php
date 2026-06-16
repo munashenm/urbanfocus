@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Str;
 
@@ -10,6 +11,56 @@ class ProductSeoService
     public function __construct(
         protected CategoryMapperService $categoryMapper,
     ) {}
+
+    /** @return array{processed: int, categorized: int, skipped: int, samples: list<string>} */
+    public function assignProductCategories(bool $dryRun = false, ?int $limit = null): array
+    {
+        $this->categoryMapper->ensureCanonicalTree();
+
+        $stats = [
+            'processed' => 0,
+            'categorized' => 0,
+            'skipped' => 0,
+            'samples' => [],
+        ];
+
+        $query = Product::query()
+            ->with(['category.parent'])
+            ->orderBy('id');
+
+        if ($limit !== null && $limit > 0) {
+            $query->limit($limit);
+        }
+
+        $query->lazyById(100)->each(function (Product $product) use ($dryRun, &$stats) {
+            $stats['processed']++;
+            $targetId = $this->resolveCategoryAssignment($product);
+
+            if ($targetId === null || $targetId === $product->category_id) {
+                $stats['skipped']++;
+
+                return;
+            }
+
+            $stats['categorized']++;
+
+            if (count($stats['samples']) < 25) {
+                $from = $product->category?->fullPathLabel() ?? 'Uncategorised';
+                $to = Category::find($targetId)?->fullPathLabel() ?? (string) $targetId;
+                $stats['samples'][] = $product->name.' · '.$from.' → '.$to;
+            }
+
+            if (! $dryRun) {
+                $product->update(['category_id' => $targetId]);
+            }
+        });
+
+        if (! $dryRun && $stats['categorized'] > 0) {
+            app(SeoService::class)->clearCache();
+        }
+
+        return $stats;
+    }
 
     /** @return array{processed: int, categorized: int, meta_updated: int, images_updated: int} */
     public function optimizeCatalog(bool $dryRun = false, ?int $limit = null): array
@@ -57,11 +108,8 @@ class ProductSeoService
         $result = ['category' => false, 'meta' => false, 'images' => 0];
         $updates = [];
 
-        if ($product->category_id === null) {
-            $displayPath = $this->categoryMapper->pathFromCatalogProduct($product);
-            $categoryId = $this->categoryMapper->resolveCategoryId($displayPath);
-
-            if ($categoryId !== null) {
+        if ($categoryId = $this->resolveCategoryAssignment($product)) {
+            if ($categoryId !== $product->category_id) {
                 $updates['category_id'] = $categoryId;
                 $result['category'] = true;
             }
@@ -226,5 +274,109 @@ class ProductSeoService
 
         return Str::contains($lower, ['gaming laptop', 'generic', 'uncategorized', 'product'])
             || mb_strlen($value) < 25;
+    }
+
+    protected function resolveCategoryAssignment(Product $product): ?int
+    {
+        $fromName = $this->categoryMapper->resolveCategoryId(
+            $this->categoryMapper->pathFromCatalogProduct($product)
+        );
+
+        if ($this->shouldUseCategory($product, $fromName)) {
+            return $fromName;
+        }
+
+        if ($product->category) {
+            $mapped = $this->categoryMapper->resolveCategoryId(
+                $this->categoryMapper->mapCategoryParts($this->categoryPathNames($product->category))
+            );
+
+            if ($this->shouldUseCategory($product, $mapped)) {
+                return $mapped;
+            }
+        }
+
+        return null;
+    }
+
+    protected function shouldUseCategory(Product $product, ?int $targetId): bool
+    {
+        if ($targetId === null) {
+            return false;
+        }
+
+        if ($product->category_id === null) {
+            return true;
+        }
+
+        if ((int) $targetId === (int) $product->category_id) {
+            return false;
+        }
+
+        $category = $product->category;
+
+        if (! $category || ! $this->isCanonicalCategory($category)) {
+            return true;
+        }
+
+        if (! $category->parent_id && $this->mainCategoryHasChildren($category->slug)) {
+            $target = Category::find($targetId);
+
+            if ($target && $target->parent_id) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function isCanonicalCategory(Category $category): bool
+    {
+        $canonical = $this->categoryMapper->canonicalSlugs();
+
+        if (! in_array($category->slug, $canonical, true)) {
+            return false;
+        }
+
+        if ($category->parent_id) {
+            return Category::where('slug', $category->slug)
+                ->where('parent_id', $category->parent_id)
+                ->exists();
+        }
+
+        foreach (config('category_tree.tree', []) as $parent) {
+            if ($parent['slug'] !== $category->slug) {
+                continue;
+            }
+
+            return ($parent['children'] ?? []) === [];
+        }
+
+        return true;
+    }
+
+    protected function mainCategoryHasChildren(string $parentSlug): bool
+    {
+        foreach (config('category_tree.tree', []) as $parent) {
+            if ($parent['slug'] === $parentSlug) {
+                return ($parent['children'] ?? []) !== [];
+            }
+        }
+
+        return false;
+    }
+
+    /** @return list<string> */
+    protected function categoryPathNames(Category $category): array
+    {
+        $parts = [];
+        $current = $category;
+
+        while ($current) {
+            array_unshift($parts, $current->name);
+            $current = $current->parent;
+        }
+
+        return $parts;
     }
 }

@@ -222,16 +222,35 @@ class CatalogController extends Controller
         try {
             @set_time_limit(0);
 
+            $categoryStats = $seo->assignProductCategories();
             $stats = $seo->optimizeCatalog();
 
             return back()->with(
                 'success',
-                "SEO optimization complete: {$stats['categorized']} categories assigned, {$stats['meta_updated']} meta fields updated, {$stats['images_updated']} image alt tags updated ({$stats['processed']} products processed)."
+                "Catalog updated: {$categoryStats['categorized']} products assigned to categories; {$stats['meta_updated']} meta fields updated; {$stats['images_updated']} image alt tags updated ({$stats['processed']} products processed)."
             );
         } catch (\Throwable $e) {
             report($e);
 
             return back()->with('error', 'SEO optimization failed: '.$e->getMessage());
+        }
+    }
+
+    public function assignCategories(ProductSeoService $seo): RedirectResponse
+    {
+        try {
+            @set_time_limit(0);
+
+            $stats = $seo->assignProductCategories();
+
+            return back()->with(
+                'success',
+                "Assigned {$stats['categorized']} products to categories ({$stats['processed']} processed, {$stats['skipped']} unchanged)."
+            );
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Category assignment failed: '.$e->getMessage());
         }
     }
 }
