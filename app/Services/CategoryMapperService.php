@@ -478,4 +478,38 @@ class CategoryMapperService
 
         return $path;
     }
+
+    public function resolveCategoryForFilter(string $slug): ?Category
+    {
+        $slug = trim($slug, '/');
+
+        if ($slug === '') {
+            return null;
+        }
+
+        $categoryId = $this->resolveCategoryIdFromPath($slug);
+
+        if ($categoryId) {
+            return Category::find($categoryId);
+        }
+
+        return Category::where('slug', $slug)->where('is_active', true)->first();
+    }
+
+    public function categoryUrlForPath(string $path): ?string
+    {
+        return $this->resolveCategoryForFilter($path)?->url();
+    }
+
+    public function isLegacyCategoryPath(string $path): bool
+    {
+        $path = trim($path, '/');
+
+        if ($path === '') {
+            return false;
+        }
+
+        return isset(config('category_tree.legacy_slug_map', [])[$path])
+            || isset(config('category_tree.legacy_path_map', [])[$path]);
+    }
 }

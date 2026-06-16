@@ -11,7 +11,7 @@ return [
             'Browse online or request a tailored quote for access points, PoE switches, cloud gateways, fibre SFP modules and UniFi Protect cameras.',
         ],
         'brand_slug' => 'ubiquiti',
-        'category_slugs' => ['networking', 'networking/access-points'],
+        'category_slugs' => ['networking-connectivity', 'networking-connectivity/access-points'],
         'faqs' => [
             ['question' => 'Why choose Urban Focus as your Ubiquiti supplier?', 'answer' => 'We specialise in IT infrastructure for South African businesses with VAT invoicing, courier delivery and knowledgeable pre-sales support for UniFi deployments.'],
             ['question' => 'Do you deliver Ubiquiti nationwide?', 'answer' => 'Yes. We courier to major cities and regional areas across South Africa.'],
@@ -28,7 +28,7 @@ return [
             'Contact us for bulk RouterBOARD, hAP, CCR and CRS quotes, spare stock and phased rollouts.',
         ],
         'brand_slug' => 'mikrotik',
-        'category_slugs' => ['networking/routers-gateways', 'networking/network-switches'],
+        'category_slugs' => ['networking-connectivity/routers', 'networking-connectivity/switches'],
         'faqs' => [
             ['question' => 'Do you support ISP bulk orders?', 'answer' => 'Yes. Submit an RFQ with model lists and quantities for project pricing and delivery scheduling.'],
         ],
@@ -43,7 +43,7 @@ return [
             'Standardise on platforms like Dell Latitude, HP EliteBook and Lenovo ThinkPad with consistent specs for finance, sales and engineering teams.',
             'Request bulk quotes for refresh cycles, Windows licensing bundles and docking accessories.',
         ],
-        'category_slugs' => ['laptops-notebooks/business-laptops'],
+        'category_slugs' => ['computing-office/laptops'],
         'faqs' => [
             ['question' => 'Can I get a fleet quote for 50+ laptops?', 'answer' => 'Yes. Use our B2B RFQ form with preferred brands, CPU/RAM/storage specs and delivery deadlines.'],
         ],
@@ -58,7 +58,7 @@ return [
             'Build complete surveillance stacks with IP cameras, recorders, PoE switches and storage sized for retail, industrial and office environments.',
             'We support project quotes, multi-site rollouts and repeat supply for security installers.',
         ],
-        'category_slugs' => ['cctv-security/ip-cameras', 'cctv-security/nvr-dvr'],
+        'category_slugs' => ['security-surveillance/ip-cameras', 'security-surveillance/nvr-systems'],
         'brand_slugs' => ['hikvision', 'dahua'],
         'faqs' => [
             ['question' => 'Do you supply both cameras and recorders?', 'answer' => 'Yes. Browse IP cameras, NVRs/DVRs and related networking from our CCTV category.'],
@@ -74,7 +74,7 @@ return [
             'From CPE and sector antennas to core routers and CRS switches, we supply platforms trusted by South African connectivity providers.',
             'Request volume pricing for subscriber growth, backup stock and new POP deployments.',
         ],
-        'category_slugs' => ['networking/routers-gateways', 'networking/access-points', 'networking/fibre-sfp'],
+        'category_slugs' => ['networking-connectivity/routers', 'networking-connectivity/access-points', 'networking-connectivity/fibre-equipment'],
         'brand_slugs' => ['mikrotik', 'ubiquiti'],
         'faqs' => [],
     ],
@@ -88,7 +88,7 @@ return [
             'Whether you are lighting up GPON ONT backhaul or building 10G office uplinks, we stock compatible optics, patch cabling and switching to match.',
             'Contact us for project BOMs and staged delivery.',
         ],
-        'category_slugs' => ['networking/fibre-sfp', 'networking/network-switches'],
+        'category_slugs' => ['networking-connectivity/fibre-equipment', 'networking-connectivity/switches'],
         'faqs' => [],
     ],
 
@@ -120,7 +120,7 @@ return [
             'We help corporates source laptops, servers, networking, security, VoIP and software licensing with procurement-friendly quoting and nationwide delivery.',
             'Partner with a supplier that understands enterprise timelines, VAT compliance and repeat fleet orders.',
         ],
-        'category_slugs' => ['networking', 'laptops-notebooks', 'servers', 'software-licensing'],
+        'category_slugs' => ['networking-connectivity', 'computing-office/laptops', 'computing-office/storage-devices', 'computing-office/software'],
         'links' => [
             ['label' => 'About Urban Focus', 'route' => 'about'],
             ['label' => 'Contact sales', 'route' => 'contact'],

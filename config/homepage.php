@@ -14,7 +14,7 @@ return [
             'eyebrow' => 'Networking & Connectivity',
             'title' => 'Professional Networking Solutions',
             'subtitle' => 'Ubiquiti, MikroTik, Cambium, TP-Link and enterprise switches — for ISPs, installers and businesses.',
-            'cta_primary' => ['label' => 'Shop Networking', 'route' => 'categories.show', 'params' => ['category' => 'networking']],
+            'cta_primary' => ['label' => 'Shop Networking', 'route' => 'shop.index', 'params' => ['category' => 'networking-connectivity']],
             'cta_secondary' => ['label' => 'Upload RFQ', 'route' => 'b2b.rfq'],
             'theme' => 'blue',
         ],
@@ -22,7 +22,7 @@ return [
             'eyebrow' => 'Business Computing',
             'title' => 'Business Laptops & Workstations',
             'subtitle' => 'Dell, HP, Lenovo and Microsoft devices for corporate, government and education deployments.',
-            'cta_primary' => ['label' => 'Shop Laptops', 'route' => 'categories.show', 'params' => ['category' => 'laptops-notebooks']],
+            'cta_primary' => ['label' => 'Shop Laptops', 'route' => 'shop.index', 'params' => ['category' => 'computing-office/laptops']],
             'cta_secondary' => ['label' => 'Bulk Pricing', 'route' => 'b2b.quote'],
             'theme' => 'dark',
         ],
@@ -32,42 +32,38 @@ return [
         [
             'title' => 'Networking Solutions',
             'subtitle' => 'Switches, access points, routers & fibre',
-            'category_slug' => 'networking',
+            'category_path' => 'networking-connectivity',
             'icon' => 'network',
         ],
         [
             'title' => 'Business Laptops',
             'subtitle' => 'Corporate notebooks & mobile workstations',
-            'category_slug' => 'laptops-notebooks',
+            'category_path' => 'computing-office/laptops',
             'icon' => 'laptop',
         ],
         [
             'title' => 'CCTV & Security',
             'subtitle' => 'Cameras, NVRs & access control',
-            'category_slug' => 'cctv-security',
+            'category_path' => 'security-surveillance',
             'icon' => 'security',
         ],
         [
             'title' => 'Software Licensing',
             'subtitle' => 'Microsoft, antivirus & subscriptions',
-            'category_slug' => 'software-licensing',
+            'category_path' => 'computing-office/software',
             'icon' => 'software',
         ],
     ],
 
     'category_icons' => [
-        'laptops-notebooks' => '💻',
-        'desktops' => '🖥️',
-        'monitors-displays' => '🖵',
-        'networking' => '🌐',
-        'servers' => '🗄️',
-        'printers' => '🖨️',
-        'software-licensing' => '📋',
-        'peripherals' => '⌨️',
-        'components-storage' => '💾',
-        'cctv-security' => '📹',
-        'telephony-voip' => '📞',
-        'ups-power' => '⚡',
+        'computing-office' => '💻',
+        'networking-connectivity' => '🌐',
+        'security-surveillance' => '📹',
+        'solar-power' => '⚡',
+        'digital-signage' => '🖵',
+        'gaming-entertainment' => '🎮',
+        'business-retail' => '🏪',
+        'industrial-iot' => '🏭',
     ],
 
     /*
@@ -101,14 +97,14 @@ return [
     ],
 
     'top_seller_categories' => [
-        'networking',
-        'cctv-security',
-        'servers',
-        'telephony-voip',
-        'laptops-notebooks',
-        'desktops',
-        'monitors-displays',
-        'ups-power',
+        'networking-connectivity',
+        'security-surveillance',
+        'computing-office/storage-devices',
+        'security-surveillance/intercom-systems',
+        'computing-office/laptops',
+        'computing-office/desktops',
+        'computing-office/monitors',
+        'solar-power',
     ],
 
     /*
@@ -116,8 +112,8 @@ return [
     | Networking uses product cards only — no logo strip.
     */
     'section_brands' => [
-        'laptops-notebooks' => ['dell', 'hp', 'lenovo', 'microsoft'],
-        'cctv-security' => ['hikvision', 'dahua'],
+        'laptops' => ['dell', 'hp', 'lenovo', 'microsoft'],
+        'cctv' => ['hikvision', 'dahua'],
         'top_sellers' => ['ubiquiti', 'mikrotik', 'hikvision', 'dahua', 'tp-link', 'dell'],
     ],
 
@@ -125,7 +121,7 @@ return [
     | When loading category product rows, prefer these brand slugs first.
     */
     'section_product_brands' => [
-        'laptops-notebooks' => ['dell', 'hp', 'lenovo'],
+        'laptops' => ['dell', 'hp', 'lenovo'],
     ],
 
     /*
@@ -136,7 +132,10 @@ return [
             'ubiquiti', 'mikrotik', 'tp-link', 'cambium-networks', 'huawei', 'cisco',
         ],
         'category_slugs' => [
-            'network-switches', 'access-points', 'routers-gateways', 'fibre-sfp',
+            'networking-connectivity/switches',
+            'networking-connectivity/access-points',
+            'networking-connectivity/routers',
+            'networking-connectivity/fibre-equipment',
         ],
         'exclude_brands' => [
             'Locally Sourced', 'Linkbasic', 'Scoop', 'Rackstuds', 'Cudy', 'Reyee',

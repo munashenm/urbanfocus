@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\CategoryMapperService;
 use App\Services\SeoService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -13,6 +14,7 @@ class BrandController extends Controller
 {
     public function __construct(
         protected SeoService $seo,
+        protected CategoryMapperService $categoryMapper,
     ) {}
 
     public function index(): View
@@ -55,11 +57,13 @@ class BrandController extends Controller
 
         $linkCategories = collect($brandSeo['links'] ?? [])
             ->map(function (array $link) {
-                if (empty($link['category'])) {
+                $path = $link['category_path'] ?? $link['category'] ?? null;
+
+                if (! $path) {
                     return null;
                 }
 
-                return Category::where('slug', $link['category'])->where('is_active', true)->first();
+                return $this->categoryMapper->resolveCategoryForFilter($path);
             })
             ->filter()
             ->values();

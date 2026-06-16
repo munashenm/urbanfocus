@@ -125,10 +125,13 @@
     <div class="container">
         <div class="row g-4">
             @foreach($solutionBlocks as $block)
-                @php $cat = $categories->firstWhere('slug', $block['category_slug']); @endphp
+                @php
+                    $cat = $block['category'] ?? null;
+                    $iconKey = $cat?->slug ?? ($block['category_path'] ?? '');
+                @endphp
                 <div class="col-md-6 col-lg-3">
-                    <a href="{{ $cat ? $cat->url() : route('shop.index', ['category' => $block['category_slug']]) }}" class="solution-block-card">
-                        <span class="solution-block-icon">{{ $categoryIcons[$block['category_slug']] ?? '⚡' }}</span>
+                    <a href="{{ $block['url'] }}" class="solution-block-card">
+                        <span class="solution-block-icon">{{ $categoryIcons[$iconKey] ?? $categoryIcons[$cat?->parent?->slug ?? ''] ?? '⚡' }}</span>
                         <h3 class="h5 fw-bold mb-1">{{ $block['title'] }}</h3>
                         <p class="small text-muted mb-2">{{ $block['subtitle'] }}</p>
                         <span class="solution-block-link">Browse →</span>
@@ -161,7 +164,7 @@
     @include('partials.home-product-section', [
         'title' => 'Top Sellers',
         'subtitle' => 'Networking, security and IT products from leading brands like Dahua, TP-Link, Ubiquiti, Dell and Hikvision.',
-        'url' => route('shop.index', ['category' => 'networking', 'sort' => 'popular']),
+        'url' => route('shop.index', ['category' => 'networking-connectivity', 'sort' => 'popular']),
         'linkLabel' => 'View All',
         'products' => $topSellers,
         'sectionKey' => 'top_sellers',
@@ -174,9 +177,9 @@
     @include('partials.home-product-section', [
         'title' => 'Business Laptops',
         'subtitle' => 'Corporate notebooks and mobile workstations from Dell, HP, Lenovo and more.',
-        'url' => route('shop.index', ['category' => 'laptops-notebooks']),
+        'url' => route('shop.index', ['category' => 'computing-office/laptops']),
         'products' => $laptopProducts,
-        'sectionKey' => 'laptops-notebooks',
+        'sectionKey' => 'laptops',
         'sectionBrands' => $sectionBrands,
     ])
 @endif
@@ -185,7 +188,7 @@
     @include('partials.home-product-section', [
         'title' => 'Networking Solutions',
         'subtitle' => 'Switches, access points, routers and fibre for ISPs and businesses.',
-        'url' => route('shop.index', ['category' => 'networking']),
+        'url' => route('shop.index', ['category' => 'networking-connectivity']),
         'products' => $networkingProducts,
         'bgLight' => true,
     ])

@@ -127,7 +127,11 @@
         <div class="card h-100 border-success"><div class="card-body">
             <h2 class="h5 fw-bold text-success">Assign Product Categories</h2>
             <p class="small text-muted">Place uncategorised products and legacy imports (e.g. old Laptops &amp; Notebooks) into the current category tree using product name, brand and keywords. Laptops map to <strong>Computing &amp; Office Technology → Laptops</strong>.</p>
-            <p class="small text-muted mb-3">cPanel: <code>deploy/assign-product-categories.php</code> · CLI: <code>php artisan catalog:optimize-seo</code></p>
+            <p class="small text-muted mb-3">cPanel: <code>deploy/merge-categories.php</code> (full merge) · <code>deploy/assign-product-categories.php</code> (heuristics only)</p>
+            <form action="{{ route('admin.catalog.merge-categories') }}" method="POST" class="mb-3" onsubmit="return confirm('Merge ALL products into canonical categories? This remaps legacy categories, creates redirects, and deactivates empty legacy categories. Back up your database first.')">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-warning">Merge All Product Categories</button>
+            </form>
             <form action="{{ route('admin.catalog.assign-categories') }}" method="POST" class="mb-3" onsubmit="return confirm('Assign categories for all products that need it?')">
                 @csrf
                 <button type="submit" class="btn btn-sm btn-primary">Assign All Product Categories</button>

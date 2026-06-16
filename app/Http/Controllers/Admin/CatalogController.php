@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Services\CategoryConsolidationService;
+use App\Services\CategoryMergeService;
 use App\Services\GoogleMerchantService;
 use App\Services\ProductCleanupService;
 use App\Services\ProductExportService;
@@ -251,6 +252,24 @@ class CatalogController extends Controller
             report($e);
 
             return back()->with('error', 'Category assignment failed: '.$e->getMessage());
+        }
+    }
+
+    public function mergeCategories(CategoryMergeService $merge): RedirectResponse
+    {
+        try {
+            @set_time_limit(0);
+
+            $result = $merge->merge(backup: true);
+
+            return back()->with(
+                'success',
+                "Category merge complete: {$result['reorganize']['moved']} products remapped, {$result['assign']['categorized']} heuristically assigned, {$result['reorganize']['redirects']} redirects created, {$result['reorganize']['deactivated']} legacy categories deactivated, {$result['legacy_products_remaining']} products still on legacy categories."
+            );
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Category merge failed: '.$e->getMessage());
         }
     }
 }

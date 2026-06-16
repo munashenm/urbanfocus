@@ -41,7 +41,7 @@
                 <ul class="list-unstyled row g-2">
                     @foreach($categories as $category)
                         <li class="col-md-6">
-                            <a href="{{ route('categories.show', $category) }}" class="text-decoration-none">{{ $category->name }}</a>
+                            <a href="{{ $category->url() }}" class="text-decoration-none">{{ $category->name }}</a>
                         </li>
                     @endforeach
                 </ul>

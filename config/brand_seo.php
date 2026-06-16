@@ -17,9 +17,9 @@ return [
             ],
         ],
         'links' => [
-            ['label' => 'Networking equipment', 'category' => 'networking'],
-            ['label' => 'Wireless access points', 'category' => 'access-points'],
-            ['label' => 'CCTV & security', 'category' => 'cctv-security'],
+            ['label' => 'Networking equipment', 'category_path' => 'networking-connectivity'],
+            ['label' => 'Wireless access points', 'category_path' => 'networking-connectivity/access-points'],
+            ['label' => 'CCTV & security', 'category_path' => 'security-surveillance'],
         ],
         'faqs' => [
             ['question' => 'Do you supply genuine Ubiquiti products in South Africa?', 'answer' => 'Yes. Urban Focus supplies genuine Ubiquiti hardware with VAT invoices and manufacturer warranty support for qualifying products.'],
@@ -43,9 +43,9 @@ return [
             ],
         ],
         'links' => [
-            ['label' => 'Routers & gateways', 'category' => 'routers-gateways'],
-            ['label' => 'Network switches', 'category' => 'network-switches'],
-            ['label' => 'Fibre & SFP modules', 'category' => 'fibre-sfp'],
+            ['label' => 'Routers & gateways', 'category_path' => 'networking-connectivity/routers'],
+            ['label' => 'Network switches', 'category_path' => 'networking-connectivity/switches'],
+            ['label' => 'Fibre & SFP modules', 'category_path' => 'networking-connectivity/fibre-equipment'],
         ],
         'faqs' => [
             ['question' => 'Is MikroTik suitable for ISP deployments?', 'answer' => 'Yes. MikroTik is widely used by South African WISPs and fibre providers for routing, PPPoE, queues, wireless backhaul and monitoring via RouterOS.'],
@@ -65,8 +65,8 @@ return [
             ],
         ],
         'links' => [
-            ['label' => 'Wireless access points', 'category' => 'access-points'],
-            ['label' => 'Network switches', 'category' => 'network-switches'],
+            ['label' => 'Wireless access points', 'category_path' => 'networking-connectivity/access-points'],
+            ['label' => 'Network switches', 'category_path' => 'networking-connectivity/switches'],
         ],
         'faqs' => [
             ['question' => 'Do you stock TP-Link Omada products?', 'answer' => 'We list in-stock Omada and business TP-Link models online. Contact us for models not yet listed or for project quantities.'],
@@ -85,8 +85,8 @@ return [
             ],
         ],
         'links' => [
-            ['label' => 'Business laptops', 'category' => 'business-laptops'],
-            ['label' => 'Servers & storage', 'category' => 'servers'],
+            ['label' => 'Business laptops', 'category_path' => 'computing-office/laptops'],
+            ['label' => 'Servers & storage', 'category_path' => 'computing-office/storage-devices'],
         ],
         'faqs' => [
             ['question' => 'Can I order Dell laptops in bulk?', 'answer' => 'Yes. Submit an RFQ with quantities and specifications for fleet pricing and staged delivery.'],
@@ -105,8 +105,8 @@ return [
             ],
         ],
         'links' => [
-            ['label' => 'Business laptops', 'category' => 'business-laptops'],
-            ['label' => 'Printers & scanners', 'category' => 'printers'],
+            ['label' => 'Business laptops', 'category_path' => 'computing-office/laptops'],
+            ['label' => 'Printers & scanners', 'category_path' => 'computing-office/printers'],
         ],
         'faqs' => [],
     ],
@@ -123,8 +123,8 @@ return [
             ],
         ],
         'links' => [
-            ['label' => 'Business laptops', 'category' => 'business-laptops'],
-            ['label' => 'Business desktops', 'category' => 'business-desktops'],
+            ['label' => 'Business laptops', 'category_path' => 'computing-office/laptops'],
+            ['label' => 'Business desktops', 'category_path' => 'computing-office/desktops'],
         ],
         'faqs' => [],
     ],
@@ -141,8 +141,8 @@ return [
             ],
         ],
         'links' => [
-            ['label' => 'IP cameras', 'category' => 'ip-cameras'],
-            ['label' => 'NVRs & DVRs', 'category' => 'nvr-dvr'],
+            ['label' => 'IP cameras', 'category_path' => 'security-surveillance/ip-cameras'],
+            ['label' => 'NVRs & DVRs', 'category_path' => 'security-surveillance/nvr-systems'],
         ],
         'faqs' => [
             ['question' => 'Do you supply Hikvision for integrators?', 'answer' => 'Yes. We support installers and security companies with product supply, quotes and delivery across South Africa.'],
@@ -161,8 +161,8 @@ return [
             ],
         ],
         'links' => [
-            ['label' => 'IP cameras', 'category' => 'ip-cameras'],
-            ['label' => 'Access control', 'category' => 'access-control'],
+            ['label' => 'IP cameras', 'category_path' => 'security-surveillance/ip-cameras'],
+            ['label' => 'Access control', 'category_path' => 'security-surveillance/access-control'],
         ],
         'faqs' => [],
     ],
@@ -179,8 +179,8 @@ return [
             ],
         ],
         'links' => [
-            ['label' => 'VoIP & telephony', 'category' => 'telephony-voip'],
-            ['label' => 'IP phones', 'category' => 'ip-phones'],
+            ['label' => 'VoIP & telephony', 'category_path' => 'security-surveillance/intercom-systems'],
+            ['label' => 'IP phones', 'category_path' => 'security-surveillance/intercom-systems'],
         ],
         'faqs' => [
             ['question' => 'Can Yeastar work with South African SIP providers?', 'answer' => 'Yes. Yeastar PBX systems support standard SIP trunks from major South African VoIP providers when configured correctly.'],
@@ -199,8 +199,8 @@ return [
             ],
         ],
         'links' => [
-            ['label' => 'Network switches', 'category' => 'network-switches'],
-            ['label' => 'Routers & gateways', 'category' => 'routers-gateways'],
+            ['label' => 'Network switches', 'category_path' => 'networking-connectivity/switches'],
+            ['label' => 'Routers & gateways', 'category_path' => 'networking-connectivity/routers'],
         ],
         'faqs' => [],
     ],

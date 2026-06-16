@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\CategoryMapperService;
 use App\Services\SeoService;
 use Illuminate\View\View;
 
@@ -12,6 +13,7 @@ class SeoLandingController extends Controller
 {
     public function __construct(
         protected SeoService $seo,
+        protected CategoryMapperService $categoryMapper,
     ) {}
 
     public function show(string $slug): View
@@ -102,19 +104,6 @@ class SeoLandingController extends Controller
 
     protected function categoryFromPath(string $path): ?Category
     {
-        [$parentSlug, $childSlug] = array_pad(explode('/', $path, 2), 2, null);
-
-        $parent = Category::where('slug', $parentSlug)->whereNull('parent_id')->first();
-
-        if (! $parent) {
-            return Category::where('slug', $path)->first();
-        }
-
-        if ($childSlug) {
-            return Category::where('slug', $childSlug)->where('parent_id', $parent->id)->first()
-                ?? $parent;
-        }
-
-        return $parent;
+        return $this->categoryMapper->resolveCategoryForFilter($path);
     }
 }

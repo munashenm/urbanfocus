@@ -294,6 +294,13 @@ class ProductSeoService
             if ($this->shouldUseCategory($product, $mapped)) {
                 return $mapped;
             }
+
+            $product->category->loadMissing('parent');
+            $legacyMapped = $this->categoryMapper->resolveCategoryIdFromPath($product->category->urlPath());
+
+            if ($this->shouldUseCategory($product, $legacyMapped)) {
+                return $legacyMapped;
+            }
         }
 
         return null;

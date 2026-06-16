@@ -62,7 +62,7 @@
             <h2 class="h6 fw-bold text-uppercase text-muted mb-2">Shop by category</h2>
             <div class="d-flex flex-wrap gap-2">
                 @foreach($linkCategories as $category)
-                    <a href="{{ route('categories.show', $category) }}?brand={{ urlencode($brand->name) }}" class="btn btn-outline-secondary btn-sm">{{ $category->name }}</a>
+                    <a href="{{ $category->url() }}?brand={{ urlencode($brand->name) }}" class="btn btn-outline-secondary btn-sm">{{ $category->name }}</a>
                 @endforeach
             </div>
         </div>

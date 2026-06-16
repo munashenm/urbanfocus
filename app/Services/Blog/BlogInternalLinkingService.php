@@ -4,8 +4,8 @@ namespace App\Services\Blog;
 
 use App\Models\Article;
 use App\Models\Brand;
-use App\Models\Category;
 use App\Models\Product;
+use App\Services\CategoryMapperService;
 use Illuminate\Support\Str;
 
 class BlogInternalLinkingService
@@ -77,8 +77,8 @@ class BlogInternalLinkingService
             'brand' => Brand::where('slug', $target['slug'] ?? '')->where('is_active', true)->exists()
                 ? route('brands.show', $target['slug'])
                 : null,
-            'category' => Category::where('slug', $target['slug'] ?? '')->where('is_active', true)->exists()
-                ? route('categories.show', $target['slug'])
+            'category' => ($path = trim((string) ($target['path'] ?? $target['slug'] ?? ''), '/')) !== ''
+                ? app(CategoryMapperService::class)->categoryUrlForPath($path)
                 : null,
             'solution' => array_key_exists($target['slug'] ?? '', config('seo_landings', []))
                 ? route('solutions.show', $target['slug'])

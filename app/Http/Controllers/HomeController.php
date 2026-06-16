@@ -7,6 +7,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Article;
+use App\Services\CategoryMapperService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -34,10 +35,10 @@ class HomeController extends Controller
 
         $networkingProducts = $this->remember('home.networking_v3', fn () => $this->networkingShowcaseProducts(8));
 
-        $laptopProducts = $this->remember('home.laptops_v2', fn () => $this->categoryProducts(
-            'laptops-notebooks',
+        $laptopProducts = $this->remember('home.laptops_v3', fn () => $this->categoryProducts(
+            'computing-office/laptops',
             8,
-            config('homepage.section_product_brands.laptops-notebooks', [])
+            config('homepage.section_product_brands.laptops', [])
         ));
 
         $categories = $this->remember('home.categories', fn () => Category::where('is_active', true)
@@ -84,7 +85,7 @@ class HomeController extends Controller
         }
 
         $heroSlides = config('homepage.hero_slides', []);
-        $solutionBlocks = config('homepage.solution_blocks', []);
+        $solutionBlocks = $this->resolveSolutionBlocks();
         $categoryIcons = config('homepage.category_icons', []);
         $sectionBrands = $this->remember('home.section_brands', fn () => $this->sectionBrands());
 
@@ -126,7 +127,7 @@ class HomeController extends Controller
      */
     protected function categoryProducts(string $slug, int $limit, array $preferredBrandSlugs = [])
     {
-        $category = Category::where('slug', $slug)->first();
+        $category = app(CategoryMapperService::class)->resolveCategoryForFilter($slug);
         if (! $category) {
             return collect();
         }
@@ -168,7 +169,7 @@ class HomeController extends Controller
 
         $categoryIds = $this->categoryIdsForSlugs($config['category_slugs'] ?? []);
         if ($categoryIds === []) {
-            $categoryIds = $this->categoryIdsForSlugs(['networking']);
+            $categoryIds = $this->categoryIdsForSlugs(['networking-connectivity']);
         }
 
         $query = Product::with('images')
@@ -205,7 +206,7 @@ class HomeController extends Controller
     /** @param list<string> $brandNames @param array<string, mixed> $config */
     protected function networkingShowcaseFallback(int $limit, array $brandNames, array $config)
     {
-        $categoryIds = $this->categoryIdsForSlugs(['networking']);
+        $categoryIds = $this->categoryIdsForSlugs(['networking-connectivity']);
 
         $query = Product::with('images')
             ->forStorefront()
@@ -295,14 +296,36 @@ class HomeController extends Controller
     {
         $ids = [];
 
+        $mapper = app(CategoryMapperService::class);
+
         foreach ($slugs as $slug) {
-            $category = Category::where('slug', $slug)->first();
+            $category = $mapper->resolveCategoryForFilter($slug);
             if ($category) {
                 $ids = array_merge($ids, Category::descendantIds($category->id));
             }
         }
 
         return array_values(array_unique($ids));
+    }
+
+    /** @return list<array<string, mixed>> */
+    protected function resolveSolutionBlocks(): array
+    {
+        $mapper = app(CategoryMapperService::class);
+
+        return collect(config('homepage.solution_blocks', []))
+            ->map(function (array $block) use ($mapper) {
+                $path = $block['category_path'] ?? $block['category_slug'] ?? '';
+                $category = $path !== '' ? $mapper->resolveCategoryForFilter($path) : null;
+                if ($category) {
+                    $category->loadMissing('parent');
+                }
+                $block['category'] = $category;
+                $block['url'] = $category?->url() ?? ($path !== '' ? route('shop.index', ['category' => $path]) : route('shop.index'));
+
+                return $block;
+            })
+            ->all();
     }
 
     protected function remember(string $key, callable $callback, int $minutes = 10): mixed

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\CategoryMapperService;
 use App\Services\SearchService;
 use App\Services\SeoService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -14,11 +16,27 @@ class ShopController extends Controller
     public function __construct(
         protected SearchService $search,
         protected SeoService $seo,
+        protected CategoryMapperService $categoryMapper,
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $searchTerm = trim((string) $request->get('q'));
+
+        if ($categorySlug = trim((string) $request->get('category'), '/')) {
+            $category = $this->categoryMapper->resolveCategoryForFilter($categorySlug);
+
+            if ($category && $this->categoryMapper->isLegacyCategoryPath($categorySlug)) {
+                $query = $request->except('category');
+                $url = $category->url();
+
+                if ($query !== []) {
+                    $url .= '?'.http_build_query($query);
+                }
+
+                return redirect($url, 301);
+            }
+        }
 
         if ($searchTerm !== '') {
             $query = $this->search->productQuery($searchTerm);
@@ -32,7 +50,7 @@ class ShopController extends Controller
         }
 
         if ($categorySlug = $request->get('category')) {
-            $category = Category::where('slug', $categorySlug)->first();
+            $category = $this->categoryMapper->resolveCategoryForFilter((string) $categorySlug);
             if ($category) {
                 $query->whereIn('category_id', Category::descendantIds($category->id));
             }
