@@ -10,14 +10,15 @@
  * 4. Run in order:
  *    a) merge-categories.php?key=YOUR_SECRET&migrate=1
  *    b) merge-categories.php?key=YOUR_SECRET&dry-run=1
- *    c) merge-categories.php?key=YOUR_SECRET&run=1&limit=25
- *    d) merge-categories.php?key=YOUR_SECRET&run=1
- * 5. DELETE public_html/merge-categories.php when finished
+ *    c) merge-categories.php?key=YOUR_SECRET&run=1&batch=200&offset=0
+ *    d) Follow "Continue" links until complete, then run finalize=1
+ * 5. DELETE public_html/merge-categories.php after success
  */
 
 declare(strict_types=1);
 
 const MERGE_KEY = 'CHANGE-ME-merge-categories-secret';
+const DEFAULT_BATCH = 200;
 
 header('X-Robots-Tag: noindex, nofollow');
 header('Cache-Control: no-store, max-age=0');
@@ -39,6 +40,18 @@ $base = 'https://'.$host.'/merge-categories.php?key='.urlencode((string) $_GET['
 header('Content-Type: text/html; charset=utf-8');
 echo '<pre style="font:14px/1.5 monospace;white-space:pre-wrap">';
 
+$stream = static function (string $message): void {
+    echo $message;
+    while (ob_get_level() > 0) {
+        ob_end_flush();
+    }
+    flush();
+};
+
+$stream("=== Merge products into canonical categories ===\n");
+$stream('Time: '.date('Y-m-d H:i:s')."\n");
+$stream("Laravel root: {$laravelRoot}\n\n");
+
 if (! is_dir($laravelRoot.'/vendor')) {
     exit("STOP: urbanfocus/vendor missing — run setup or composer install first.\n");
 }
@@ -48,98 +61,138 @@ $app = require_once $laravelRoot.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-@set_time_limit(0);
+@set_time_limit(300);
 @ini_set('memory_limit', '512M');
 
 /** @var \App\Services\CategoryMergeService $merge */
 $merge = $app->make(\App\Services\CategoryMergeService::class);
 
 if (isset($_GET['migrate'])) {
-    echo "=== Running database migrations ===\n";
+    $stream("=== Running database migrations ===\n");
     try {
         $exitCode = $kernel->call('migrate', ['--force' => true]);
-        echo trim($kernel->output())."\n";
-        echo $exitCode === 0 ? "✓ Migrations complete.\n\n" : "✗ Migration exit code: {$exitCode}\n\n";
+        $out = trim($kernel->output());
+        if ($out !== '') {
+            $stream($out."\n");
+        }
+        $stream($exitCode === 0 ? "✓ Migrations complete.\n\n" : "✗ Migration exit code: {$exitCode}\n\n");
     } catch (Throwable $e) {
-        echo 'Migration ERROR: '.$e->getMessage()."\n\n";
+        $stream('Migration ERROR: '.$e->getMessage()."\n\n");
     }
 }
 
 if (! isset($_GET['dry-run']) && ! isset($_GET['run'])) {
-    echo "=== Merge products into canonical categories ===\n";
-    echo 'Time: '.date('Y-m-d H:i:s')."\n\n";
-    echo "This runs the full category merge:\n";
-    echo "  1. Remap products from legacy categories (e.g. laptops-notebooks)\n";
-    echo "  2. Heuristic assignment for any remaining stragglers\n";
-    echo "  3. Create slug redirects and deactivate empty legacy categories\n\n";
-    echo "1. Migrations (first time only):\n   {$base}&migrate=1\n\n";
-    echo "2. Preview (no changes):\n   {$base}&dry-run=1\n\n";
-    echo "3. Test 25 products:\n   {$base}&run=1&limit=25\n\n";
-    echo "4. Full merge:\n   {$base}&run=1\n\n";
-    echo "Tip: back up your database in phpMyAdmin before step 4.\n";
-    echo "DELETE this file from public_html when finished.\n</pre>";
+    $stream("Run these URLs in order:\n\n");
+    $stream("1. Migrations (first time only):\n   {$base}&migrate=1\n\n");
+    $stream("2. Preview (no changes):\n   {$base}&dry-run=1\n\n");
+    $stream("3. Batch remap (start here):\n   {$base}&run=1&phase=remap&offset=0&batch=".DEFAULT_BATCH."\n\n");
+    $stream("4. When remap finishes, finalize:\n   {$base}&run=1&phase=finalize\n\n");
+    $stream("Tip: back up your database in phpMyAdmin before step 3.\n");
+    $stream("DELETE this file from public_html when finished.\n</pre>");
     exit;
 }
 
-echo "=== Merge products into canonical categories ===\n";
-echo 'Time: '.date('Y-m-d H:i:s')."\n\n";
+$preview = $merge->preview();
+$stream('Catalog: '.number_format($preview['total_products'])." products, ".number_format($preview['categorized_products'])." categorised\n");
+$stream('On legacy categories: '.number_format($preview['legacy_products'])."\n");
+$stream('Reorg would move: '.number_format($preview['reorganization']['products_to_move'])."\n");
+$stream('Migration tables ready: '.($preview['migration_tables_ready'] ? 'yes' : 'NO — run migrate=1 first')."\n\n");
+
+if (! $preview['migration_tables_ready'] && isset($_GET['run'])) {
+    $stream("STOP: Run migrations first:\n{$base}&migrate=1\n</pre>");
+    exit;
+}
 
 if (isset($_GET['dry-run'])) {
-    $preview = $merge->preview();
     $reorg = $preview['reorganization'];
-
-    echo "DRY RUN — no product or category changes made\n\n";
-    echo "Products on legacy categories now: {$preview['legacy_products']}\n";
-    echo "Products to remap (reorg pass): {$reorg['products_to_move']}\n";
-    echo "Products unchanged (reorg pass): {$reorg['products_unchanged']}\n";
-    echo "Redirects to create: {$reorg['redirects_to_create']}\n\n";
+    $stream("DRY RUN — no changes made\n\n");
 
     if ($reorg['sample_moves'] !== []) {
-        echo "Sample moves:\n";
+        $stream("Sample moves:\n");
         foreach ($reorg['sample_moves'] as $move) {
-            echo "  {$move['count']}× {$move['from']} → {$move['to']}\n";
+            $stream("  {$move['count']}× {$move['from']} → {$move['to']}\n");
         }
-        echo "\n";
+        $stream("\n");
+    } elseif ($preview['legacy_products'] === 0) {
+        $stream("Nothing to merge — products already use canonical categories.\n");
+        $stream("If shop pages are still empty, run assign only:\n");
+        $stream("  {$base}&run=1&phase=assign&offset=0&batch=".DEFAULT_BATCH."\n\n");
     }
 
-    echo "Next — test 25 products:\n{$base}&run=1&limit=25\n\n";
-    echo "Then full merge:\n{$base}&run=1\n</pre>";
+    $stream("Start batch remap:\n{$base}&run=1&phase=remap&offset=0&batch=".DEFAULT_BATCH."\n</pre>");
     exit;
 }
 
-$limit = isset($_GET['limit']) ? (int) $_GET['limit'] : null;
-
-echo 'Applying category merge';
-echo $limit ? " (limit {$limit} products)" : ' (all products)';
-echo "...\n\n";
+$phase = (string) ($_GET['phase'] ?? 'remap');
+$offset = max(0, (int) ($_GET['offset'] ?? 0));
+$batch = max(25, (int) ($_GET['batch'] ?? DEFAULT_BATCH));
+$started = microtime(true);
 
 try {
-    $result = $merge->merge(backup: true, limit: $limit);
+    if ($phase === 'finalize') {
+        $stream("Phase: FINALIZE (redirects, deactivate orphans, heuristic sweep)\n\n");
+        $result = $merge->finalize();
 
-    echo "✓ Reorg remapped: {$result['reorganize']['moved']}\n";
-    echo "✓ Heuristic assigned: {$result['assign']['categorized']}\n";
-    echo "✓ Redirects created: {$result['reorganize']['redirects']}\n";
-    echo "✓ Legacy categories deactivated: {$result['reorganize']['deactivated']}\n";
-    echo "✓ Products still on legacy categories: {$result['legacy_products_remaining']}\n\n";
+        $stream('✓ Redirects created: '.$result['finalize']['redirects']."\n");
+        $stream('✓ Legacy categories deactivated: '.$result['finalize']['deactivated']."\n");
+        $stream('✓ Heuristic assigned: '.$result['assign']['categorized']."\n");
+        $stream('✓ Products still on legacy categories: '.$result['legacy_products_remaining']."\n\n");
 
-    echo "Clearing caches...\n";
-    foreach (['config:clear', 'route:clear', 'view:clear', 'cache:clear'] as $cmd) {
-        $kernel->call($cmd);
-        $out = trim($kernel->output());
-        if ($out !== '') {
-            echo $out."\n";
+        $stream("Clearing caches...\n");
+        foreach (['config:clear', 'route:clear', 'view:clear', 'cache:clear'] as $cmd) {
+            $kernel->call($cmd);
+            $out = trim($kernel->output());
+            if ($out !== '') {
+                $stream($out."\n");
+            }
         }
-    }
 
-    if ($limit) {
-        echo "\nTest complete. Run full merge when ready:\n{$base}&run=1\n";
+        $stream("\n✓ Category merge complete in ".number_format(microtime(true) - $started, 2)."s\n");
+        $stream("Check /category/computing-office/laptops and Admin → Categories.\n");
+    } elseif ($phase === 'assign') {
+        $stream("Phase: ASSIGN heuristics — offset {$offset}, batch {$batch}\n\n");
+        $result = $merge->assignBatch($offset, $batch);
+
+        $stream('✓ Processed: '.$result['assign']['processed']."\n");
+        $stream('✓ Assigned: '.$result['assign']['categorized']."\n");
+        $stream('✓ Skipped: '.$result['assign']['skipped']."\n");
+        $stream('✓ Legacy products remaining: '.$result['legacy_products_remaining']."\n\n");
+
+        if ($result['has_more']) {
+            $next = $base.'&run=1&phase=assign&offset='.$result['next_offset'].'&batch='.$batch;
+            $stream("Continue assign batch:\n{$next}\n\n");
+            $stream('<meta http-equiv="refresh" content="2;url='.$next.'">Auto-continuing in 2s...</pre>');
+            exit;
+        }
+
+        $stream("Assign complete. Finalize:\n{$base}&run=1&phase=finalize\n");
     } else {
-        echo "\n✓ Category merge complete.\n";
-        echo "Check /shop?category=computing-office/laptops and Admin → Categories.\n";
+        $stream("Phase: REMAP legacy categories — offset {$offset}, batch {$batch}\n\n");
+        $result = $merge->mergeBatch($offset, $batch, backupOnFirst: $offset === 0);
+        $reorg = $result['reorganize'];
+
+        $stream('✓ Processed: '.$reorg['processed'].' / '.number_format($reorg['total'])."\n");
+        $stream('✓ Remapped this batch: '.$reorg['moved']."\n");
+        $stream('✓ Legacy products remaining: '.$result['legacy_products_remaining']."\n");
+        $stream('Elapsed: '.number_format(microtime(true) - $started, 2)."s\n\n");
+
+        if ($reorg['has_more']) {
+            $next = $base.'&run=1&phase=remap&offset='.$reorg['next_offset'].'&batch='.$batch;
+            $stream("Continue remap batch:\n{$next}\n\n");
+            $stream('<meta http-equiv="refresh" content="2;url='.$next.'">Auto-continuing in 2s...</pre>');
+            exit;
+        }
+
+        $stream("Remap complete. Run heuristic assign:\n{$base}&run=1&phase=assign&offset=0&batch={$batch}\n\n");
+        $stream("Or skip to finalize:\n{$base}&run=1&phase=finalize\n");
     }
 } catch (Throwable $e) {
-    echo 'ERROR: '.$e->getMessage()."\n";
-    echo $e->getFile().':'.$e->getLine()."\n";
+    $stream("\nERROR: ".$e->getMessage()."\n");
+    $stream($e->getFile().':'.$e->getLine()."\n");
+
+    if (str_contains($e->getMessage(), 'category_migration') || str_contains($e->getMessage(), 'category_slug_redirects')) {
+        $stream("\nMigration tables may be missing. Run:\n{$base}&migrate=1\n");
+    }
 }
 
-echo "\nDELETE public_html/merge-categories.php now.\n</pre>";
+$stream("\nDELETE public_html/merge-categories.php now.\n</pre>";

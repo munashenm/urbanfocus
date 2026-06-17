@@ -21,6 +21,9 @@ class CategoryMergeService
         return [
             'reorganization' => $this->reorganization->preview(),
             'legacy_products' => $this->countLegacyCategoryProducts(),
+            'total_products' => Product::count(),
+            'categorized_products' => Product::whereNotNull('category_id')->count(),
+            'migration_tables_ready' => $this->reorganization->migrationTablesReady(),
         ];
     }
 
@@ -38,6 +41,61 @@ class CategoryMergeService
 
         return [
             'reorganize' => $reorganize,
+            'assign' => $assign,
+            'legacy_products_remaining' => $this->countLegacyCategoryProducts(),
+        ];
+    }
+
+    /**
+     * Batch remap for cPanel (avoids HTTP timeouts on large catalogs).
+     *
+     * @return array<string, mixed>
+     */
+    public function mergeBatch(int $offset, int $batchSize, bool $backupOnFirst = false): array
+    {
+        $this->categoryMapper->ensureCanonicalTree();
+
+        $reorganize = $this->reorganization->remapProductBatch($offset, $batchSize, $backupOnFirst);
+
+        return [
+            'reorganize' => $reorganize,
+            'legacy_products_remaining' => $this->countLegacyCategoryProducts(),
+        ];
+    }
+
+    /**
+     * Heuristic assignment batch for cPanel.
+     *
+     * @return array<string, mixed>
+     */
+    public function assignBatch(int $offset, int $batchSize): array
+    {
+        $this->categoryMapper->ensureCanonicalTree();
+
+        $assign = $this->productSeo->assignProductCategories(offset: $offset, limit: $batchSize);
+        $total = Product::count();
+        $nextOffset = $offset + $assign['processed'];
+        $hasMore = $nextOffset < $total;
+
+        return [
+            'assign' => $assign,
+            'has_more' => $hasMore,
+            'next_offset' => $nextOffset,
+            'total' => $total,
+            'legacy_products_remaining' => $this->countLegacyCategoryProducts(),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function finalize(): array
+    {
+        $this->categoryMapper->ensureCanonicalTree();
+
+        $finalize = $this->reorganization->finalizeMigration();
+        $assign = $this->productSeo->assignProductCategories();
+
+        return [
+            'finalize' => $finalize,
             'assign' => $assign,
             'legacy_products_remaining' => $this->countLegacyCategoryProducts(),
         ];

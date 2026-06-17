@@ -96,47 +96,107 @@ class CategoryReorganizationService
                 $this->backupProductCategories();
             }
 
-            $this->mapper->ensureCanonicalTree();
+            $batch = $this->remapProducts(limit: $limit);
 
-            $moved = 0;
-            $processed = 0;
-            $mappingCounts = [];
-
-            $query = Product::query()->with('category.parent')->whereNotNull('category_id');
-
-            if ($limit) {
-                $query->limit($limit);
-            }
-
-            $query->chunkById(200, function ($products) use (&$moved, &$processed, &$mappingCounts) {
-                foreach ($products as $product) {
-                    $processed++;
-                    $oldCategory = $product->category;
-
-                    if (! $oldCategory) {
-                        continue;
-                    }
-
-                    $targetId = $this->resolveTargetCategoryId($oldCategory);
-
-                    if ($targetId === null || $targetId === $product->category_id) {
-                        continue;
-                    }
-
-                    $product->update(['category_id' => $targetId]);
-                    $moved++;
-
-                    $key = $oldCategory->id;
-                    $mappingCounts[$key] = ($mappingCounts[$key] ?? 0) + 1;
-                }
-            });
-
-            $this->recordCategoryMappings($mappingCounts);
+            $this->recordCategoryMappings($batch['mapping_counts']);
             $redirects = $this->buildSlugRedirects();
             $deactivated = $this->deactivateOrphanCategories();
 
-            return compact('moved', 'processed', 'redirects', 'deactivated');
+            return [
+                'moved' => $batch['moved'],
+                'processed' => $batch['processed'],
+                'redirects' => $redirects,
+                'deactivated' => $deactivated,
+            ];
         });
+    }
+
+    /**
+     * Remap a slice of products for cPanel batch runs (no transaction wrapper).
+     *
+     * @return array{moved: int, processed: int, mapping_counts: array<int, int>, has_more: bool, next_offset: int, total: int}
+     */
+    public function remapProductBatch(int $offset, int $batchSize, bool $backupOnFirst = false): array
+    {
+        if ($backupOnFirst && $offset === 0) {
+            $this->backupProductCategories();
+        }
+
+        $this->mapper->ensureCanonicalTree();
+
+        $batch = $this->remapProducts(offset: $offset, limit: $batchSize);
+        $total = Product::query()->whereNotNull('category_id')->count();
+        $nextOffset = $offset + $batch['processed'];
+        $hasMore = $nextOffset < $total;
+
+        return array_merge($batch, [
+            'has_more' => $hasMore,
+            'next_offset' => $nextOffset,
+            'total' => $total,
+        ]);
+    }
+
+    /** @return array{redirects: int, deactivated: int} */
+    public function finalizeMigration(): array
+    {
+        return [
+            'redirects' => $this->buildSlugRedirects(),
+            'deactivated' => $this->deactivateOrphanCategories(),
+        ];
+    }
+
+    public function migrationTablesReady(): bool
+    {
+        return \Illuminate\Support\Facades\Schema::hasTable('category_slug_redirects')
+            && \Illuminate\Support\Facades\Schema::hasTable('category_migration_mappings')
+            && \Illuminate\Support\Facades\Schema::hasTable('category_migration_backups');
+    }
+
+    /**
+     * @return array{moved: int, processed: int, mapping_counts: array<int, int>}
+     */
+    protected function remapProducts(?int $offset = null, ?int $limit = null): array
+    {
+        $moved = 0;
+        $processed = 0;
+        $mappingCounts = [];
+
+        $query = Product::query()->with('category.parent')->whereNotNull('category_id')->orderBy('id');
+
+        if ($offset !== null) {
+            $query->offset($offset);
+        }
+
+        if ($limit !== null) {
+            $query->limit($limit);
+        }
+
+        foreach ($query->get() as $product) {
+            $processed++;
+            $oldCategory = $product->category;
+
+            if (! $oldCategory) {
+                continue;
+            }
+
+            $targetId = $this->resolveTargetCategoryId($oldCategory);
+
+            if ($targetId === null || $targetId === $product->category_id) {
+                continue;
+            }
+
+            $product->update(['category_id' => $targetId]);
+            $moved++;
+
+            $key = $oldCategory->id;
+            $mappingCounts[$key] = ($mappingCounts[$key] ?? 0) + 1;
+        }
+
+        return [
+            'moved' => $moved,
+            'processed' => $processed,
+            'mapping_counts' => $mappingCounts,
+        ];
     }
 
     protected function backupProductCategories(): void

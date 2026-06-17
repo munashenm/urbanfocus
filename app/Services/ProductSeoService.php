@@ -13,7 +13,7 @@ class ProductSeoService
     ) {}
 
     /** @return array{processed: int, categorized: int, skipped: int, samples: list<string>} */
-    public function assignProductCategories(bool $dryRun = false, ?int $limit = null): array
+    public function assignProductCategories(bool $dryRun = false, ?int $limit = null, ?int $offset = null): array
     {
         $this->categoryMapper->ensureCanonicalTree();
 
@@ -28,11 +28,15 @@ class ProductSeoService
             ->with(['category.parent'])
             ->orderBy('id');
 
+        if ($offset !== null) {
+            $query->offset($offset);
+        }
+
         if ($limit !== null && $limit > 0) {
             $query->limit($limit);
         }
 
-        $query->lazyById(100)->each(function (Product $product) use ($dryRun, &$stats) {
+        $process = function (Product $product) use ($dryRun, &$stats) {
             $stats['processed']++;
             $targetId = $this->resolveCategoryAssignment($product);
 
@@ -53,7 +57,15 @@ class ProductSeoService
             if (! $dryRun) {
                 $product->update(['category_id' => $targetId]);
             }
-        });
+        };
+
+        if ($offset !== null || ($limit !== null && $limit > 0)) {
+            foreach ($query->get() as $product) {
+                $process($product);
+            }
+        } else {
+            $query->lazyById(100)->each($process);
+        }
 
         if (! $dryRun && $stats['categorized'] > 0) {
             app(SeoService::class)->clearCache();
