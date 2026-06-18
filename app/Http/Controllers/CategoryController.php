@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\CategorySlugRedirect;
 use App\Models\Product;
 use App\Services\CatalogFilterService;
+use App\Services\CategoryMapperService;
 use App\Services\SeoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,33 +16,61 @@ class CategoryController extends Controller
 {
     public function __construct(
         protected CatalogFilterService $catalogFilter,
+        protected CategoryMapperService $categoryMapper,
         protected SeoService $seo,
     ) {}
 
-    public function show(Category $category, Request $request): View|RedirectResponse
+    public function show(string $category, Request $request): View|RedirectResponse
     {
-        if ($redirect = $this->redirectForLegacySlug($category->slug)) {
+        if ($redirect = $this->redirectForLegacySlug($category)) {
             return $redirect;
         }
 
-        if ($category->parent_id) {
-            return redirect($category->url(), 301);
+        $categoryModel = $this->resolveCategoryBySlug($category);
+
+        if ($categoryModel->parent_id) {
+            return redirect($categoryModel->url(), 301);
         }
 
-        return $this->renderCategory($category, $request);
+        return $this->renderCategory($categoryModel, $request);
     }
 
-    public function showChild(Category $parent, Category $child, Request $request): View|RedirectResponse
+    public function showChild(string $parent, string $child, Request $request): View|RedirectResponse
     {
-        if ($child->parent_id !== $parent->id) {
-            abort(404);
-        }
-
-        if ($redirect = $this->redirectForLegacySlug($child->slug)) {
+        if ($redirect = $this->redirectForLegacySlug($child)) {
             return $redirect;
         }
 
-        return $this->renderCategory($child, $request, $parent);
+        [$parentModel, $childModel] = $this->resolveChildCategories($parent, $child);
+
+        return $this->renderCategory($childModel, $request, $parentModel);
+    }
+
+    protected function resolveCategoryBySlug(string $slug): Category
+    {
+        $this->categoryMapper->ensureCanonicalTree();
+
+        return Category::query()
+            ->where('slug', $slug)
+            ->firstOrFail();
+    }
+
+    /** @return array{0: Category, 1: Category} */
+    protected function resolveChildCategories(string $parentSlug, string $childSlug): array
+    {
+        $this->categoryMapper->ensureCanonicalTree();
+
+        $parent = Category::query()
+            ->where('slug', $parentSlug)
+            ->whereNull('parent_id')
+            ->firstOrFail();
+
+        $child = Category::query()
+            ->where('slug', $childSlug)
+            ->where('parent_id', $parent->id)
+            ->firstOrFail();
+
+        return [$parent, $child];
     }
 
     protected function redirectForLegacySlug(string $slug): ?RedirectResponse
