@@ -50,16 +50,54 @@ $stream = static function (string $message): void {
 
 $stream("=== Merge products into canonical categories ===\n");
 $stream('Time: '.date('Y-m-d H:i:s')."\n");
-$stream("Laravel root: {$laravelRoot}\n\n");
+$stream("Laravel root: {$laravelRoot}\n");
+$stream('Folder exists: '.(is_dir($laravelRoot) ? 'yes' : 'NO')."\n");
+$stream('vendor exists: '.(is_dir($laravelRoot.'/vendor') ? 'yes' : 'NO')."\n");
+$stream('PHP version: '.PHP_VERSION."\n\n");
 
-if (! is_dir($laravelRoot.'/vendor')) {
-    exit("STOP: urbanfocus/vendor missing — run setup or composer install first.\n");
+if (! is_dir($laravelRoot)) {
+    exit("STOP: urbanfocus folder not found at {$laravelRoot}\nExpected: /home/youruser/urbanfocus next to public_html\n</pre>");
 }
 
-require $laravelRoot.'/vendor/autoload.php';
-$app = require_once $laravelRoot.'/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
+if (! is_dir($laravelRoot.'/vendor')) {
+    exit("STOP: urbanfocus/vendor missing — run Composer install or upload vendor/ first.\n</pre>");
+}
+
+// Help page only — no Laravel boot (avoids 500 when you just need the URL list)
+if (! isset($_GET['migrate']) && ! isset($_GET['dry-run']) && ! isset($_GET['run'])) {
+    $stream("Run these URLs in order:\n\n");
+    $stream("1. Migrations (first time only):\n   {$base}&migrate=1\n\n");
+    $stream("2. Preview (no changes):\n   {$base}&dry-run=1\n\n");
+    $stream("3. Batch remap (start here):\n   {$base}&run=1&phase=remap&offset=0&batch=".DEFAULT_BATCH."\n\n");
+    $stream("4. When remap finishes, finalize:\n   {$base}&run=1&phase=finalize\n\n");
+    $stream("Tip: back up your database in phpMyAdmin before step 3.\n");
+    $stream("If you see HTTP 500 on step 2+, run fix-500.php first or read urbanfocus/storage/logs/laravel.log\n");
+    $stream("DELETE this file from public_html when finished.\n</pre>");
+    exit;
+}
+
+try {
+    require $laravelRoot.'/vendor/autoload.php';
+    $app = require_once $laravelRoot.'/bootstrap/app.php';
+    $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+    $kernel->bootstrap();
+} catch (Throwable $e) {
+    $stream("\nLARAVEL BOOT FAILED:\n");
+    $stream($e->getMessage()."\n");
+    $stream($e->getFile().':'.$e->getLine()."\n\n");
+    $logFile = $laravelRoot.'/storage/logs/laravel.log';
+    if (file_exists($logFile)) {
+        $lines = file($logFile, FILE_IGNORE_NEW_LINES) ?: [];
+        for ($i = count($lines) - 1; $i >= 0; $i--) {
+            if (str_contains($lines[$i], '.ERROR:') || str_contains($lines[$i], 'local.ERROR')) {
+                $stream("Last laravel.log error:\n".implode("\n", array_slice($lines, $i, min(12, count($lines) - $i)))."\n");
+                break;
+            }
+        }
+    }
+    $stream("\nTry fix-500.php in public_html, or clear bootstrap/cache/*.php in File Manager.\n</pre>");
+    exit;
+}
 
 @set_time_limit(300);
 @ini_set('memory_limit', '512M');
@@ -79,17 +117,6 @@ if (isset($_GET['migrate'])) {
     } catch (Throwable $e) {
         $stream('Migration ERROR: '.$e->getMessage()."\n\n");
     }
-}
-
-if (! isset($_GET['dry-run']) && ! isset($_GET['run'])) {
-    $stream("Run these URLs in order:\n\n");
-    $stream("1. Migrations (first time only):\n   {$base}&migrate=1\n\n");
-    $stream("2. Preview (no changes):\n   {$base}&dry-run=1\n\n");
-    $stream("3. Batch remap (start here):\n   {$base}&run=1&phase=remap&offset=0&batch=".DEFAULT_BATCH."\n\n");
-    $stream("4. When remap finishes, finalize:\n   {$base}&run=1&phase=finalize\n\n");
-    $stream("Tip: back up your database in phpMyAdmin before step 3.\n");
-    $stream("DELETE this file from public_html when finished.\n</pre>");
-    exit;
 }
 
 $preview = $merge->preview();
