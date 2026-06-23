@@ -56,9 +56,6 @@ echo '<pre style="font:14px/1.5 monospace;white-space:pre-wrap">';
 
 $stream = static function (string $message): void {
     echo $message;
-    while (ob_get_level() > 0) {
-        ob_end_flush();
-    }
     flush();
 };
 
