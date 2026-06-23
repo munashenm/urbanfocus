@@ -20,6 +20,20 @@ declare(strict_types=1);
 const MERGE_KEY = 'CHANGE-ME-merge-categories-secret';
 const DEFAULT_BATCH = 200;
 
+register_shutdown_function(static function (): void {
+    $error = error_get_last();
+    if (! $error || ! in_array($error['type'], [E_ERROR, E_PARSE, E_COMPILE_ERROR, E_CORE_ERROR], true)) {
+        return;
+    }
+    if (! headers_sent()) {
+        header('Content-Type: text/plain; charset=utf-8');
+        http_response_code(500);
+    }
+    echo "\n\nFATAL PHP ERROR:\n";
+    echo $error['message']."\n";
+    echo $error['file'].':'.$error['line']."\n";
+});
+
 header('X-Robots-Tag: noindex, nofollow');
 header('Cache-Control: no-store, max-age=0');
 
@@ -103,7 +117,13 @@ try {
 @ini_set('memory_limit', '512M');
 
 /** @var \App\Services\CategoryMergeService $merge */
-$merge = $app->make(\App\Services\CategoryMergeService::class);
+try {
+    $merge = $app->make(\App\Services\CategoryMergeService::class);
+} catch (Throwable $e) {
+    $stream("\nCategoryMergeService FAILED:\n".$e->getMessage()."\n");
+    $stream($e->getFile().':'.$e->getLine()."\n</pre>");
+    exit;
+}
 
 if (isset($_GET['migrate'])) {
     $stream("=== Running database migrations ===\n");
@@ -119,7 +139,18 @@ if (isset($_GET['migrate'])) {
     }
 }
 
-$preview = $merge->preview();
+$preview = [];
+try {
+    $preview = $merge->preview();
+} catch (Throwable $e) {
+    $stream("\nPREVIEW FAILED:\n".$e->getMessage()."\n");
+    $stream($e->getFile().':'.$e->getLine()."\n");
+    if (str_contains($e->getMessage(), 'category_migration') || str_contains($e->getMessage(), 'category_slug_redirects')) {
+        $stream("\nRun migrations first:\n{$base}&migrate=1\n");
+    }
+    $stream("</pre>");
+    exit;
+}
 $stream('Catalog: '.number_format($preview['total_products'])." products, ".number_format($preview['categorized_products'])." categorised\n");
 $stream('On legacy categories: '.number_format($preview['legacy_products'])."\n");
 $stream('Reorg would move: '.number_format($preview['reorganization']['products_to_move'])."\n");
