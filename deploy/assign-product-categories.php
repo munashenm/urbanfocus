@@ -38,32 +38,44 @@ $base = 'https://'.$host.'/assign-product-categories.php?key='.urlencode((string
 header('Content-Type: text/html; charset=utf-8');
 echo '<pre style="font:14px/1.5 monospace;white-space:pre-wrap">';
 
+echo "=== Assign products to categories ===\n";
+echo 'Time: '.date('Y-m-d H:i:s')."\n";
+echo "Laravel root: {$laravelRoot}\n";
+echo 'vendor exists: '.(is_dir($laravelRoot.'/vendor') ? 'yes' : 'NO')."\n\n";
+
 if (! is_dir($laravelRoot.'/vendor')) {
-    exit("STOP: urbanfocus/vendor missing — run setup or composer install first.\n");
+    exit("STOP: urbanfocus/vendor missing — run setup or composer install first.\n</pre>");
 }
 
-require $laravelRoot.'/vendor/autoload.php';
-$app = require_once $laravelRoot.'/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
-
-@set_time_limit(0);
-@ini_set('memory_limit', '512M');
-
-/** @var \App\Services\ProductSeoService $seo */
-$seo = $app->make(\App\Services\ProductSeoService::class);
-
+// Help page only — no Laravel boot (avoids HTTP 500 when you just open the URL)
 if (! isset($_GET['dry-run']) && ! isset($_GET['run'])) {
-    echo "=== Assign products to categories ===\n";
-    echo 'Time: '.date('Y-m-d H:i:s')."\n\n";
-    echo "Maps uncategorised products and legacy categories (e.g. Laptops & Notebooks)\n";
-    echo "into the current tree such as Computing & Office Technology → Laptops.\n\n";
+    echo "Maps legacy/uncategorised products into the canonical tree\n";
+    echo "(e.g. Computing & Office Technology → Laptops).\n\n";
     echo "1. Preview (no changes):\n   {$base}&dry-run=1\n\n";
     echo "2. Test 25 products:\n   {$base}&run=1&limit=25\n\n";
     echo "3. Assign all products:\n   {$base}&run=1\n\n";
     echo "Tip: back up your database in phpMyAdmin before step 3.\n";
     echo "DELETE this file from public_html when finished.\n</pre>";
     exit;
+}
+
+try {
+    require $laravelRoot.'/vendor/autoload.php';
+    $app = require_once $laravelRoot.'/bootstrap/app.php';
+    $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+    $kernel->bootstrap();
+} catch (Throwable $e) {
+    exit('Laravel boot failed: '.$e->getMessage()."\n".$e->getFile().':'.$e->getLine()."\n</pre>");
+}
+
+@set_time_limit(0);
+@ini_set('memory_limit', '512M');
+
+/** @var \App\Services\ProductSeoService $seo */
+try {
+    $seo = $app->make(\App\Services\ProductSeoService::class);
+} catch (Throwable $e) {
+    exit('ProductSeoService error: '.$e->getMessage()."\n</pre>");
 }
 
 $dryRun = isset($_GET['dry-run']);

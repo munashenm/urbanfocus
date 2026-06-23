@@ -20,20 +20,6 @@ declare(strict_types=1);
 const MERGE_KEY = 'CHANGE-ME-merge-categories-secret';
 const DEFAULT_BATCH = 200;
 
-register_shutdown_function(static function (): void {
-    $error = error_get_last();
-    if (! $error || ! in_array($error['type'], [E_ERROR, E_PARSE, E_COMPILE_ERROR, E_CORE_ERROR], true)) {
-        return;
-    }
-    if (! headers_sent()) {
-        header('Content-Type: text/plain; charset=utf-8');
-        http_response_code(500);
-    }
-    echo "\n\nFATAL PHP ERROR:\n";
-    echo $error['message']."\n";
-    echo $error['file'].':'.$error['line']."\n";
-});
-
 header('X-Robots-Tag: noindex, nofollow');
 header('Cache-Control: no-store, max-age=0');
 
