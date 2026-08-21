@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class Product extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'category_id',
@@ -102,6 +104,15 @@ class Product extends Model
     public function getIsOnSaleAttribute(): bool
     {
         return $this->sale_price && $this->sale_price > 0 && $this->sale_price < $this->price;
+    }
+
+    public function discountPercent(): ?int
+    {
+        if (! $this->is_on_sale || (float) $this->price <= 0) {
+            return null;
+        }
+
+        return (int) round((((float) $this->price - $this->effective_price) / (float) $this->price) * 100);
     }
 
     public function getPrimaryImageUrlAttribute(): ?string
@@ -303,7 +314,7 @@ class Product extends Model
         return $query;
     }
 
-    public static function applyStorefrontStockFilter($query, ?\Illuminate\Http\Request $request = null): void
+    public static function applyStorefrontStockFilter($query, ?Request $request = null): void
     {
         if (config('catalog.hide_out_of_stock', true)) {
             if (! $request?->boolean('include_out_of_stock')) {

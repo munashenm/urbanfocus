@@ -56,6 +56,8 @@ return [
     'robots_disallow' => [
         '/admin',
         '/cart',
+        '/wishlist',
+        '/compare',
         '/checkout',
         '/account',
         '/login',

@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Str;
+
 if (! function_exists('public_asset_version')) {
     /** Cache-busting version for a file in Laravel's public directory. */
     function public_asset_version(string $path): ?int
@@ -76,7 +78,7 @@ if (! function_exists('seo_meta_description')) {
         $max = (int) config('seo.defaults.max_description_length', 160);
 
         if ($base !== '' && mb_strlen($base) >= $min) {
-            return \Illuminate\Support\Str::limit($base, $max, '');
+            return Str::limit($base, $max, '');
         }
 
         $name = $context['name'] ?? '';
@@ -111,13 +113,13 @@ if (! function_exists('seo_meta_description')) {
         foreach ($suffixes as $suffix) {
             $combined = $prefix.$suffix;
             if (mb_strlen($combined) >= $min) {
-                return \Illuminate\Support\Str::limit($combined, $max, '');
+                return Str::limit($combined, $max, '');
             }
         }
 
         $fallback = $prefix.($suffixes[0] ?? 'Shop IT products online at Urban Focus with nationwide delivery across South Africa.');
 
-        return \Illuminate\Support\Str::limit($fallback, $max, '');
+        return Str::limit($fallback, $max, '');
     }
 }
 
@@ -151,7 +153,7 @@ if (! function_exists('clean_html')) {
         $allowedAttrs = ['href', 'title', 'alt', 'src', 'width', 'height', 'colspan', 'rowspan', 'target', 'rel', 'id', 'class'];
 
         $previous = libxml_use_internal_errors(true);
-        $dom = new \DOMDocument('1.0', 'UTF-8');
+        $dom = new DOMDocument('1.0', 'UTF-8');
         $dom->loadHTML(
             '<?xml encoding="UTF-8"?><div id="uf-clean-root">'.$html.'</div>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
@@ -159,15 +161,15 @@ if (! function_exists('clean_html')) {
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
-        $xpath = new \DOMXPath($dom);
+        $xpath = new DOMXPath($dom);
         $root = $xpath->query('//*[@id="uf-clean-root"]')->item(0);
 
-        if (! $root instanceof \DOMElement) {
+        if (! $root instanceof DOMElement) {
             return '';
         }
 
         foreach (iterator_to_array($xpath->query('//*')) as $node) {
-            if (! $node instanceof \DOMElement || $node === $root) {
+            if (! $node instanceof DOMElement || $node === $root) {
                 continue;
             }
 
@@ -215,5 +217,29 @@ if (! function_exists('clean_html')) {
         }
 
         return $out;
+    }
+}
+
+if (! function_exists('whatsapp_url')) {
+    /** WhatsApp click-to-chat URL for the configured business number. */
+    function whatsapp_url(?string $message = null): ?string
+    {
+        $raw = preg_replace('/\D+/', '', (string) config('business.whatsapp')) ?? '';
+
+        if ($raw === '') {
+            return null;
+        }
+
+        if (str_starts_with($raw, '0')) {
+            $raw = '27'.substr($raw, 1);
+        }
+
+        $url = 'https://wa.me/'.$raw;
+
+        if ($message) {
+            $url .= '?text='.rawurlencode($message);
+        }
+
+        return $url;
     }
 }

@@ -6,14 +6,17 @@ use App\Models\Article;
 use App\Models\Product;
 use App\Observers\ArticleObserver;
 use App\Observers\ProductObserver;
+use App\Services\CartService;
+use App\Services\CompareService;
+use App\Services\WishlistService;
 use App\Support\PublicAssetSync;
 use App\View\Composers\LayoutComposer;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
         if ($publicPath = env('PUBLIC_PATH')) {
             $this->app->usePublicPath($publicPath);
         }
+
+        $this->app->singleton(CartService::class);
+        $this->app->singleton(WishlistService::class);
+        $this->app->singleton(CompareService::class);
     }
 
     public function boot(): void

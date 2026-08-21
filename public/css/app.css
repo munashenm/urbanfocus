@@ -753,3 +753,176 @@ a:hover { color: var(--uf-blue); }
 }
 .category-sibling-pill:hover { border-color: var(--uf-blue); color: var(--uf-blue); }
 .category-sibling-pill.is-active { background: var(--uf-blue); border-color: var(--uf-blue); color: #fff; }
+
+.header-actions { flex-shrink: 0; }
+.header-icon-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    color: var(--uf-navy);
+    text-decoration: none;
+}
+.header-icon-btn:hover,
+.header-icon-btn.is-active {
+    background: var(--uf-gray-100);
+    color: var(--uf-blue);
+}
+.header-icon-badge {
+    position: absolute;
+    top: 2px;
+    right: 0;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--uf-blue);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+}
+
+.product-card-image-wrap { position: relative; }
+.product-card-tools {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    z-index: 2;
+}
+.product-tool-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--uf-gray-200);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.95);
+    color: var(--uf-navy);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+.product-tool-btn:hover,
+.product-tool-btn.is-active {
+    border-color: var(--uf-blue);
+    color: var(--uf-blue);
+    background: #fff;
+}
+.badge-sale-inline {
+    display: inline-block;
+    margin-left: 0.5rem;
+    background: rgba(0,136,255,0.12);
+    color: var(--uf-blue-dark);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    vertical-align: middle;
+}
+
+.cart-item-thumb {
+    display: block;
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    background: var(--uf-gray-100);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.cart-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.compare-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    border-top: 1px solid var(--uf-gray-200);
+    box-shadow: 0 -6px 24px rgba(10,22,40,0.08);
+    z-index: 1035;
+}
+.compare-bar-items {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    flex: 1;
+}
+.compare-bar-thumb {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--uf-gray-200);
+    background: var(--uf-gray-100);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.compare-bar-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.compare-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--uf-gray-200);
+    border-radius: 12px;
+    background: #fff;
+}
+.compare-table { min-width: 640px; }
+.compare-table .compare-label {
+    width: 160px;
+    background: var(--uf-gray-100);
+    color: var(--uf-navy);
+    font-weight: 600;
+    vertical-align: top;
+}
+.compare-image {
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+    background: var(--uf-gray-100);
+    border-radius: 8px;
+}
+.compare-product { min-width: 180px; }
+
+.whatsapp-float {
+    position: fixed;
+    right: 1.15rem;
+    bottom: 1.15rem;
+    z-index: 1040;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #25d366;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 999px;
+    padding: 0.7rem 0.95rem 0.7rem 0.8rem;
+    box-shadow: 0 10px 24px rgba(37,211,102,0.35);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.whatsapp-float:hover { color: #fff; background: #1ebe5d; }
+.whatsapp-float-label { line-height: 1; }
+
+body.has-compare-bar { padding-bottom: 72px; }
+body.has-mobile-buy-bar.has-compare-bar { padding-bottom: 144px; }
+body.has-compare-bar .whatsapp-float,
+body.has-mobile-buy-bar .whatsapp-float { bottom: 5.5rem; }
+body.has-mobile-buy-bar.has-compare-bar .whatsapp-float { bottom: 9.25rem; }
+
+@media (max-width: 768px) {
+    .whatsapp-float-label { display: none; }
+    .whatsapp-float { padding: 0.75rem; border-radius: 50%; }
+}

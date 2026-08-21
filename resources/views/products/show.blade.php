@@ -49,12 +49,21 @@
                 @if($product->model_number)<span>Model: <strong>{{ $product->model_number }}</strong></span>@endif
             </div>
 
+            @php
+                $inWishlist = app(\App\Services\WishlistService::class)->has($product->id);
+                $inCompare = app(\App\Services\CompareService::class)->has($product->id);
+                $discount = $product->discountPercent();
+            @endphp
+
             <div class="my-3">
                 @if($product->is_on_sale)
                     <span class="price-old h5">R {{ number_format($product->price, 2) }}</span>
                 @endif
                 <span class="price-current h3">R {{ number_format($product->effective_price, 2) }}</span>
                 <span class="text-muted small"> incl. VAT</span>
+                @if($discount)
+                    <span class="badge-sale-inline">Save {{ $discount }}%</span>
+                @endif
             </div>
 
             <div class="product-meta-cards mb-4">
@@ -104,6 +113,14 @@
                         </form>
                     </div>
                 @endif
+                <form action="{{ route('wishlist.toggle', $product) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-primary btn-lg">{{ $inWishlist ? 'Saved to Wishlist' : 'Save to Wishlist' }}</button>
+                </form>
+                <form action="{{ route('compare.toggle', $product) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-secondary btn-lg">{{ $inCompare ? 'In Compare' : 'Compare' }}</button>
+                </form>
                 <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg">Request Bulk Quote</a>
             </div>
 

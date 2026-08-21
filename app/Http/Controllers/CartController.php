@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Services\CartService;
+use App\Services\WishlistService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -44,5 +45,16 @@ class CartController extends Controller
         $this->cart->remove($product->id);
 
         return redirect()->route('cart.index')->with('success', 'Item removed.');
+    }
+
+    public function saveForLater(Product $product, WishlistService $wishlist): RedirectResponse
+    {
+        if (! $wishlist->add($product->id)) {
+            return redirect()->route('cart.index')->with('warning', 'Your wishlist is full. Remove an item before saving another.');
+        }
+
+        $this->cart->remove($product->id);
+
+        return redirect()->route('wishlist.index')->with('success', $product->name.' saved for later.');
     }
 }
