@@ -7,6 +7,7 @@ use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\CatalogDeduper;
 use App\Services\CategoryMapperService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -19,22 +20,25 @@ class HomeController extends Controller
 {
     public function index(): View
     {
-        $featuredProducts = $this->remember('home.featured_v3', fn () => $this->curatedFeaturedProducts(8));
+        $featuredProducts = $this->remember('home.featured_v4', fn () => $this->curatedFeaturedProducts(8));
 
-        $latestProducts = $this->remember('home.latest_v1', fn () => Product::with('images')
-            ->forStorefront()->latest()->take(8)->get());
+        $latestProducts = $this->remember('home.latest_v3', function () {
+            $products = Product::with('images')->forStorefront()->latest()->take(16)->get();
 
-        $topSellers = $this->remember('home.top_sellers_v3', fn () => $this->topSellerProducts(8));
+            return app(CatalogDeduper::class)->uniqueCollection($products)->take(8);
+        });
 
-        $networkingProducts = $this->remember('home.networking_v4', fn () => $this->networkingShowcaseProducts(8));
+        $topSellers = $this->remember('home.top_sellers_v4', fn () => $this->topSellerProducts(8));
 
-        $laptopProducts = $this->remember('home.laptops_v4', fn () => $this->categoryProducts(
+        $networkingProducts = $this->remember('home.networking_v5', fn () => $this->networkingShowcaseProducts(8));
+
+        $laptopProducts = $this->remember('home.laptops_v5', fn () => $this->categoryProducts(
             'computing-office/laptops',
             8,
             config('homepage.section_product_brands.laptops', [])
         ));
 
-        $securityProducts = $this->remember('home.security_v1', fn () => $this->categoryProducts(
+        $securityProducts = $this->remember('home.security_v2', fn () => $this->categoryProducts(
             'security-surveillance',
             8,
             config('homepage.section_product_brands.cctv', [])
@@ -130,18 +134,25 @@ class HomeController extends Controller
     protected function dedupeHomepageRows(array $rows): array
     {
         $used = [];
+        $deduper = app(CatalogDeduper::class);
 
-        return array_map(function ($products) use (&$used) {
+        return array_map(function ($products) use (&$used, $deduper) {
             if ($products->isEmpty()) {
                 return $products;
             }
 
-            return $products->reject(function (Product $product) use (&$used) {
-                if (isset($used[$product->id])) {
-                    return true;
+            return $products->reject(function (Product $product) use (&$used, $deduper) {
+                $keys = ['id:'.$product->id, $deduper->listingKey($product)];
+
+                foreach ($keys as $key) {
+                    if (isset($used[$key])) {
+                        return true;
+                    }
                 }
 
-                $used[$product->id] = true;
+                foreach ($keys as $key) {
+                    $used[$key] = true;
+                }
 
                 return false;
             })->values();

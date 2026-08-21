@@ -23,8 +23,6 @@
                 <ul class="list-unstyled footer-links">
                     <li><a href="{{ route('home') }}">Home</a></li>
                     <li><a href="{{ route('shop.index') }}">Products</a></li>
-                    <li><a href="{{ route('wishlist.index') }}">Wishlist</a></li>
-                    <li><a href="{{ route('compare.index') }}">Compare products</a></li>
                     <li><a href="{{ route('brands.index') }}">Brands</a></li>
                     <li><a href="{{ route('about') }}">About Us</a></li>
                     <li><a href="{{ route('contact') }}">Contact Us</a></li>

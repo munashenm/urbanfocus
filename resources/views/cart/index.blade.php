@@ -33,14 +33,6 @@
                                             <div>
                                                 <a href="{{ route('products.show', $item['product']) }}" class="fw-semibold text-decoration-none">{{ $item['product']->name }}</a>
                                                 @if($item['product']->sku)<br><small class="text-muted">{{ $item['product']->sku }}</small>@endif
-                                                <div class="mt-1">
-                                                    <button
-                                                        type="submit"
-                                                        class="btn btn-link btn-sm p-0"
-                                                        formaction="{{ route('cart.save-for-later', $item['product']) }}"
-                                                        formmethod="POST"
-                                                    >Save for later</button>
-                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -77,9 +69,8 @@
     @else
         <div class="text-center py-5 checkout-card">
             <h2 class="h4 fw-bold mb-2">Your cart is empty</h2>
-            <p class="text-muted mb-4">Browse networking, laptops and security products — or check your wishlist for items you saved earlier.</p>
-            <a href="{{ route('shop.index') }}" class="btn btn-primary me-2">Start Shopping</a>
-            <a href="{{ route('wishlist.index') }}" class="btn btn-outline-primary">View wishlist</a>
+            <p class="text-muted mb-4">Browse networking, laptops and security products to add items to your cart.</p>
+            <a href="{{ route('shop.index') }}" class="btn btn-primary">Start Shopping</a>
         </div>
     @endif
 </div>

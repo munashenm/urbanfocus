@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\CatalogDeduper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -300,6 +301,7 @@ class Product extends Model
     public function scopeForStorefront($query, ?bool $includeOutOfStock = null)
     {
         $query->where('is_active', true);
+        $query->withoutDuplicateListings();
 
         $includeOutOfStock ??= ! config('catalog.hide_out_of_stock', true);
 
@@ -314,8 +316,21 @@ class Product extends Model
         return $query;
     }
 
+    public function scopeWithoutDuplicateListings($query)
+    {
+        $ids = app(CatalogDeduper::class)->idsToHide();
+
+        if ($ids !== []) {
+            $query->whereNotIn($this->getTable().'.id', $ids);
+        }
+
+        return $query;
+    }
+
     public static function applyStorefrontStockFilter($query, ?Request $request = null): void
     {
+        $query->withoutDuplicateListings();
+
         if (config('catalog.hide_out_of_stock', true)) {
             if (! $request?->boolean('include_out_of_stock')) {
                 $query->availableInStock();

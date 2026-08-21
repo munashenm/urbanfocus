@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\Article;
+use App\Models\Author;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Tag;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -15,7 +17,7 @@ class SeoService
 {
     public function sitemapXml(): string
     {
-        return $this->rememberSitemap('sitemap.main.v3', function () {
+        return $this->rememberSitemap('sitemap.main.v4', function () {
             $urls = $this->baseUrls();
 
             Category::where('is_active', true)->visibleInCatalog()->with('parent')->get()->each(function (Category $category) use (&$urls) {
@@ -28,6 +30,7 @@ class SeoService
 
             Product::query()
                 ->where('is_active', true)
+                ->withoutDuplicateListings()
                 ->with('images')
                 ->orderBy('id')
                 ->lazyById(200)
@@ -51,7 +54,7 @@ class SeoService
 
     public function imageSitemapXml(): string
     {
-        return $this->rememberSitemap('sitemap.images.v2', function () {
+        return $this->rememberSitemap('sitemap.images.v3', function () {
             return $this->buildProductImageSitemap();
         });
     }
@@ -193,7 +196,7 @@ class SeoService
 
     public function clearCache(): void
     {
-        foreach (['sitemap.xml', 'sitemap-images.xml', 'sitemap.main.v2', 'sitemap.main.v3', 'sitemap.images.v2'] as $key) {
+        foreach (['sitemap.xml', 'sitemap-images.xml', 'sitemap.main.v2', 'sitemap.main.v3', 'sitemap.main.v4', 'sitemap.images.v2', 'sitemap.images.v3'] as $key) {
             Cache::forget($key);
         }
 
@@ -289,10 +292,10 @@ class SeoService
         }
 
         if (Schema::hasTable('tags')) {
-            \App\Models\Tag::query()
+            Tag::query()
                 ->whereHas('articles', fn ($q) => $q->published())
                 ->get()
-                ->each(function (\App\Models\Tag $tag) use (&$urls) {
+                ->each(function (Tag $tag) use (&$urls) {
                     $urls[] = [
                         'loc' => route('blog.tag', $tag),
                         'changefreq' => 'weekly',
@@ -302,10 +305,10 @@ class SeoService
         }
 
         if (Schema::hasTable('authors')) {
-            \App\Models\Author::where('is_active', true)
+            Author::where('is_active', true)
                 ->whereHas('articles', fn ($q) => $q->published())
                 ->get()
-                ->each(function (\App\Models\Author $author) use (&$urls) {
+                ->each(function (Author $author) use (&$urls) {
                     $urls[] = [
                         'loc' => route('blog.author', $author),
                         'changefreq' => 'monthly',
@@ -361,6 +364,7 @@ class SeoService
 
         Product::query()
             ->where('is_active', true)
+            ->withoutDuplicateListings()
             ->whereHas('images')
             ->with('images')
             ->orderBy('id')

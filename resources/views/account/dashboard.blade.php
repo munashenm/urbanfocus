@@ -8,8 +8,6 @@
     <h1 class="h2 fw-bold mb-4">My Account</h1>
     <div class="d-flex flex-wrap gap-2 mb-4">
         <a href="{{ route('account.profile.edit') }}" class="btn btn-outline-primary btn-sm">Edit Profile &amp; Password</a>
-        <a href="{{ route('wishlist.index') }}" class="btn btn-outline-primary btn-sm">Wishlist</a>
-        <a href="{{ route('compare.index') }}" class="btn btn-outline-primary btn-sm">Compare</a>
         @if(auth()->user()->isAdmin())
             <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">Admin Dashboard</a>
         @endif

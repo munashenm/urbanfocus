@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Mail\LowStockAlert;
 use App\Models\Product;
+use App\Services\CatalogDeduper;
 use App\Services\Marketing\MakeWebhookService;
 use App\Services\SeoService;
 use App\Services\Social\SocialPostingService;
@@ -26,11 +27,13 @@ class ProductObserver
         $this->safe(fn () => $this->handleMakeWebhook($product));
         $this->safe(fn () => $this->handleStockAlerts($product));
         $this->safe(fn () => $this->seo->clearCache());
+        $this->safe(fn () => app(CatalogDeduper::class)->clearCache());
     }
 
     public function deleted(Product $product): void
     {
         $this->safe(fn () => $this->seo->clearCache());
+        $this->safe(fn () => app(CatalogDeduper::class)->clearCache());
     }
 
     protected function handleSocialQueue(Product $product): void

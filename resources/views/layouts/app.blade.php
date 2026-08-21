@@ -53,7 +53,7 @@
     @stack('head')
     @stack('schema')
 </head>
-<body class="d-flex flex-column min-vh-100{{ app(\App\Services\CompareService::class)->count() && ! request()->routeIs('compare.index') ? ' has-compare-bar' : '' }}">
+<body class="d-flex flex-column min-vh-100">
     @include('partials.analytics')
     <a href="#main-content" class="visually-hidden-focusable skip-link">Skip to content</a>
     @include('partials.header')
@@ -71,7 +71,6 @@
     <main id="main-content" class="flex-grow-1">@yield('content')</main>
 
     @include('partials.footer')
-    @include('partials.compare-bar')
     @include('partials.whatsapp-button')
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>

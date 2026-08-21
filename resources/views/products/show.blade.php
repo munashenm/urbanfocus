@@ -50,8 +50,6 @@
             </div>
 
             @php
-                $inWishlist = app(\App\Services\WishlistService::class)->has($product->id);
-                $inCompare = app(\App\Services\CompareService::class)->has($product->id);
                 $discount = $product->discountPercent();
             @endphp
 
@@ -113,14 +111,6 @@
                         </form>
                     </div>
                 @endif
-                <form action="{{ route('wishlist.toggle', $product) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-primary btn-lg">{{ $inWishlist ? 'Saved to Wishlist' : 'Save to Wishlist' }}</button>
-                </form>
-                <form action="{{ route('compare.toggle', $product) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-secondary btn-lg">{{ $inCompare ? 'In Compare' : 'Compare' }}</button>
-                </form>
                 <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg">Request Bulk Quote</a>
             </div>
 

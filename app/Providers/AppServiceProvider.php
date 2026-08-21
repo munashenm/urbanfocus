@@ -7,8 +7,6 @@ use App\Models\Product;
 use App\Observers\ArticleObserver;
 use App\Observers\ProductObserver;
 use App\Services\CartService;
-use App\Services\CompareService;
-use App\Services\WishlistService;
 use App\Support\PublicAssetSync;
 use App\View\Composers\LayoutComposer;
 use Illuminate\Pagination\Paginator;
@@ -29,8 +27,6 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->app->singleton(CartService::class);
-        $this->app->singleton(WishlistService::class);
-        $this->app->singleton(CompareService::class);
     }
 
     public function boot(): void

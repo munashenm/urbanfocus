@@ -4,13 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\CatalogDeduper;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    public function show(Product $product): View
+    public function show(Product $product): View|RedirectResponse
     {
         abort_unless($product->is_active, 404);
+
+        $canonical = app(CatalogDeduper::class)->canonicalProduct($product);
+        if ($canonical->id !== $product->id) {
+            return redirect()->route('products.show', $canonical, 301);
+        }
 
         $product->increment('views');
         $product->load(['category', 'images']);

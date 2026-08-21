@@ -35,6 +35,7 @@ class BrandController extends Controller
 
         $products = Product::with(['category', 'images'])
             ->where('is_active', true)
+            ->withoutDuplicateListings()
             ->availableInStock()
             ->where('brand', $brand->name)
             ->latest()

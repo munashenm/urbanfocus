@@ -27,22 +27,8 @@
         </a>
         @php
             $cartCount = app(\App\Services\CartService::class)->count();
-            $wishlistCount = app(\App\Services\WishlistService::class)->count();
-            $compareCount = app(\App\Services\CompareService::class)->count();
         @endphp
         <div class="header-actions d-flex align-items-center gap-1 ms-auto order-lg-3">
-            <a class="header-icon-btn {{ request()->routeIs('wishlist.*') ? 'is-active' : '' }}" href="{{ route('wishlist.index') }}" aria-label="Wishlist{{ $wishlistCount ? ' ('.$wishlistCount.' items)' : '' }}" title="Wishlist">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 16 16" aria-hidden="true"><path d="m8 13.5-5.2-5.05A3.3 3.3 0 1 1 8 3.55a3.3 3.3 0 1 1 5.2 4.9L8 13.5z"/></svg>
-                @if($wishlistCount > 0)
-                    <span class="header-icon-badge">{{ $wishlistCount }}</span>
-                @endif
-            </a>
-            <a class="header-icon-btn {{ request()->routeIs('compare.*') ? 'is-active' : '' }}" href="{{ route('compare.index') }}" aria-label="Compare products{{ $compareCount ? ' ('.$compareCount.' items)' : '' }}" title="Compare">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2v12H2V2h2zm10 0v12h-2V2h2zM9.5 4v8H6.5V4h3z"/></svg>
-                @if($compareCount > 0)
-                    <span class="header-icon-badge">{{ $compareCount }}</span>
-                @endif
-            </a>
             <a class="header-icon-btn header-icon-btn--cart {{ request()->routeIs('cart.*') ? 'is-active' : '' }}" href="{{ route('cart.index') }}" aria-label="Cart{{ $cartCount ? ' ('.$cartCount.' items)' : '' }}" title="Cart">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l1.313 7h8.17l1.313-7zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/></svg>
                 @if($cartCount > 0)
