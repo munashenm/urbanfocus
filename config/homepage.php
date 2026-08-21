@@ -122,6 +122,7 @@ return [
     */
     'section_product_brands' => [
         'laptops' => ['dell', 'hp', 'lenovo'],
+        'cctv' => ['hikvision', 'dahua'],
     ],
 
     /*

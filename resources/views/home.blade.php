@@ -142,22 +142,14 @@
     </div>
 </section>
 
-@if($dealProducts->count())
-<section class="py-5">
-    <div class="container">
-        @include('partials.section-header', [
-            'title' => 'Daily Deals',
-            'subtitle' => 'Limited-time specials on selected IT products.',
-            'url' => route('shop.index', ['deals' => 1]),
-            'linkLabel' => 'All Deals',
-        ])
-        <div class="row g-4">
-            @foreach($dealProducts as $product)
-                <div class="col-6 col-md-4 col-lg-3">@include('partials.product-card', ['product' => $product])</div>
-            @endforeach
-        </div>
-    </div>
-</section>
+@if($latestProducts->count())
+    @include('partials.home-product-section', [
+        'title' => 'Current Range',
+        'subtitle' => 'Live catalogue products currently available to order.',
+        'url' => route('shop.index'),
+        'linkLabel' => 'Shop All Products',
+        'products' => $latestProducts,
+    ])
 @endif
 
 @if($topSellers->count())
@@ -191,6 +183,17 @@
         'url' => route('shop.index', ['category' => 'networking-connectivity']),
         'products' => $networkingProducts,
         'bgLight' => true,
+    ])
+@endif
+
+@if($securityProducts->count())
+    @include('partials.home-product-section', [
+        'title' => 'CCTV & Security',
+        'subtitle' => 'Cameras, NVRs and access control from Hikvision, Dahua and more.',
+        'url' => route('shop.index', ['category' => 'security-surveillance']),
+        'products' => $securityProducts,
+        'sectionKey' => 'cctv',
+        'sectionBrands' => $sectionBrands,
     ])
 @endif
 

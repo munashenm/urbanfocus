@@ -2,43 +2,42 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Article;
 use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\Article;
 use App\Services\CategoryMapperService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
     public function index(): View
     {
-        $featuredProducts = $this->remember('home.featured', fn () => Product::with('images')
-            ->forStorefront()->where('is_featured', true)->latest()->take(8)->get());
+        $featuredProducts = $this->remember('home.featured_v3', fn () => $this->curatedFeaturedProducts(8));
 
-        $dealProducts = $this->remember('home.deals', function () {
-            $q = Product::with('images')->forStorefront();
-            if (Schema::hasColumn('products', 'is_deal')) {
-                $q->where(fn ($w) => $w->where('is_deal', true)->orWhereNotNull('sale_price'));
-            } else {
-                $q->whereNotNull('sale_price');
-            }
+        $latestProducts = $this->remember('home.latest_v1', fn () => Product::with('images')
+            ->forStorefront()->latest()->take(8)->get());
 
-            return $q->latest()->take(8)->get();
-        });
+        $topSellers = $this->remember('home.top_sellers_v3', fn () => $this->topSellerProducts(8));
 
-        $topSellers = $this->remember('home.top_sellers_v2', fn () => $this->topSellerProducts(8));
+        $networkingProducts = $this->remember('home.networking_v4', fn () => $this->networkingShowcaseProducts(8));
 
-        $networkingProducts = $this->remember('home.networking_v3', fn () => $this->networkingShowcaseProducts(8));
-
-        $laptopProducts = $this->remember('home.laptops_v3', fn () => $this->categoryProducts(
+        $laptopProducts = $this->remember('home.laptops_v4', fn () => $this->categoryProducts(
             'computing-office/laptops',
             8,
             config('homepage.section_product_brands.laptops', [])
+        ));
+
+        $securityProducts = $this->remember('home.security_v1', fn () => $this->categoryProducts(
+            'security-surveillance',
+            8,
+            config('homepage.section_product_brands.cctv', [])
         ));
 
         $categories = $this->remember('home.categories', fn () => Category::where('is_active', true)
@@ -49,8 +48,18 @@ class HomeController extends Controller
             ->take(12)
             ->get());
 
-        $newProducts = $this->remember('home.new', fn () => Product::with('images')
-            ->forStorefront()->latest()->take(8)->get());
+        [$latestProducts, $topSellers, $laptopProducts, $networkingProducts, $securityProducts, $featuredProducts] = $this->dedupeHomepageRows([
+            $latestProducts,
+            $topSellers,
+            $laptopProducts,
+            $networkingProducts,
+            $securityProducts,
+            $featuredProducts,
+        ]);
+
+        if ($featuredProducts->count() < 4) {
+            $featuredProducts = collect();
+        }
 
         $brands = $this->remember('home.brands', function () {
             if (Schema::hasTable('brands')) {
@@ -59,7 +68,7 @@ class HomeController extends Controller
 
             return Product::where('is_active', true)->whereNotNull('brand')->distinct()->pluck('brand')
                 ->take(12)
-                ->map(fn ($name) => (object) ['name' => $name, 'slug' => \Illuminate\Support\Str::slug($name), 'logo' => null]);
+                ->map(fn ($name) => (object) ['name' => $name, 'slug' => Str::slug($name), 'logo' => null]);
         });
 
         $banners = Schema::hasTable('banners')
@@ -90,13 +99,56 @@ class HomeController extends Controller
         $sectionBrands = $this->remember('home.section_brands', fn () => $this->sectionBrands());
 
         return view('home', compact(
-            'featuredProducts', 'dealProducts', 'topSellers', 'networkingProducts',
-            'laptopProducts', 'categories', 'newProducts', 'brands', 'banners',
+            'featuredProducts', 'latestProducts', 'topSellers', 'networkingProducts',
+            'laptopProducts', 'securityProducts', 'categories', 'brands', 'banners',
             'articles', 'featuredArticle', 'heroSlides', 'solutionBlocks', 'categoryIcons', 'sectionBrands'
         ));
     }
 
-    /** @return array<string, \Illuminate\Support\Collection<int, Brand>> */
+    /**
+     * Featured row only when there is a real curated set from the live catalogue.
+     * Sparse leftover "deal" flags should not become a one-product homepage section.
+     */
+    protected function curatedFeaturedProducts(int $limit)
+    {
+        $featured = Product::with('images')
+            ->forStorefront()
+            ->where('is_featured', true)
+            ->latest()
+            ->take($limit)
+            ->get();
+
+        return $featured->count() >= 4 ? $featured : collect();
+    }
+
+    /**
+     * Keep homepage rows unique so the same SKU is not repeated down the page.
+     *
+     * @param  list<Collection<int, Product>>  $rows
+     * @return list<Collection<int, Product>>
+     */
+    protected function dedupeHomepageRows(array $rows): array
+    {
+        $used = [];
+
+        return array_map(function ($products) use (&$used) {
+            if ($products->isEmpty()) {
+                return $products;
+            }
+
+            return $products->reject(function (Product $product) use (&$used) {
+                if (isset($used[$product->id])) {
+                    return true;
+                }
+
+                $used[$product->id] = true;
+
+                return false;
+            })->values();
+        }, $rows);
+    }
+
+    /** @return array<string, Collection<int, Brand>> */
     protected function sectionBrands(): array
     {
         $map = config('homepage.section_brands', []);
