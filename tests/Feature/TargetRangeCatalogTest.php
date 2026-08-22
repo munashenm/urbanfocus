@@ -30,16 +30,21 @@ class TargetRangeCatalogTest extends TestCase
 
         $this->assertSame(9, $result['created']);
         $this->assertSame(0, $result['skipped']);
+        $this->assertSame(0, $result['updated']);
         $this->assertSame(0, $result['errors']);
 
         $router = Product::where('sku', 'RUTX50')->first();
         $this->assertNotNull($router);
-        $this->assertSame(10400.0, (float) $router->price);
+        $this->assertSame(11450.0, (float) $router->price);
         $this->assertFalse($router->manage_stock);
         $this->assertTrue($router->in_stock);
         $this->assertSame(0, $router->stock_quantity);
         $this->assertSame('Teltonika', $router->brand);
         $this->assertTrue($router->images()->exists());
+        $this->assertSame(
+            TargetRangeCatalogService::CATALOG_RANGE_SPEC_VALUE,
+            $router->specifications[TargetRangeCatalogService::CATALOG_RANGE_SPEC_KEY] ?? null
+        );
     }
 
     public function test_skips_existing_sku_and_does_not_duplicate(): void
@@ -144,7 +149,7 @@ class TargetRangeCatalogTest extends TestCase
         $pricing = new ProductPricingService;
 
         $this->assertTrue($pricing->applyToProduct($product->fresh()));
-        $this->assertSame(10400.0, (float) $product->fresh()->price);
+        $this->assertSame(11450.0, (float) $product->fresh()->price);
     }
 
     public function test_full_catalog_creates_one_hundred_unique_products_then_skips_on_rerun(): void
@@ -163,8 +168,51 @@ class TargetRangeCatalogTest extends TestCase
         $second = app(TargetRangeCatalogService::class)->sync();
 
         $this->assertSame(0, $second['created']);
+        $this->assertSame(0, $second['updated']);
         $this->assertSame(100, $second['skipped']);
         $this->assertSame(100, Product::count());
+    }
+
+    public function test_reprices_previously_added_catalog_products_with_ten_percent_topup(): void
+    {
+        $product = Product::factory()->create([
+            'sku' => 'RUTX50',
+            'name' => 'Teltonika RUTX50 5G Industrial Router Dual SIM',
+            'slug' => 'existing-rutx50-street',
+            'brand' => 'Teltonika',
+            'price' => 10400,
+            'cost_price' => 8900,
+        ]);
+
+        $result = app(TargetRangeCatalogService::class)->sync();
+
+        $this->assertSame(8, $result['created']);
+        $this->assertSame(1, $result['updated']);
+        $this->assertSame(0, $result['skipped']);
+        $this->assertSame(11450.0, (float) $product->fresh()->price);
+        $this->assertGreaterThan(0, (float) $product->fresh()->cost_price);
+        $this->assertSame(
+            TargetRangeCatalogService::CATALOG_RANGE_SPEC_VALUE,
+            $product->fresh()->specifications[TargetRangeCatalogService::CATALOG_RANGE_SPEC_KEY] ?? null
+        );
+    }
+
+    public function test_does_not_reprice_preexisting_store_skus_that_are_not_ours(): void
+    {
+        $product = Product::factory()->create([
+            'sku' => 'AD3U3ET',
+            'name' => 'HP EliteBook 8 G1i 16 already listed',
+            'slug' => 'existing-elitebook-16',
+            'brand' => 'HP',
+            'price' => 1999,
+        ]);
+
+        $result = app(TargetRangeCatalogService::class)->sync();
+
+        $this->assertSame(8, $result['created']);
+        $this->assertSame(0, $result['updated']);
+        $this->assertSame(1, $result['skipped']);
+        $this->assertSame(1999.0, (float) $product->fresh()->price);
     }
 
     public function test_admin_catalog_page_loads_with_target_range_card(): void
@@ -177,7 +225,8 @@ class TargetRangeCatalogTest extends TestCase
             ->get(route('admin.catalog.index'))
             ->assertOk()
             ->assertSee('Add target-range products', false)
-            ->assertSee('Preview (no changes)', false);
+            ->assertSee('Preview (no changes)', false)
+            ->assertSee('Add missing products / update prices', false);
     }
 
     public function test_admin_can_preview_and_add_target_range_without_artisan(): void

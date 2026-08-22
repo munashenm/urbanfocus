@@ -28,6 +28,12 @@ return [
     'payment_fee_percent' => (float) env('PRICE_PAYMENT_FEE_PERCENT', 3.9),
 
     /*
+    | Extra top-up on curated target-range (new) products, after street price.
+    | Rounded up to round_to. Existing catalogue imports are not affected.
+    */
+    'target_range_topup_percent' => (float) env('PRICE_TARGET_RANGE_TOPUP_PERCENT', 10),
+
+    /*
     | Longest category path wins. Values are markup percent on VAT-inclusive cost.
     */
     'category_markups' => [

@@ -10,6 +10,10 @@ use Illuminate\Support\Str;
 
 class TargetRangeCatalogService
 {
+    public const CATALOG_RANGE_SPEC_KEY = 'Urban Focus range';
+
+    public const CATALOG_RANGE_SPEC_VALUE = 'Target catalogue';
+
     /** @var Collection<int, object>|null */
     protected ?Collection $index = null;
 
@@ -46,7 +50,7 @@ class TargetRangeCatalogService
     }
 
     /**
-     * @return array{created: int, skipped: int, imaged: int, errors: int, samples: list<array<string, mixed>>}
+     * @return array{created: int, skipped: int, updated: int, imaged: int, errors: int, samples: list<array<string, mixed>>}
      */
     public function sync(bool $dryRun = false, ?string $path = null, ?string $sku = null): array
     {
@@ -56,6 +60,7 @@ class TargetRangeCatalogService
 
         $created = 0;
         $skipped = 0;
+        $updated = 0;
         $imaged = 0;
         $errors = 0;
         $samples = [];
@@ -75,6 +80,26 @@ class TargetRangeCatalogService
                         } elseif ($dryRun) {
                             $imaged++;
                         }
+                    }
+
+                    if ($this->shouldUpdatePrice($existing, $item)) {
+                        $newPrice = $this->retailStreetPrice($item);
+                        if (! $dryRun) {
+                            $this->applyRetailPrice($existing, $item);
+                        }
+                        $updated++;
+                        if (count($samples) < 25) {
+                            $samples[] = [
+                                'action' => $dryRun ? 'would_update' : 'updated',
+                                'list_id' => $item['list_id'] ?? null,
+                                'sku' => $item['sku'],
+                                'name' => $item['name'],
+                                'price' => $newPrice,
+                                'reason' => 'Was R'.number_format((float) $existing->price, 0).' → R'.number_format($newPrice, 0).' ('.$this->topupPercent().'% catalogue top-up)',
+                            ];
+                        }
+
+                        continue;
                     }
 
                     $skipped++;
@@ -99,7 +124,7 @@ class TargetRangeCatalogService
                             'list_id' => $item['list_id'] ?? null,
                             'sku' => $item['sku'],
                             'name' => $item['name'],
-                            'price' => (float) $item['street_price'],
+                            'price' => $this->retailStreetPrice($item),
                         ];
                     }
 
@@ -136,12 +161,12 @@ class TargetRangeCatalogService
             }
         }
 
-        if (! $dryRun && ($created > 0 || $imaged > 0)) {
+        if (! $dryRun && ($created > 0 || $imaged > 0 || $updated > 0)) {
             $this->deduper->clearCache();
             Cache::forget('home.product_rows_v1');
         }
 
-        return compact('created', 'skipped', 'imaged', 'errors', 'samples');
+        return compact('created', 'skipped', 'updated', 'imaged', 'errors', 'samples');
     }
 
     /**
@@ -169,12 +194,30 @@ class TargetRangeCatalogService
     }
 
     /**
+     * Street research price plus the target-range top-up, rounded to the store step.
+     *
+     * @param  array<string, mixed>  $item
+     */
+    public function retailStreetPrice(array $item): float
+    {
+        $street = (float) ($item['street_price'] ?? 0);
+        if ($street <= 0) {
+            return 0.0;
+        }
+
+        $topup = $this->topupPercent();
+        $withTopup = $street * (1 + ($topup / 100));
+
+        return $this->roundRetail($withTopup);
+    }
+
+    /**
      * @param  array<string, mixed>  $item
      */
     public function impliedCostPrice(array $item): float
     {
-        $street = (float) ($item['street_price'] ?? 0);
-        if ($street <= 0) {
+        $retail = $this->retailStreetPrice($item);
+        if ($retail <= 0) {
             return 0.0;
         }
 
@@ -184,11 +227,84 @@ class TargetRangeCatalogService
             'category_path' => (string) ($item['category_path'] ?? ''),
         ];
 
-        $markup = $this->pricing->markupPercentFor($street, null, $context);
+        $markup = $this->pricing->markupPercentFor($retail, null, $context);
         $fee = (float) config('pricing.payment_fee_percent', 0);
         $divisor = (1 + ($markup / 100)) * (1 + ($fee / 100));
 
-        return $divisor > 0 ? round($street / $divisor, 2) : $street;
+        return $divisor > 0 ? round($retail / $divisor, 2) : $retail;
+    }
+
+    /**
+     * Reprice a listing we previously created from this catalogue. Store imports
+     * matched only by name (or a different SKU) are left unchanged.
+     *
+     * @param  array<string, mixed>  $item
+     */
+    public function shouldUpdatePrice(Product $product, array $item): bool
+    {
+        if (! $this->isCatalogOwnedProduct($product, $item)) {
+            return false;
+        }
+
+        return abs((float) $product->price - $this->retailStreetPrice($item)) >= 0.01;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    protected function isCatalogOwnedProduct(Product $product, array $item): bool
+    {
+        $catalogSku = $this->normalizeCode((string) ($item['sku'] ?? ''));
+        if ($catalogSku === '' || $this->normalizeCode((string) $product->sku) !== $catalogSku) {
+            return false;
+        }
+
+        $specs = is_array($product->specifications) ? $product->specifications : [];
+        if (($specs[self::CATALOG_RANGE_SPEC_KEY] ?? '') === self::CATALOG_RANGE_SPEC_VALUE) {
+            return true;
+        }
+
+        $current = (float) $product->price;
+        $street = (float) ($item['street_price'] ?? 0);
+        $retail = $this->retailStreetPrice($item);
+
+        return abs($current - $street) < 0.51 || abs($current - $retail) < 0.51;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    protected function applyRetailPrice(Product $product, array $item): void
+    {
+        $specs = is_array($product->specifications) ? $product->specifications : [];
+        $specs[self::CATALOG_RANGE_SPEC_KEY] = self::CATALOG_RANGE_SPEC_VALUE;
+
+        $product->update([
+            'price' => $this->retailStreetPrice($item),
+            'cost_price' => $this->impliedCostPrice($item),
+            'specifications' => $specs,
+        ]);
+    }
+
+    public function topupPercent(): float
+    {
+        return max(0, (float) config('pricing.target_range_topup_percent', 10));
+    }
+
+    protected function roundRetail(float $price): float
+    {
+        if ($price <= 0) {
+            return 0.0;
+        }
+
+        $roundTo = max(1, (int) config('pricing.round_to', 50));
+        $mode = config('pricing.round_mode', 'up');
+
+        $rounded = $mode === 'nearest'
+            ? (int) (round($price / $roundTo) * $roundTo)
+            : (int) (ceil($price / $roundTo) * $roundTo);
+
+        return (float) max($rounded, $roundTo);
     }
 
     /**
@@ -196,7 +312,7 @@ class TargetRangeCatalogService
      */
     protected function createProduct(array $item): Product
     {
-        $street = (float) $item['street_price'];
+        $retail = $this->retailStreetPrice($item);
         $category = $this->categories->resolveCategoryForFilter((string) $item['category_path']);
         $short = trim((string) ($item['short_description'] ?? ''));
         $angle = trim((string) ($item['sales_angle'] ?? ''));
@@ -209,7 +325,7 @@ class TargetRangeCatalogService
             'slug' => $this->uniqueSlug((string) $item['name'], (string) $item['sku']),
             'short_description' => $short,
             'description' => $this->description($item),
-            'price' => $street,
+            'price' => $retail,
             'sale_price' => null,
             'cost_price' => $this->impliedCostPrice($item),
             'stock_quantity' => 0,
@@ -222,6 +338,7 @@ class TargetRangeCatalogService
                 'Model' => (string) $item['sku'],
                 'Brand' => (string) ($item['brand'] ?? ''),
                 'Sales focus' => $angle,
+                self::CATALOG_RANGE_SPEC_KEY => self::CATALOG_RANGE_SPEC_VALUE,
                 'Availability' => 'Available to order — typically 5–10 working days',
             ]),
             'meta_title' => Str::limit((string) $item['name'].' | Urban Focus', 70, ''),
@@ -394,7 +511,7 @@ class TargetRangeCatalogService
         $parts = array_filter([
             trim((string) ($item['short_description'] ?? '')),
             ! empty($item['sales_angle']) ? 'Urban Focus use: '.$item['sales_angle'].'.' : null,
-            'Configuration and lead time confirmed on quote. Price includes a buffer for Paystack and bank charges.',
+            'Configuration and lead time confirmed on quote. Price includes a buffer for Paystack and bank charges, plus a '.rtrim(rtrim(number_format($this->topupPercent(), 1), '0'), '.').'% catalogue top-up.',
         ]);
 
         return '<p>'.implode('</p><p>', array_map(fn (string $p) => e($p), $parts)).'</p>';

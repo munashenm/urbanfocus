@@ -20,7 +20,8 @@ class SyncTargetRangeCatalog extends Command
         $file = trim((string) $this->option('file')) ?: null;
         $sku = trim((string) $this->option('sku')) ?: null;
 
-        $this->line('Target-range sync: skip existing SKUs/names, create the rest at competitive street prices (Paystack/bank fee included).');
+        $topup = rtrim(rtrim(number_format($catalog->topupPercent(), 1), '0'), '.');
+        $this->line("Target-range sync: skip existing store SKUs/names, create the rest at street price + {$topup}% top-up (Paystack/bank fee included). Re-run updates prices on products we added.");
         $this->newLine();
 
         $result = $catalog->sync($dryRun, $file, $sku);
@@ -38,12 +39,13 @@ class SyncTargetRangeCatalog extends Command
             $this->newLine();
         }
 
+        $updated = $result['updated'] ?? 0;
         $this->info($dryRun
-            ? "Dry run: {$result['created']} would be created, {$result['skipped']} already on the store, {$result['imaged']} would get photos, {$result['errors']} errors."
-            : "Created: {$result['created']}. Skipped (already on store): {$result['skipped']}. Photos attached: {$result['imaged']}. Errors: {$result['errors']}."
+            ? "Dry run: {$result['created']} would be created, {$updated} prices would be updated, {$result['skipped']} already on the store, {$result['imaged']} would get photos, {$result['errors']} errors."
+            : "Created: {$result['created']}. Prices updated: {$updated}. Skipped (already on store): {$result['skipped']}. Photos attached: {$result['imaged']}. Errors: {$result['errors']}."
         );
 
-        if (! $dryRun && $result['created'] > 0) {
+        if (! $dryRun && ($result['created'] > 0 || $updated > 0)) {
             $this->line('New listings are available to order (not fake warehouse stock). Re-run with --dry-run anytime to audit.');
         }
 

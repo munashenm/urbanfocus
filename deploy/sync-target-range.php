@@ -4,6 +4,7 @@
  * Add curated target-range products (cPanel — no Terminal / no artisan)
  *
  * Skips any SKU or model already on the store. Safe to re-run.
+ * Applies a 10% top-up on products we added from this catalogue (not other store SKUs).
  *
  * 1. Git pull latest master (or copy the new files into urbanfocus/)
  * 2. Copy this file to public_html/sync-target-range.php
@@ -76,6 +77,7 @@ try {
 
 echo ($dryRun ? "PREVIEW (no changes made)\n" : "APPLIED\n");
 echo "Created / would create: {$result['created']}\n";
+echo "Prices updated / would update: ".($result['updated'] ?? 0)."\n";
 echo "Already on store: {$result['skipped']}\n";
 echo "Photos attached: {$result['imaged']}\n";
 echo "Errors: {$result['errors']}\n\n";
