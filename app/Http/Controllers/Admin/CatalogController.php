@@ -22,84 +22,109 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CatalogController extends Controller
 {
-    public function index(GoogleMerchantService $merchant, ProductCleanupService $cleanup, CategoryConsolidationService $consolidation): View
+    public function index(Request $request, GoogleMerchantService $merchant, ProductCleanupService $cleanup, CategoryConsolidationService $consolidation): View
     {
-        $this->forgetStaleRouteCache();
-
-        $apiKey = Setting::get('api_key') ?: config('app.api_key');
-        $feedStats = $this->emptyFeedStats();
-        $nonItPreview = [
-            'terms_loaded' => 0,
-            'it_heads_loaded' => 0,
-            'total_products' => 0,
-            'excluded_categories' => [],
-            'products_to_delete' => 0,
-            'categories_to_delete' => 0,
-            'sample_products' => [],
-        ];
-        $categoryConsolidationPreview = [
-            'products_to_move' => 0,
-            'empty_categories' => 0,
-            'sample_moves' => [],
-        ];
-        $ineligibleSample = [];
-        $importPricing = [
-            'markup_percent' => (float) config('pricing.markup_percent', 15),
-            'round_to' => (int) config('pricing.round_to', 50),
-            'round_mode' => (string) config('pricing.round_mode', 'up'),
-            'low_cost_threshold' => (float) config('pricing.low_cost_threshold', 20),
-            'example' => ['cost' => 100, 'retail' => 150],
-            'low_cost_example' => ['cost' => 4, 'retail' => 5.6],
-        ];
-
         try {
-            $feedStats = $merchant->feedStats();
+            $this->forgetStaleRouteCache();
+
+            $apiKey = Setting::get('api_key') ?: config('app.api_key');
+            $feedStats = $this->emptyFeedStats();
+            $nonItPreview = [
+                'terms_loaded' => 0,
+                'it_heads_loaded' => 0,
+                'total_products' => (int) Product::query()->count(),
+                'excluded_categories' => [],
+                'products_to_delete' => 0,
+                'categories_to_delete' => 0,
+                'sample_products' => [],
+            ];
+            $categoryConsolidationPreview = [
+                'products_to_move' => 0,
+                'empty_categories' => 0,
+                'sample_moves' => [],
+            ];
+            $ineligibleSample = [];
+            $importPricing = [
+                'markup_percent' => (float) config('pricing.markup_percent', 15),
+                'round_to' => (int) config('pricing.round_to', 50),
+                'round_mode' => (string) config('pricing.round_mode', 'up'),
+                'low_cost_threshold' => (float) config('pricing.low_cost_threshold', 20),
+                'example' => ['cost' => 100, 'retail' => 150],
+                'low_cost_example' => ['cost' => 4, 'retail' => 5.6],
+            ];
+
+            try {
+                $feedStats['total_active'] = (int) Product::query()->where('is_active', true)->count();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            try {
+                $importPricing = app(ProductImportService::class)->pricingPolicy();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            if ($request->boolean('stats')) {
+                @set_time_limit(120);
+
+                try {
+                    $feedStats = $merchant->feedStats();
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+
+                try {
+                    $nonItPreview = $cleanup->previewNonItCleanup();
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+
+                try {
+                    $categoryConsolidationPreview = $consolidation->preview();
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+
+                try {
+                    $ineligibleSample = $merchant->ineligibleProducts(10);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+
+            $merchantIssueLabels = Product::googleMerchantIssueLabels();
+            $targetRangeCount = $this->targetRangeCount();
+
+            $feeds = [
+                ['name' => 'Google Merchant Center', 'url' => url('/feeds/google.xml'), 'format' => 'XML'],
+                ['name' => 'Bob Shop product feed (XML)', 'url' => url('/feeds/bobshop.xml'), 'format' => 'XML'],
+                ['name' => 'Bob Shop BulkLoad CSV', 'url' => url('/feeds/bobshop.csv'), 'format' => 'CSV'],
+                ['name' => 'PriceCheck comparison CSV', 'url' => url('/feeds/pricecheck.csv'), 'format' => 'CSV'],
+                ['name' => 'PriceCheck product feed (XML)', 'url' => url('/feeds/pricecheck.xml'), 'format' => 'XML'],
+                ['name' => 'XML Sitemap', 'url' => url('/sitemap.xml'), 'format' => 'XML'],
+            ];
+
+            $apiEndpoints = [
+                ['method' => 'GET', 'path' => '/api/products', 'description' => 'List products (paginated)'],
+                ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
+            ];
+
+            return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing', 'targetRangeCount'));
         } catch (\Throwable $e) {
             report($e);
+
+            $count = 0;
+            try {
+                $count = $this->targetRangeCount();
+            } catch (\Throwable) {
+            }
+
+            return view('admin.catalog.simple', [
+                'error' => $e->getMessage(),
+                'targetRangeCount' => $count,
+            ]);
         }
-
-        try {
-            $nonItPreview = $cleanup->previewNonItCleanup();
-        } catch (\Throwable $e) {
-            report($e);
-        }
-
-        try {
-            $categoryConsolidationPreview = $consolidation->preview();
-        } catch (\Throwable $e) {
-            report($e);
-        }
-
-        try {
-            $ineligibleSample = $merchant->ineligibleProducts(10);
-        } catch (\Throwable $e) {
-            report($e);
-        }
-
-        try {
-            $importPricing = app(ProductImportService::class)->pricingPolicy();
-        } catch (\Throwable $e) {
-            report($e);
-        }
-
-        $merchantIssueLabels = Product::googleMerchantIssueLabels();
-        $targetRangeCount = $this->targetRangeCount();
-
-        $feeds = [
-            ['name' => 'Google Merchant Center', 'url' => Route::has('feeds.google') ? route('feeds.google') : url('/feeds/google.xml'), 'format' => 'XML'],
-            ['name' => 'Bob Shop product feed (XML)', 'url' => Route::has('feeds.bobshop') ? route('feeds.bobshop') : url('/feeds/bobshop.xml'), 'format' => 'XML'],
-            ['name' => 'Bob Shop BulkLoad CSV', 'url' => Route::has('feeds.bobshop.csv') ? route('feeds.bobshop.csv') : url('/feeds/bobshop.csv'), 'format' => 'CSV'],
-            ['name' => 'PriceCheck comparison CSV', 'url' => Route::has('feeds.pricecheck') ? route('feeds.pricecheck') : url('/feeds/pricecheck.csv'), 'format' => 'CSV'],
-            ['name' => 'PriceCheck product feed (XML)', 'url' => Route::has('feeds.pricecheck.xml') ? route('feeds.pricecheck.xml') : url('/feeds/pricecheck.xml'), 'format' => 'XML'],
-            ['name' => 'XML Sitemap', 'url' => Route::has('sitemap') ? route('sitemap') : url('/sitemap.xml'), 'format' => 'XML'],
-        ];
-
-        $apiEndpoints = [
-            ['method' => 'GET', 'path' => '/api/products', 'description' => 'List products (paginated)'],
-            ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
-        ];
-
-        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing', 'targetRangeCount'));
     }
 
     public function import(Request $request, ProductImportService $importService): RedirectResponse

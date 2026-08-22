@@ -78,7 +78,6 @@
         <div class="card h-100 border-success"><div class="card-body">
             @php
                 $targetRangeCount = $targetRangeCount ?? 0;
-                $canSyncTargetRange = \Illuminate\Support\Facades\Route::has('admin.catalog.sync-target-range');
             @endphp
             <h2 class="h5 fw-bold text-success">Add target-range products</h2>
             <p class="small text-muted mb-3">
@@ -110,20 +109,20 @@
                 </div>
             @endif
 
-            @if($canSyncTargetRange && $targetRangeCount > 0)
+            @if($targetRangeCount > 0)
                 <div class="d-flex flex-wrap gap-2">
-                    <form action="{{ route('admin.catalog.sync-target-range-preview') }}" method="POST">
+                    <form action="{{ url('/admin/catalog/sync-target-range/preview') }}" method="POST">
                         @csrf
                         <button type="submit" class="btn btn-outline-secondary">Preview (no changes)</button>
                     </form>
-                    <form action="{{ route('admin.catalog.sync-target-range') }}" method="POST" onsubmit="return confirm('Create missing target-range products? Existing store listings will not be duplicated.')">
+                    <form action="{{ url('/admin/catalog/sync-target-range') }}" method="POST" onsubmit="return confirm('Create missing target-range products? Existing store listings will not be duplicated.')">
                         @csrf
                         <button type="submit" class="btn btn-success">Add missing products</button>
                     </form>
                 </div>
             @else
                 <div class="alert alert-warning small mb-0">
-                    Refresh this page once after pulling <code>master</code>. If the buttons still do not appear, run <code>public_html/clear-cache.php</code> (copy from <code>deploy/clear-cache.php</code>) so Laravel drops its old route cache.
+                    Pull latest <code>master</code> so <code>database/data/target-range-products.json</code> is on the server, then refresh.
                 </div>
             @endif
         </div></div>
@@ -278,7 +277,11 @@
     <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Google Merchant Center</h2>
-            <p class="small text-muted">Products must have an image, description, brand, price, and SKU or GTIN to appear in the feed.</p>
+            <p class="small text-muted">Products must have an image, description, brand, price, and SKU or GTIN to appear in the feed.
+                @unless(request('stats'))
+                    <a href="{{ url('/admin/catalog?stats=1') }}">Load detailed stats</a> (slow on a large catalogue).
+                @endunless
+            </p>
 
             <div class="row g-3 mb-3">
                 <div class="col-4">
