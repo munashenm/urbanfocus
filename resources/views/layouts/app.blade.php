@@ -71,7 +71,6 @@
     <main id="main-content" class="flex-grow-1">@yield('content')</main>
 
     @include('partials.footer')
-    @include('partials.whatsapp-button')
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="{{ asset('js/search.js') }}" defer></script>

@@ -219,27 +219,3 @@ if (! function_exists('clean_html')) {
         return $out;
     }
 }
-
-if (! function_exists('whatsapp_url')) {
-    /** WhatsApp click-to-chat URL for the configured business number. */
-    function whatsapp_url(?string $message = null): ?string
-    {
-        $raw = preg_replace('/\D+/', '', (string) config('business.whatsapp')) ?? '';
-
-        if ($raw === '') {
-            return null;
-        }
-
-        if (str_starts_with($raw, '0')) {
-            $raw = '27'.substr($raw, 1);
-        }
-
-        $url = 'https://wa.me/'.$raw;
-
-        if ($message) {
-            $url .= '?text='.rawurlencode($message);
-        }
-
-        return $url;
-    }
-}

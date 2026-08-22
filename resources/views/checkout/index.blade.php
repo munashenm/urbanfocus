@@ -35,7 +35,6 @@
             $defaultFirst = $nameParts[0] ?? '';
             $defaultLast = $nameParts[1] ?? '';
         }
-        $helpWhatsapp = whatsapp_url('Hi Urban Focus, I need help completing checkout.');
     @endphp
 
     <form action="{{ route('checkout.store') }}" method="POST" id="checkout-form">
@@ -197,11 +196,7 @@
                     <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" data-label="Continue to secure payment">Continue to secure payment</button>
                     <p class="small text-muted text-center mt-3 mb-0">
                         You’ll confirm payment on the next screen.
-                        @if($helpWhatsapp)
-                            Stuck? <a href="{{ $helpWhatsapp }}" target="_blank" rel="noopener">WhatsApp us</a> or call <a href="tel:0875501813">087 550 1813</a>.
-                        @else
-                            Stuck? Call <a href="tel:0875501813">087 550 1813</a>.
-                        @endif
+                        Stuck? Call <a href="tel:0875501813">087 550 1813</a>.
                     </p>
                 </div>
             </div>

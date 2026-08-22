@@ -11,8 +11,6 @@
     <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
        href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode($shareUrl) }}" aria-label="Share on LinkedIn">LinkedIn</a>
     <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
-       href="https://api.whatsapp.com/send?text={{ urlencode($shareText.' '.$shareUrl) }}" aria-label="Share on WhatsApp">WhatsApp</a>
-    <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
        href="mailto:?subject={{ urlencode($shareText) }}&body={{ urlencode($shareUrl) }}" aria-label="Share by email">Email</a>
     <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-link="{{ $shareUrl }}">Copy link</button>
 </div>
