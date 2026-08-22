@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\CatalogBrowseService;
 use App\Services\CategoryMapperService;
 use App\Services\SeoService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
@@ -15,6 +17,7 @@ class BrandController extends Controller
     public function __construct(
         protected SeoService $seo,
         protected CategoryMapperService $categoryMapper,
+        protected CatalogBrowseService $browse,
     ) {}
 
     public function index(): View
@@ -26,20 +29,23 @@ class BrandController extends Controller
         return view('brands.index', compact('brands'));
     }
 
-    public function show(Brand $brand): View
+    public function show(Request $request, Brand $brand): View
     {
         abort_unless($brand->is_active, 404);
 
         $brandSeo = config("brand_seo.{$brand->slug}", []);
         $pagination = null;
 
-        $products = Product::with(['category', 'images'])
+        $currentSort = $sort = $this->browse->requestedSort($request);
+        $query = Product::with(['category', 'images'])
             ->where('is_active', true)
             ->withoutDuplicateListings()
             ->availableInStock()
-            ->where('brand', $brand->name)
-            ->latest()
-            ->paginate(24);
+            ->where('brand', $brand->name);
+
+        $this->browse->applySort($query, $sort);
+
+        $products = $query->paginate(24)->withQueryString();
 
         $pagination = $this->seo->paginationMeta($products);
 
@@ -87,6 +93,7 @@ class BrandController extends Controller
             'linkCategories',
             'categories',
             'pagination',
+            'currentSort',
             'faqs',
             'faqSchema',
         ));

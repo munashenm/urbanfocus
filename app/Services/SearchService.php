@@ -80,7 +80,7 @@ class SearchService
     {
         $search = trim($search);
 
-        return Product::with(['category', 'images'])
+        $query = Product::with(['category', 'images'])
             ->where('is_active', true)
             ->withoutDuplicateListings()
             ->when(config('catalog.hide_out_of_stock', true), fn ($q) => $q->availableInStock())
@@ -90,12 +90,48 @@ class SearchService
                 } else {
                     $this->applySearch($q, $search);
                 }
-            })
-            ->orderByRaw('CASE WHEN name LIKE ? THEN 0 WHEN sku LIKE ? THEN 1 WHEN brand LIKE ? THEN 2 ELSE 3 END', [
-                "{$search}%",
-                "{$search}%",
-                "{$search}%",
-            ]);
+            });
+
+        return $this->applyRelevanceOrder($query, $search);
+    }
+
+    public function applyRelevanceOrder(Builder $query, string $search): Builder
+    {
+        $search = trim($search);
+
+        if ($search === '') {
+            return $query;
+        }
+
+        $normalized = $this->normalizedCode($search);
+        $lower = mb_strtolower($search);
+        $prefix = $lower.'%';
+        $contains = '%'.$lower.'%';
+        $skuExpr = $this->normalizedCodeSql('sku');
+
+        $query->orderByRaw(
+            "CASE
+                WHEN LOWER(COALESCE(sku,'')) = ? THEN 0
+                WHEN {$skuExpr} != '' AND {$skuExpr} = ? THEN 0
+                WHEN LOWER(COALESCE(sku,'')) LIKE ? THEN 1
+                WHEN {$skuExpr} != '' AND {$skuExpr} LIKE ? THEN 1
+                WHEN LOWER(name) LIKE ? THEN 2
+                WHEN LOWER(name) LIKE ? THEN 3
+                WHEN LOWER(COALESCE(brand,'')) LIKE ? THEN 4
+                ELSE 5
+            END",
+            [
+                $lower,
+                $normalized,
+                $prefix,
+                $normalized !== '' ? $normalized.'%' : $prefix,
+                $prefix,
+                $contains,
+                $prefix,
+            ]
+        )->orderByDesc('views');
+
+        return $query;
     }
 
     public function applySearch(Builder $query, string $search): Builder
@@ -107,7 +143,9 @@ class SearchService
                 continue;
             }
 
-            $query->where(function (Builder $q) use ($term) {
+            $normalized = $this->normalizedCode($term);
+
+            $query->where(function (Builder $q) use ($term, $normalized) {
                 $like = "%{$term}%";
                 $q->where('name', 'like', $like)
                     ->orWhere('sku', 'like', $like)
@@ -116,10 +154,28 @@ class SearchService
                     ->orWhere('short_description', 'like', $like)
                     ->orWhere('barcode', 'like', $like)
                     ->orWhereHas('category', fn (Builder $c) => $c->where('name', 'like', $like));
+
+                if (strlen($normalized) >= 3) {
+                    $codeLike = "%{$normalized}%";
+                    $q->orWhereRaw($this->normalizedCodeSql('sku').' LIKE ?', [$codeLike])
+                        ->orWhereRaw($this->normalizedCodeSql('model_number').' LIKE ?', [$codeLike]);
+                }
             });
         }
 
         return $query;
+    }
+
+    protected function normalizedCode(string $value): string
+    {
+        return strtolower((string) preg_replace('/[^a-z0-9]+/i', '', $value));
+    }
+
+    protected function normalizedCodeSql(string $column): string
+    {
+        $safe = in_array($column, ['sku', 'model_number'], true) ? $column : 'sku';
+
+        return "REPLACE(REPLACE(REPLACE(REPLACE(LOWER(COALESCE({$safe},'')), '-', ''), ' ', ''), '/', ''), '_', '')";
     }
 
     protected function applyFuzzySearch(Builder $query, string $search): void

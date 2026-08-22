@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\CatalogBrowseService;
 use App\Services\CategoryMapperService;
 use App\Services\SearchService;
 use App\Services\SeoService;
@@ -17,6 +18,7 @@ class ShopController extends Controller
         protected SearchService $search,
         protected SeoService $seo,
         protected CategoryMapperService $categoryMapper,
+        protected CatalogBrowseService $browse,
     ) {}
 
     public function index(Request $request): View|RedirectResponse
@@ -77,14 +79,8 @@ class ShopController extends Controller
             $query->whereRaw('COALESCE(sale_price, price) <= ?', [(float) $max]);
         }
 
-        $sort = $request->get('sort', 'newest');
-        match ($sort) {
-            'price_asc' => $query->orderByRaw('COALESCE(sale_price, price) ASC'),
-            'price_desc' => $query->orderByRaw('COALESCE(sale_price, price) DESC'),
-            'name' => $query->orderBy('name'),
-            'popular' => $query->orderByDesc('views'),
-            default => $query->latest(),
-        };
+        $sort = $this->browse->requestedSort($request);
+        $this->browse->applySort($query, $sort, $searchTerm !== '' ? $searchTerm : null);
 
         $products = $query->paginate(24)->withQueryString();
         $categories = Category::where('is_active', true)->whereNull('parent_id')->visibleInCatalog()->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])->orderBy('sort_order')->get();
@@ -94,6 +90,7 @@ class ShopController extends Controller
             'products' => $products,
             'categories' => $categories,
             'brands' => $brands,
+            'currentSort' => $sort,
             'paginationMeta' => $this->seo->paginationMeta($products),
             'breadcrumbSchema' => $this->seo->breadcrumbSchema([
                 ['name' => 'Home', 'url' => route('home')],

@@ -2,7 +2,7 @@
 
 @section('title', 'Shop IT Products | Urban Focus')
 @section('meta_description', seo_meta_description('Browse laptops, desktops, networking, storage and software from Urban Focus.', ['type' => 'category', 'name' => 'IT products']))
-@if(request()->hasAny(['q', 'category', 'brand', 'deals', 'price_min', 'price_max']) || (request('sort') && request('sort') !== 'newest'))
+@if(request()->hasAny(['q', 'category', 'brand', 'deals', 'price_min', 'price_max']) || (request('sort') && ! app(\App\Services\CatalogBrowseService::class)->isDefaultSort(request())))
 @section('meta_robots', 'noindex, follow')
 @endif
 
@@ -33,11 +33,7 @@
                             @if(is_string($val))<input type="hidden" name="{{ $key }}" value="{{ $val }}">@endif
                         @endforeach
                         <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Sort products">
-                            <option value="newest" @selected(request('sort', 'newest') === 'newest')>Newest</option>
-                            <option value="popular" @selected(request('sort') === 'popular')>Popular</option>
-                            <option value="price_asc" @selected(request('sort') === 'price_asc')>Price: Low to High</option>
-                            <option value="price_desc" @selected(request('sort') === 'price_desc')>Price: High to Low</option>
-                            <option value="name" @selected(request('sort') === 'name')>Name</option>
+                            @include('partials.sort-options')
                         </select>
                     </form>
                     <span class="text-muted small">{{ $products->total() }} products</span>

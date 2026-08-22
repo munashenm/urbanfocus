@@ -5,6 +5,69 @@ return [
     'deprioritize_out_of_stock' => filter_var(env('CATALOG_DEPRIORITIZE_OUT_OF_STOCK', true), FILTER_VALIDATE_BOOL),
 
     /*
+    | Default /shop sort when the buyer has not chosen one.
+    | Search (?q=) uses relevance so imported junk cannot bury a SKU match.
+    */
+    'default_sort' => 'recommended',
+    'default_search_sort' => 'relevance',
+
+    /*
+    | Recommended browse: business IT first, leftover imports last.
+    | Products stay in the catalogue — they are only re-ordered.
+    */
+    'priority_category_paths' => [
+        'networking-connectivity',
+        'computing-office/laptops',
+        'security-surveillance',
+        'computing-office/storage-devices',
+        'computing-office/desktops',
+        'computing-office/software',
+    ],
+    'browse_demote_name_terms' => [
+        'hdmi',
+        'helmet',
+        'body worn',
+        'body-worn',
+        'bwc-',
+        'playstation',
+        'ps5',
+        'dash cam',
+        'dashcam',
+    ],
+    'browse_hero_name_terms' => [
+        'unifi',
+        'switch',
+        'access point',
+        'router',
+        'laptop',
+        'notebook',
+        'latitude',
+        'thinkpad',
+        'thinkbook',
+        'elitebook',
+        'probook',
+        'camera',
+        ' nvr',
+        'hikvision',
+        'dahua',
+        'nas',
+        'ssd',
+        'workstation',
+    ],
+    'browse_accessory_name_terms' => [
+        'trunking',
+        'charger',
+        'patch cord',
+        'patch panel',
+        'cable tie',
+        'bracket',
+        'pigtail',
+        'socket',
+        'stand off',
+        'tripod',
+    ],
+
+    /*
     | Categories under these heads are kept unless they match excluded_category_terms.
     | Top-level categories NOT in this list (orphan categories) are non-IT by default.
     */

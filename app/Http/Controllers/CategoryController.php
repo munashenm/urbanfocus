@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\CategorySlugRedirect;
 use App\Models\Product;
+use App\Services\CatalogBrowseService;
 use App\Services\CatalogFilterService;
 use App\Services\CategoryMapperService;
 use App\Services\SeoService;
@@ -18,6 +19,7 @@ class CategoryController extends Controller
         protected CatalogFilterService $catalogFilter,
         protected CategoryMapperService $categoryMapper,
         protected SeoService $seo,
+        protected CatalogBrowseService $browse,
     ) {}
 
     public function show(string $category, Request $request): View|RedirectResponse
@@ -119,14 +121,8 @@ class CategoryController extends Controller
             $query->whereRaw('COALESCE(sale_price, price) <= ?', [(float) $max]);
         }
 
-        $sort = $request->get('sort', 'newest');
-        match ($sort) {
-            'price_asc' => $query->orderByRaw('COALESCE(sale_price, price) ASC'),
-            'price_desc' => $query->orderByRaw('COALESCE(sale_price, price) DESC'),
-            'name' => $query->orderBy('name'),
-            'popular' => $query->orderByDesc('views'),
-            default => $query->latest(),
-        };
+        $sort = $this->browse->requestedSort($request);
+        $this->browse->applySort($query, $sort);
 
         $products = $query->paginate(24)->withQueryString();
 
@@ -165,6 +161,7 @@ class CategoryController extends Controller
             'subcategories' => $subcategories,
             'siblingCategories' => $siblingCategories,
             'canonicalUrl' => $category->url(),
+            'currentSort' => $sort,
             'paginationMeta' => $this->seo->paginationMeta($products),
             'breadcrumbSchema' => $this->seo->breadcrumbSchema($breadcrumbs),
         ]);

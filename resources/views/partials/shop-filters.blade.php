@@ -62,11 +62,7 @@
                 <div class="mb-3">
                     <label class="form-label small fw-semibold">Sort by</label>
                     <select name="sort" class="form-select form-select-sm">
-                        <option value="newest" @selected(request('sort', 'newest') === 'newest')>Newest</option>
-                        <option value="popular" @selected(request('sort') === 'popular')>Popular</option>
-                        <option value="price_asc" @selected(request('sort') === 'price_asc')>Price: Low to High</option>
-                        <option value="price_desc" @selected(request('sort') === 'price_desc')>Price: High to Low</option>
-                        <option value="name" @selected(request('sort') === 'name')>Name</option>
+                        @include('partials.sort-options')
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary btn-sm w-100">Apply Filters</button>

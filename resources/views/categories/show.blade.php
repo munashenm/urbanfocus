@@ -3,7 +3,7 @@
 @section('title', $category->meta_title ?: $category->name.' | Urban Focus')
 @section('meta_description', $category->seoDescription())
 @section('canonical', $canonicalUrl)
-@if(request()->hasAny(['brand', 'price_min', 'price_max']) || (request('sort') && request('sort') !== 'newest'))
+@if(request()->hasAny(['brand', 'price_min', 'price_max']) || (request('sort') && ! app(\App\Services\CatalogBrowseService::class)->isDefaultSort(request())))
 @section('meta_robots', 'noindex, follow')
 @endif
 
