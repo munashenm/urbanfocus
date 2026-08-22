@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
@@ -30,6 +31,14 @@ class CheckoutController extends Controller
     {
         if ($this->cart->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+        }
+
+        $unavailable = $this->unavailableCartItems();
+        if ($unavailable !== []) {
+            return redirect()->route('cart.index')->with(
+                'error',
+                'Some items are no longer available: '.implode(', ', $unavailable).'. Please remove them to continue.'
+            );
         }
 
         $subtotal = $this->cart->subtotal();
@@ -81,7 +90,15 @@ class CheckoutController extends Controller
     public function store(Request $request): RedirectResponse
     {
         if ($this->cart->isEmpty()) {
-            return redirect()->route('cart.index');
+            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+        }
+
+        $unavailable = $this->unavailableCartItems();
+        if ($unavailable !== []) {
+            return redirect()->route('cart.index')->with(
+                'error',
+                'Some items are no longer available: '.implode(', ', $unavailable).'. Please remove them to continue.'
+            );
         }
 
         $validated = $request->validate([
@@ -95,7 +112,7 @@ class CheckoutController extends Controller
             'billing_province' => 'required|string|max:100',
             'billing_postal_code' => 'required|string|max:20',
             'customer_email' => 'required|email|max:255',
-            'customer_phone' => 'required|string|max:30',
+            'customer_phone' => ['required', 'string', 'max:30', 'regex:/^[0-9+\s()\-]{8,30}$/'],
             'shipping_method' => 'required|in:courier,free,manual_quote,collection',
             'payment_method' => 'required|in:paystack,eft',
             'customer_notes' => 'nullable|string|max:1000',
@@ -107,6 +124,8 @@ class CheckoutController extends Controller
             'shipping_city' => 'nullable|string|max:100',
             'shipping_province' => 'nullable|string|max:100',
             'shipping_postal_code' => 'nullable|string|max:20',
+        ], [
+            'customer_phone.regex' => 'Enter a valid phone number so we can contact you about delivery.',
         ]);
 
         $subtotal = $this->cart->subtotal();
@@ -191,41 +210,43 @@ class CheckoutController extends Controller
             $coupon->increment('used_count');
         }
 
-        $this->cart->clear();
-
         session(['checkout_order_id' => $order->id]);
 
-        Mail::to($order->customer_email)->send(new OrderConfirmation($order));
-        Mail::to(config('app.email'))->send(new NewOrderNotification($order));
+        $this->notifyOrderPlaced($order);
 
         if ($validated['payment_method'] === 'paystack') {
             return redirect()->route('checkout.paystack.pay', $order);
         }
+
+        $this->cart->clear();
 
         return redirect()->route('checkout.success', $order)->with('success', 'Order placed. Please complete EFT payment using the reference on the confirmation page.');
     }
 
     public function paystackPay(Order $order): RedirectResponse
     {
-        if (session('checkout_order_id') !== $order->id) {
-            abort(403);
-        }
-
         if ($order->payment_status === 'paid') {
             return redirect()->route('checkout.success', $order);
         }
 
-        $reference = $order->order_number.'-'.strtoupper(substr(uniqid(), -6));
+        if ($order->payment_method !== 'paystack') {
+            return redirect()->route('checkout.success', $order);
+        }
+
+        $reference = $order->paystack_reference ?: $order->order_number.'-'.strtoupper(substr(uniqid(), -6));
         $order->update(['paystack_reference' => $reference]);
 
         $result = $this->paystack->initializeTransaction($order, $reference);
 
         if (($result['status'] ?? false) && ! empty($result['data']['authorization_url'])) {
+            $this->cart->clear();
+            session(['checkout_order_id' => $order->id]);
+
             return redirect()->away($result['data']['authorization_url']);
         }
 
         return redirect()->route('checkout.success', $order)
-            ->with('error', 'We could not start the Paystack payment. Please choose Manual EFT or contact us to complete your order.');
+            ->with('error', $result['message'] ?? 'We could not start the Paystack payment. You can try again or complete the order by Manual EFT.');
     }
 
     public function paystackCallback(Request $request): RedirectResponse
@@ -233,10 +254,14 @@ class CheckoutController extends Controller
         $reference = $request->get('reference') ?? $request->get('trxref');
 
         if (! $reference) {
-            return redirect()->route('cart.index')->with('error', 'Payment could not be confirmed.');
+            return redirect()->route('cart.index')->with('error', 'Payment could not be confirmed. If you were charged, contact us with your email address.');
         }
 
-        $order = Order::where('paystack_reference', $reference)->firstOrFail();
+        $order = Order::where('paystack_reference', $reference)->first();
+
+        if (! $order) {
+            return redirect()->route('cart.index')->with('error', 'We could not match that payment to an order. Contact us with your email and we will help.');
+        }
 
         $result = $this->paystack->verifyTransaction($reference);
         $data = $result['data'] ?? [];
@@ -249,7 +274,7 @@ class CheckoutController extends Controller
         }
 
         return redirect()->route('checkout.success', $order)
-            ->with('success', 'Your order has been received. We will confirm payment once Paystack completes processing.');
+            ->with('error', 'Payment is not confirmed yet. If you paid, wait a moment and refresh this page — or tap Pay now to try again.');
     }
 
     public function paystackWebhook(Request $request): Response
@@ -282,7 +307,13 @@ class CheckoutController extends Controller
      */
     protected function markOrderPaid(Order $order, array $data): void
     {
-        if (isset($data['amount']) && (int) $data['amount'] !== $this->paystack->toSubunit((float) $order->total)) {
+        if (isset($data['amount']) && ! $this->paystack->amountsMatch((int) $data['amount'], (float) $order->total)) {
+            Log::warning('Paystack amount mismatch — order left unpaid', [
+                'order' => $order->order_number,
+                'paid_cents' => $data['amount'],
+                'expected_cents' => $this->paystack->toSubunit((float) $order->total),
+            ]);
+
             return;
         }
 
@@ -314,7 +345,45 @@ class CheckoutController extends Controller
     {
         $order->load('items');
 
-        return view('checkout.success', compact('order'));
+        $canRetryPayment = $order->payment_method === 'paystack' && $order->payment_status !== 'paid';
+
+        return view('checkout.success', compact('order', 'canRetryPayment'));
+    }
+
+    /** @return list<string> */
+    protected function unavailableCartItems(): array
+    {
+        return $this->cart->items()
+            ->filter(fn (array $item) => ! $item['product']->isAvailable())
+            ->map(fn (array $item) => $item['product']->name)
+            ->values()
+            ->all();
+    }
+
+    protected function notifyOrderPlaced(Order $order): void
+    {
+        $order->loadMissing('items');
+
+        try {
+            Mail::to($order->customer_email)->send(new OrderConfirmation($order));
+        } catch (\Throwable $e) {
+            Log::error('Order confirmation email failed', [
+                'order' => $order->order_number,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $adminEmail = config('app.email');
+        if (is_string($adminEmail) && $adminEmail !== '') {
+            try {
+                Mail::to($adminEmail)->send(new NewOrderNotification($order));
+            } catch (\Throwable $e) {
+                Log::error('Admin new-order email failed', [
+                    'order' => $order->order_number,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     /** @return array{0: float, 1: float} [taxAmount, total] */

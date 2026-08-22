@@ -22,7 +22,9 @@ class CartController extends Controller
 
     public function add(Request $request, Product $product): RedirectResponse
     {
-        abort_unless($product->isAvailable(), 422, 'Product is not available.');
+        if (! $product->isAvailable()) {
+            return back()->with('error', 'This product is currently unavailable.');
+        }
 
         $quantity = max(1, (int) $request->input('quantity', 1));
         $this->cart->add($product->id, $quantity);

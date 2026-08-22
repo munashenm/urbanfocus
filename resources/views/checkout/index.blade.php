@@ -12,7 +12,19 @@
             <li class="breadcrumb-item text-muted">Payment</li>
         </ol>
     </nav>
-    <h1 class="h2 fw-bold mb-4">Checkout</h1>
+    <h1 class="h2 fw-bold mb-2">Checkout</h1>
+    <p class="text-muted mb-4">No account needed. Pay with card, Instant EFT, Apple Pay or Google Pay — or request a bank transfer.</p>
+
+    @if($errors->any())
+        <div class="alert alert-danger" role="alert">
+            <strong>Please check the highlighted fields</strong> and tap Continue to payment again.
+            <ul class="mb-0 mt-2">
+                @foreach($errors->all() as $message)
+                    <li>{{ $message }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     @php
         $authUser = auth()->user();
@@ -23,67 +35,77 @@
             $defaultFirst = $nameParts[0] ?? '';
             $defaultLast = $nameParts[1] ?? '';
         }
+        $helpWhatsapp = whatsapp_url('Hi Urban Focus, I need help completing checkout.');
     @endphp
 
-    <form action="{{ route('checkout.store') }}" method="POST">
+    <form action="{{ route('checkout.store') }}" method="POST" id="checkout-form">
         @csrf
+        <input type="hidden" name="same_as_billing" value="1">
         <div class="row g-4">
             <div class="col-lg-7">
                 <div class="checkout-card mb-4">
-                    <h2 class="h5 fw-bold mb-3">Billing Details</h2>
+                    <h2 class="h5 fw-bold mb-1">Your details</h2>
+                    <p class="small text-muted mb-3">We’ll deliver to this address and email your order confirmation here.</p>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">First Name *</label>
-                            <input type="text" name="billing_first_name" class="form-control @error('billing_first_name') is-invalid @enderror" value="{{ $defaultFirst }}" required>
+                            <label class="form-label" for="billing_first_name">First name *</label>
+                            <input id="billing_first_name" type="text" name="billing_first_name" autocomplete="given-name" class="form-control @error('billing_first_name') is-invalid @enderror" value="{{ $defaultFirst }}" required>
                             @error('billing_first_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Last Name *</label>
-                            <input type="text" name="billing_last_name" class="form-control @error('billing_last_name') is-invalid @enderror" value="{{ $defaultLast }}" required>
+                            <label class="form-label" for="billing_last_name">Last name *</label>
+                            <input id="billing_last_name" type="text" name="billing_last_name" autocomplete="family-name" class="form-control @error('billing_last_name') is-invalid @enderror" value="{{ $defaultLast }}" required>
                             @error('billing_last_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
-                        <div class="col-12">
-                            <label class="form-label">Company</label>
-                            <input type="text" name="billing_company" class="form-control" value="{{ old('billing_company', auth()->user()?->company_name) }}">
+                        <div class="col-md-6">
+                            <label class="form-label" for="customer_email">Email *</label>
+                            <input id="customer_email" type="email" name="customer_email" autocomplete="email" inputmode="email" class="form-control @error('customer_email') is-invalid @enderror" value="{{ old('customer_email', auth()->user()?->email) }}" required>
+                            @error('customer_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">VAT Number</label>
-                            <input type="text" name="billing_vat_number" class="form-control" value="{{ old('billing_vat_number', auth()->user()?->vat_number) }}" placeholder="Optional — for tax invoice">
+                            <label class="form-label" for="customer_phone">Phone *</label>
+                            <input id="customer_phone" type="tel" name="customer_phone" autocomplete="tel" inputmode="tel" class="form-control @error('customer_phone') is-invalid @enderror" value="{{ old('customer_phone', auth()->user()?->phone) }}" placeholder="e.g. 082 123 4567" required>
+                            @error('customer_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Address *</label>
-                            <input type="text" name="billing_address_line_1" class="form-control" value="{{ old('billing_address_line_1') }}" required>
+                            <label class="form-label" for="billing_company">Company <span class="text-muted fw-normal">(optional)</span></label>
+                            <input id="billing_company" type="text" name="billing_company" autocomplete="organization" class="form-control" value="{{ old('billing_company', auth()->user()?->company_name) }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="billing_vat_number">VAT number <span class="text-muted fw-normal">(optional)</span></label>
+                            <input id="billing_vat_number" type="text" name="billing_vat_number" class="form-control" value="{{ old('billing_vat_number', auth()->user()?->vat_number) }}" placeholder="For a tax invoice">
                         </div>
                         <div class="col-12">
-                            <input type="text" name="billing_address_line_2" class="form-control" placeholder="Apartment, suite, etc." value="{{ old('billing_address_line_2') }}">
+                            <label class="form-label" for="billing_address_line_1">Street address *</label>
+                            <input id="billing_address_line_1" type="text" name="billing_address_line_1" autocomplete="address-line1" class="form-control @error('billing_address_line_1') is-invalid @enderror" value="{{ old('billing_address_line_1') }}" required>
+                            @error('billing_address_line_1')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-12">
+                            <label class="visually-hidden" for="billing_address_line_2">Apartment, suite, unit</label>
+                            <input id="billing_address_line_2" type="text" name="billing_address_line_2" autocomplete="address-line2" class="form-control" placeholder="Apartment, suite, unit (optional)" value="{{ old('billing_address_line_2') }}">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">City *</label>
-                            <input type="text" name="billing_city" class="form-control" value="{{ old('billing_city') }}" required>
+                            <label class="form-label" for="billing_city">City *</label>
+                            <input id="billing_city" type="text" name="billing_city" autocomplete="address-level2" class="form-control @error('billing_city') is-invalid @enderror" value="{{ old('billing_city') }}" required>
+                            @error('billing_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Province *</label>
-                            <select name="billing_province" class="form-select" required>
+                            <label class="form-label" for="billing_province">Province *</label>
+                            <select id="billing_province" name="billing_province" autocomplete="address-level1" class="form-select @error('billing_province') is-invalid @enderror" required>
                                 @foreach(['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Free State','Limpopo','Mpumalanga','North West','Northern Cape'] as $prov)
-                                    <option value="{{ $prov }}" @selected(old('billing_province') === $prov)>{{ $prov }}</option>
+                                    <option value="{{ $prov }}" @selected(old('billing_province', 'Gauteng') === $prov)>{{ $prov }}</option>
                                 @endforeach
                             </select>
+                            @error('billing_province')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Postal Code *</label>
-                            <input type="text" name="billing_postal_code" class="form-control" value="{{ old('billing_postal_code') }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Email *</label>
-                            <input type="email" name="customer_email" class="form-control" value="{{ old('customer_email', auth()->user()?->email) }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Phone *</label>
-                            <input type="text" name="customer_phone" class="form-control" value="{{ old('customer_phone', auth()->user()?->phone) }}" required>
+                            <label class="form-label" for="billing_postal_code">Postal code *</label>
+                            <input id="billing_postal_code" type="text" name="billing_postal_code" autocomplete="postal-code" inputmode="numeric" class="form-control @error('billing_postal_code') is-invalid @enderror" value="{{ old('billing_postal_code') }}" required>
+                            @error('billing_postal_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Order Notes</label>
-                            <textarea name="customer_notes" class="form-control" rows="3">{{ old('customer_notes') }}</textarea>
+                            <label class="form-label" for="customer_notes">Order notes <span class="text-muted fw-normal">(optional)</span></label>
+                            <textarea id="customer_notes" name="customer_notes" class="form-control" rows="2" placeholder="Delivery instructions, alternative contact, etc.">{{ old('customer_notes') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -172,7 +194,15 @@
                     <div class="d-flex justify-content-between h5 mb-0">
                         <span>Total</span><strong id="checkout-total">—</strong>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">Place Order</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" data-label="Continue to secure payment">Continue to secure payment</button>
+                    <p class="small text-muted text-center mt-3 mb-0">
+                        You’ll confirm payment on the next screen.
+                        @if($helpWhatsapp)
+                            Stuck? <a href="{{ $helpWhatsapp }}" target="_blank" rel="noopener">WhatsApp us</a> or call <a href="tel:0875501813">087 550 1813</a>.
+                        @else
+                            Stuck? Call <a href="tel:0875501813">087 550 1813</a>.
+                        @endif
+                    </p>
                 </div>
             </div>
         </div>

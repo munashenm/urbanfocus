@@ -126,12 +126,24 @@
         });
     }
 
+    function resetSubmitButton() {
+        if (!submitBtn) return;
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitBtn.getAttribute('data-label') || 'Continue to secure payment';
+    }
+
     if (submitBtn) {
         submitBtn.closest('form')?.addEventListener('submit', function () {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Placing order…';
+            submitBtn.textContent = 'Taking you to payment…';
         });
     }
+
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted) {
+            resetSubmitButton();
+        }
+    });
 
     updateTotals();
 })();

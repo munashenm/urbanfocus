@@ -1,8 +1,15 @@
 <?php
 
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\ApiKeyMiddleware;
+use App\Http\Middleware\PermissionMiddleware;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,25 +18,30 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function () {
             if (file_exists(base_path('routes/api.php'))) {
-                \Illuminate\Support\Facades\Route::prefix('api')
+                Route::prefix('api')
                     ->group(base_path('routes/api.php'));
             }
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
-            \App\Http\Middleware\SecurityHeaders::class,
+            SecurityHeaders::class,
         ]);
         $middleware->validateCsrfTokens(except: [
             'checkout/paystack/webhook',
         ]);
         $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            'permission' => \App\Http\Middleware\PermissionMiddleware::class,
-            'api.key' => \App\Http\Middleware\ApiKeyMiddleware::class,
+            'admin' => AdminMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'api.key' => ApiKeyMiddleware::class,
         ]);
         $middleware->throttleApi('60,1');
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (TokenMismatchException $e, Request $request) {
+            if ($request->is('checkout', 'checkout/*', 'cart', 'cart/*')) {
+                return redirect()->route('cart.index')
+                    ->with('error', 'Your session expired before we could place the order. Your cart is still saved — please go to checkout and try again.');
+            }
+        });
     })->create();
