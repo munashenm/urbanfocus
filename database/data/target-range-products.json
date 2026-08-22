@@ -1,0 +1,1863 @@
+[
+  {
+    "list_id": 1,
+    "sku": "DB14250-U7-32-1T",
+    "name": "Dell Pro 14 Plus Intel Core Ultra 7 32GB 1TB Win 11 Pro",
+    "brand": "Dell",
+    "category_path": "computing-office/laptops",
+    "street_price": 34900,
+    "match_terms": [
+      "dell pro 14 plus"
+    ],
+    "match_skus": [
+      "DB14250-U7-32-1T"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Corporate standard",
+    "short_description": "14-inch corporate Dell Pro Plus. Core Ultra 7, 32GB, 1TB, Windows 11 Pro."
+  },
+  {
+    "list_id": 2,
+    "sku": "DB16250-U7-32-1T",
+    "name": "Dell Pro 16 Plus Intel Core Ultra 7 32GB 1TB Win 11 Pro",
+    "brand": "Dell",
+    "category_path": "computing-office/laptops",
+    "street_price": 38900,
+    "match_terms": [
+      "dell pro 16 plus"
+    ],
+    "match_skus": [
+      "DB16250-U7-32-1T"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Corporate 16\"",
+    "short_description": "16-inch corporate Dell Pro Plus. Core Ultra 7, 32GB, 1TB, Windows 11 Pro."
+  },
+  {
+    "list_id": 3,
+    "sku": "PA13250-U7-32-1T",
+    "name": "Dell Pro 13 Premium Intel Core Ultra 32GB 1TB Win 11 Pro",
+    "brand": "Dell",
+    "category_path": "computing-office/laptops",
+    "street_price": 42900,
+    "match_terms": [
+      "dell pro 13 premium"
+    ],
+    "match_skus": [
+      "PA13250-U7-32-1T"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Premium executive",
+    "short_description": "13-inch executive Dell Pro Premium. Core Ultra, 32GB, 1TB, Windows 11 Pro."
+  },
+  {
+    "list_id": 4,
+    "sku": "PM16250-RTX",
+    "name": "Dell Pro Max 16 RTX Workstation Win 11 Pro",
+    "brand": "Dell",
+    "category_path": "computing-office/laptops",
+    "street_price": 62900,
+    "match_terms": [
+      "dell pro max 16"
+    ],
+    "match_skus": [
+      "PM16250-RTX"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Engineering/design",
+    "short_description": "16-inch Dell Pro Max workstation with RTX graphics for engineering and design."
+  },
+  {
+    "list_id": 5,
+    "sku": "EBX-G1I-14-5G",
+    "name": "HP EliteBook X G1i 14 5G Ultra 7 32GB 1TB Win 11 Pro",
+    "brand": "HP",
+    "category_path": "computing-office/laptops",
+    "street_price": 45900,
+    "match_terms": [
+      "elitebook x g1i"
+    ],
+    "match_skus": [
+      "EBX-G1I-14-5G"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "Push heavily",
+    "short_description": "14-inch 5G EliteBook X for field and corporate mobility. Ultra 7, 32GB, 1TB."
+  },
+  {
+    "list_id": 6,
+    "sku": "EB8-G1I-14",
+    "name": "HP EliteBook 8 G1i 14 Ultra 7 32GB 1TB Win 11 Pro",
+    "brand": "HP",
+    "category_path": "computing-office/laptops",
+    "street_price": 38900,
+    "match_terms": [
+      "elitebook 8 g1i 14"
+    ],
+    "match_skus": [
+      "EB8-G1I-14"
+    ],
+    "exclude_name_terms": [
+      "elitebook 8 g1i 16"
+    ],
+    "featured": false,
+    "sales_angle": "Corporate fleet",
+    "short_description": "14-inch EliteBook 8 G1i corporate fleet notebook."
+  },
+  {
+    "list_id": 7,
+    "sku": "AD3U3ET",
+    "name": "HP EliteBook 8 G1i 16 Next Gen AI Core U7-258V 32GB 2TB Win 11 Pro Notebook",
+    "brand": "HP",
+    "category_path": "computing-office/laptops",
+    "street_price": 46600,
+    "match_terms": [
+      "elitebook 8 g1i 16"
+    ],
+    "match_skus": [
+      "AD3U3ET"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Enterprise 16\"",
+    "short_description": "16-inch EliteBook 8 G1i corporate notebook."
+  },
+  {
+    "list_id": 8,
+    "sku": "ZBF-G1I-16-5G",
+    "name": "HP ZBook Fury G1i 16 5G Mobile Workstation",
+    "brand": "HP",
+    "category_path": "computing-office/laptops",
+    "street_price": 78900,
+    "match_terms": [
+      "zbook fury g1i"
+    ],
+    "match_skus": [
+      "ZBF-G1I-16-5G"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Tender/high-end",
+    "short_description": "16-inch 5G ZBook Fury for tender and high-end engineering work."
+  },
+  {
+    "list_id": 9,
+    "sku": "ZBP-32-RTX-1T",
+    "name": "HP ZBook Power 32GB RTX 1TB Win 11 Pro",
+    "brand": "HP",
+    "category_path": "computing-office/laptops",
+    "street_price": 52900,
+    "match_terms": [
+      "zbook power"
+    ],
+    "match_skus": [
+      "ZBP-32-RTX-1T"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "CAD/engineering",
+    "short_description": "ZBook Power mobile workstation. 32GB, RTX, 1TB for CAD and engineering."
+  },
+  {
+    "list_id": 10,
+    "sku": "OBU-FLIP14-OLED",
+    "name": "HP OmniBook Ultra Flip 14 OLED Touch",
+    "brand": "HP",
+    "category_path": "computing-office/laptops",
+    "street_price": 38900,
+    "match_terms": [
+      "omnibook ultra flip"
+    ],
+    "match_skus": [
+      "OBU-FLIP14-OLED"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Executives",
+    "short_description": "14-inch OLED touch convertible for executives."
+  },
+  {
+    "list_id": 11,
+    "sku": "21QC001HZA",
+    "name": "Lenovo ThinkPad T14 Gen 6 Intel Core Ultra 7 16GB 1TB Win 11 Pro",
+    "brand": "Lenovo",
+    "category_path": "computing-office/laptops",
+    "street_price": 32900,
+    "match_terms": [
+      "thinkpad t14 gen 6"
+    ],
+    "match_skus": [
+      "21QC001HZA"
+    ],
+    "exclude_name_terms": [
+      "lte",
+      "5g"
+    ],
+    "featured": false,
+    "sales_angle": "High-volume B2B",
+    "short_description": "High-volume B2B ThinkPad T14 Gen 6. Street-priced against FirstShop Wi-Fi configs."
+  },
+  {
+    "list_id": 12,
+    "sku": "21QC000YZA",
+    "name": "Lenovo ThinkPad T14 Gen 6 LTE/5G Intel Core Ultra 7 16GB 512GB Win 11 Pro",
+    "brand": "Lenovo",
+    "category_path": "computing-office/laptops",
+    "street_price": 35500,
+    "match_terms": [
+      "thinkpad t14 gen 6 lte",
+      "thinkpad t14 gen 6 5g"
+    ],
+    "match_skus": [
+      "21QC000YZA"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "Rare configuration",
+    "short_description": "ThinkPad T14 Gen 6 with LTE/5G \u2014 uncommon RFQ configuration."
+  },
+  {
+    "list_id": 13,
+    "sku": "L14G6-U5-16-512",
+    "name": "Lenovo ThinkPad L14 Gen 6 Win 11 Pro",
+    "brand": "Lenovo",
+    "category_path": "computing-office/laptops",
+    "street_price": 18900,
+    "match_terms": [
+      "thinkpad l14 gen 6"
+    ],
+    "match_skus": [
+      "L14G6-U5-16-512"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Government/education",
+    "short_description": "Government and education-friendly ThinkPad L14 Gen 6."
+  },
+  {
+    "list_id": 14,
+    "sku": "L16G2-LTE",
+    "name": "Lenovo ThinkPad L16 Gen 2 LTE Win 11 Pro",
+    "brand": "Lenovo",
+    "category_path": "computing-office/laptops",
+    "street_price": 22500,
+    "match_terms": [
+      "thinkpad l16 gen 2"
+    ],
+    "match_skus": [
+      "L16G2-LTE"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "RFQ-friendly",
+    "short_description": "16-inch ThinkPad L16 Gen 2 with LTE for RFQs."
+  },
+  {
+    "list_id": 15,
+    "sku": "X1C-G13",
+    "name": "Lenovo ThinkPad X1 Carbon Gen 13 Win 11 Pro",
+    "brand": "Lenovo",
+    "category_path": "computing-office/laptops",
+    "street_price": 42900,
+    "match_terms": [
+      "thinkpad x1 carbon gen 13",
+      "x1 carbon gen 13"
+    ],
+    "match_skus": [
+      "X1C-G13"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Premium corporate",
+    "short_description": "Premium executive X1 Carbon Gen 13."
+  },
+  {
+    "list_id": 16,
+    "sku": "P16-RTX",
+    "name": "Lenovo ThinkPad P16 RTX Workstation Win 11 Pro",
+    "brand": "Lenovo",
+    "category_path": "computing-office/laptops",
+    "street_price": 58900,
+    "match_terms": [
+      "thinkpad p16"
+    ],
+    "match_skus": [
+      "P16-RTX"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "CAD/GIS",
+    "short_description": "ThinkPad P16 RTX workstation for CAD and GIS."
+  },
+  {
+    "list_id": 17,
+    "sku": "P5-ULTRA",
+    "name": "ASUS ExpertBook P5 Intel Core Ultra Win 11 Pro",
+    "brand": "ASUS",
+    "category_path": "computing-office/laptops",
+    "street_price": 24900,
+    "match_terms": [
+      "expertbook p5"
+    ],
+    "match_skus": [
+      "P5-ULTRA"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Alternative B2B",
+    "short_description": "ASUS ExpertBook P5 Core Ultra alternative B2B notebook."
+  },
+  {
+    "list_id": 18,
+    "sku": "PROART-P16-RTX",
+    "name": "ASUS ProArt P16 RTX Creative Workstation",
+    "brand": "ASUS",
+    "category_path": "computing-office/laptops",
+    "street_price": 48900,
+    "match_terms": [
+      "proart p16"
+    ],
+    "match_skus": [
+      "PROART-P16-RTX"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Video/design",
+    "short_description": "ProArt P16 RTX for video and design teams."
+  },
+  {
+    "list_id": 19,
+    "sku": "MBP14-M4PRO",
+    "name": "Apple MacBook Pro 14-inch current Pro generation",
+    "brand": "Apple",
+    "category_path": "computing-office/laptops",
+    "street_price": 42900,
+    "match_terms": [
+      "macbook pro 14"
+    ],
+    "match_skus": [
+      "MBP14-M4PRO"
+    ],
+    "exclude_name_terms": [
+      "macbook pro 16"
+    ],
+    "featured": false,
+    "sales_angle": "Corporate creative",
+    "short_description": "Current 14-inch MacBook Pro for corporate creative work."
+  },
+  {
+    "list_id": 20,
+    "sku": "MBP16-M4PRO",
+    "name": "Apple MacBook Pro 16-inch current Pro generation",
+    "brand": "Apple",
+    "category_path": "computing-office/laptops",
+    "street_price": 52900,
+    "match_terms": [
+      "macbook pro 16"
+    ],
+    "match_skus": [
+      "MBP16-M4PRO"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "High-value procurement",
+    "short_description": "Current 16-inch MacBook Pro for high-value procurement."
+  },
+  {
+    "list_id": 21,
+    "sku": "RUTX50",
+    "name": "Teltonika RUTX50 5G Industrial Router Dual SIM",
+    "brand": "Teltonika",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 10400,
+    "match_terms": [
+      "rutx50"
+    ],
+    "match_skus": [
+      "RUTX50",
+      "RUTX50000000"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "Major opportunity",
+    "short_description": "Industrial 5G dual-SIM router. Priced between FirstShop (R9,999) and Amazon (R10,920) to cover card fees."
+  },
+  {
+    "list_id": 22,
+    "sku": "RUTM50",
+    "name": "Teltonika RUTM50 5G Industrial Router",
+    "brand": "Teltonika",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 12500,
+    "match_terms": [
+      "rutm50"
+    ],
+    "match_skus": [
+      "RUTM50"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Enterprise failover",
+    "short_description": "Enterprise 5G failover router."
+  },
+  {
+    "list_id": 23,
+    "sku": "RUT976",
+    "name": "Teltonika RUT976 5G RedCap Industrial Router",
+    "brand": "Teltonika",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 8900,
+    "match_terms": [
+      "rut976"
+    ],
+    "match_skus": [
+      "RUT976"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "IoT/industrial",
+    "short_description": "5G RedCap router for IoT and industrial sites."
+  },
+  {
+    "list_id": 24,
+    "sku": "TRB500",
+    "name": "Teltonika TRB500 5G Gateway",
+    "brand": "Teltonika",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 7500,
+    "match_terms": [
+      "trb500"
+    ],
+    "match_skus": [
+      "TRB500"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Remote connectivity",
+    "short_description": "Compact 5G gateway for remote connectivity."
+  },
+  {
+    "list_id": 25,
+    "sku": "UR75",
+    "name": "Milesight UR75 5G Industrial Router Dual-SIM GPS",
+    "brand": "Milesight",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 11900,
+    "match_terms": [
+      "milesight ur75",
+      "ur75"
+    ],
+    "match_skus": [
+      "UR75"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Dual-SIM/GPS",
+    "short_description": "Industrial 5G router with dual-SIM and GPS."
+  },
+  {
+    "list_id": 26,
+    "sku": "MAX-BR1-PRO-5G",
+    "name": "Peplink MAX BR1 Pro 5G",
+    "brand": "Peplink",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 18900,
+    "match_terms": [
+      "max br1 pro",
+      "br1 pro 5g"
+    ],
+    "match_skus": [
+      "MAX-BR1-PRO-5G"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Premium failover",
+    "short_description": "Premium 5G failover router for business WAN."
+  },
+  {
+    "list_id": 27,
+    "sku": "S53UG-5HAXD2HAXD",
+    "name": "MikroTik Chateau 5G",
+    "brand": "MikroTik",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 4500,
+    "match_terms": [
+      "chateau 5g"
+    ],
+    "match_skus": [
+      "S53UG-5HAXD2HAXD"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "SME/branch sites",
+    "short_description": "SME/branch 5G Chateau router."
+  },
+  {
+    "list_id": 28,
+    "sku": "RB-CCR2004SP",
+    "name": "MikroTik CCR2004-1G-12S+2XS Cloud Core Router",
+    "brand": "MikroTik",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 13850,
+    "match_terms": [
+      "ccr2004-1g-12s"
+    ],
+    "match_skus": [
+      "RB-CCR2004SP",
+      "CCR2004-1G-12S+2XS"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "ISPs/business",
+    "short_description": "CCR2004 12xSFP+ 2xSFP28 core router."
+  },
+  {
+    "list_id": 29,
+    "sku": "RB-CCR2116P",
+    "name": "MikroTik CCR2116-12G-4S+ Cloud Core Router",
+    "brand": "MikroTik",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 23350,
+    "match_terms": [
+      "ccr2116"
+    ],
+    "match_skus": [
+      "RB-CCR2116P",
+      "CCR2116-12G-4S+"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "ISP/high capacity",
+    "short_description": "CCR2116 high-capacity router."
+  },
+  {
+    "list_id": 30,
+    "sku": "RB-CCR2216SP",
+    "name": "MikroTik CCR2216-1G-12XS-2XQ Cloud Core Router",
+    "brand": "MikroTik",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 64400,
+    "match_terms": [
+      "ccr2216"
+    ],
+    "match_skus": [
+      "RB-CCR2216SP",
+      "CCR2216-1G-12XS-2XQ"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Data centre",
+    "short_description": "CCR2216 data-centre router."
+  },
+  {
+    "list_id": 31,
+    "sku": "CRS326-24S+2Q+RM",
+    "name": "MikroTik CRS326-24S+2Q+RM 10GbE Aggregation Switch",
+    "brand": "MikroTik",
+    "category_path": "networking-connectivity/switches",
+    "street_price": 18900,
+    "match_terms": [
+      "crs326-24s"
+    ],
+    "match_skus": [
+      "CRS326-24S+2Q+RM"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Fibre aggregation",
+    "short_description": "24xSFP+ 2xQSFP+ fibre aggregation switch."
+  },
+  {
+    "list_id": 32,
+    "sku": "CRS518-16XS-2XQ-RM",
+    "name": "MikroTik CRS518-16XS-2XQ-RM 25/100Gb Switch",
+    "brand": "MikroTik",
+    "category_path": "networking-connectivity/switches",
+    "street_price": 42900,
+    "match_terms": [
+      "crs518-16xs"
+    ],
+    "match_skus": [
+      "CRS518-16XS-2XQ-RM"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Data centre",
+    "short_description": "16x25G 2x100G data-centre switch."
+  },
+  {
+    "list_id": 33,
+    "sku": "U7-PRO",
+    "name": "Ubiquiti UniFi U7 Pro Wi-Fi 7 Access Point",
+    "brand": "Ubiquiti",
+    "category_path": "networking-connectivity/access-points",
+    "street_price": 5150,
+    "match_terms": [
+      "u7 pro"
+    ],
+    "match_skus": [
+      "U7-PRO"
+    ],
+    "exclude_name_terms": [
+      "max"
+    ],
+    "featured": true,
+    "sales_angle": "Strong seller",
+    "short_description": "UniFi U7 Pro Wi-Fi 7 access point."
+  },
+  {
+    "list_id": 34,
+    "sku": "U7-PRO-MAX",
+    "name": "Ubiquiti UniFi U7 Pro Max Wi-Fi 7 Access Point",
+    "brand": "Ubiquiti",
+    "category_path": "networking-connectivity/access-points",
+    "street_price": 6850,
+    "match_terms": [
+      "u7 pro max"
+    ],
+    "match_skus": [
+      "U7-PRO-MAX"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "High-density",
+    "short_description": "High-density UniFi Wi-Fi 7 Pro Max AP."
+  },
+  {
+    "list_id": 35,
+    "sku": "U7-ENTERPRISE",
+    "name": "Ubiquiti UniFi Enterprise Wi-Fi 7 Access Point",
+    "brand": "Ubiquiti",
+    "category_path": "networking-connectivity/access-points",
+    "street_price": 8950,
+    "match_terms": [
+      "unifi enterprise wifi 7",
+      "u7 enterprise"
+    ],
+    "match_skus": [
+      "U7-ENTERPRISE",
+      "U7-PRO-XG"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Enterprise",
+    "short_description": "Enterprise UniFi Wi-Fi 7 AP."
+  },
+  {
+    "list_id": 36,
+    "sku": "USW-PRO-MAX-24-POE",
+    "name": "Ubiquiti UniFi Pro Max 24 PoE Switch",
+    "brand": "Ubiquiti",
+    "category_path": "networking-connectivity/switches",
+    "street_price": 16950,
+    "match_terms": [
+      "usw-pro-max-24-poe",
+      "pro max 24 poe"
+    ],
+    "match_skus": [
+      "USW-PRO-MAX-24-POE",
+      "USW-PRO-MAX24P",
+      "USW-PRO-MAX-24-POE-EU"
+    ],
+    "exclude_name_terms": [
+      "pro max 16"
+    ],
+    "featured": false,
+    "sales_angle": "Business networks",
+    "short_description": "24-port Pro Max PoE switch. Street ~R16,500\u201316,950."
+  },
+  {
+    "list_id": 37,
+    "sku": "USW-E24XG",
+    "name": "Ubiquiti UniFi EnterpriseXG 24 10GbE Switch",
+    "brand": "Ubiquiti",
+    "category_path": "networking-connectivity/switches",
+    "street_price": 36250,
+    "match_terms": [
+      "enterprisexg 24"
+    ],
+    "match_skus": [
+      "USW-E24XG"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "High-speed LAN",
+    "short_description": "EnterpriseXG 24 10GbE switch."
+  },
+  {
+    "list_id": 38,
+    "sku": "EAP723",
+    "name": "TP-Link Omada EAP723 Wi-Fi 7 Access Point",
+    "brand": "TP-Link",
+    "category_path": "networking-connectivity/access-points",
+    "street_price": 3250,
+    "match_terms": [
+      "eap723"
+    ],
+    "match_skus": [
+      "EAP723"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Value enterprise",
+    "short_description": "Value enterprise Wi-Fi 7 Omada AP."
+  },
+  {
+    "list_id": 39,
+    "sku": "EAP773",
+    "name": "TP-Link Omada EAP773 Wi-Fi 7 Access Point",
+    "brand": "TP-Link",
+    "category_path": "networking-connectivity/access-points",
+    "street_price": 4450,
+    "match_terms": [
+      "eap773"
+    ],
+    "match_skus": [
+      "EAP773"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Business",
+    "short_description": "Business Omada Wi-Fi 7 AP."
+  },
+  {
+    "list_id": 40,
+    "sku": "EAP783",
+    "name": "TP-Link Omada EAP783 Wi-Fi 7 Access Point",
+    "brand": "TP-Link",
+    "category_path": "networking-connectivity/access-points",
+    "street_price": 5950,
+    "match_terms": [
+      "eap783"
+    ],
+    "match_skus": [
+      "EAP783"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "High density",
+    "short_description": "High-density Omada Wi-Fi 7 AP."
+  },
+  {
+    "list_id": 41,
+    "sku": "SG3428XPP-M2",
+    "name": "TP-Link Omada 24-Port 2.5GbE PoE+ Switch",
+    "brand": "TP-Link",
+    "category_path": "networking-connectivity/switches",
+    "street_price": 12900,
+    "match_terms": [
+      "sg3428xpp-m2",
+      "omada 24-port 2.5"
+    ],
+    "match_skus": [
+      "SG3428XPP-M2"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "Growing demand",
+    "short_description": "24-port 2.5GbE PoE+ Omada switch for Wi-Fi 7 upgrades."
+  },
+  {
+    "list_id": 42,
+    "sku": "GWN7670",
+    "name": "Grandstream GWN7670 Wi-Fi 7 Access Point",
+    "brand": "Grandstream",
+    "category_path": "networking-connectivity/access-points",
+    "street_price": 3950,
+    "match_terms": [
+      "gwn7670"
+    ],
+    "match_skus": [
+      "GWN7670"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Hospitality/education",
+    "short_description": "Wi-Fi 7 AP for hospitality and education."
+  },
+  {
+    "list_id": 43,
+    "sku": "GWN7811P",
+    "name": "Grandstream 8-Port 2.5GbE Managed PoE Switch",
+    "brand": "Grandstream",
+    "category_path": "networking-connectivity/switches",
+    "street_price": 3450,
+    "match_terms": [
+      "gwn7811p",
+      "grandstream 8-port 2.5"
+    ],
+    "match_skus": [
+      "GWN7811P"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "SME",
+    "short_description": "8-port 2.5GbE managed PoE switch for SMEs."
+  },
+  {
+    "list_id": 44,
+    "sku": "RG-ES218GS-P",
+    "name": "Reyee 2.5GbE PoE Smart Managed Switch",
+    "brand": "Reyee",
+    "category_path": "networking-connectivity/switches",
+    "street_price": 4950,
+    "match_terms": [
+      "reyee 2.5gbe poe",
+      "rg-es218gs-p"
+    ],
+    "match_skus": [
+      "RG-ES218GS-P"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Price competitive",
+    "short_description": "Price-competitive 2.5GbE PoE smart switch."
+  },
+  {
+    "list_id": 45,
+    "sku": "RG-RAP73-PRO",
+    "name": "Reyee Wi-Fi 7 Ceiling Access Point",
+    "brand": "Reyee",
+    "category_path": "networking-connectivity/access-points",
+    "street_price": 3650,
+    "match_terms": [
+      "rg-rap73",
+      "reyee wifi 7"
+    ],
+    "match_skus": [
+      "RG-RAP73-PRO"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Hotels/residences",
+    "short_description": "Wi-Fi 7 ceiling AP for hotels and residences."
+  },
+  {
+    "list_id": 46,
+    "sku": "IDS-2CD7A46G0-XZHSY",
+    "name": "Hikvision 4MP DeepinView ANPR Bullet Camera",
+    "brand": "Hikvision",
+    "category_path": "security-surveillance/ai-cameras",
+    "street_price": 12900,
+    "match_terms": [
+      "deepinview anpr"
+    ],
+    "match_skus": [
+      "IDS-2CD7A46G0-XZHSY"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "High-margin",
+    "short_description": "4MP DeepinView ANPR bullet for access and parking."
+  },
+  {
+    "list_id": 47,
+    "sku": "DS-2CD2387G2-LU",
+    "name": "Hikvision ColorVu 8MP AI Camera",
+    "brand": "Hikvision",
+    "category_path": "security-surveillance/cctv-cameras",
+    "street_price": 3450,
+    "match_terms": [
+      "colorvu 8mp"
+    ],
+    "match_skus": [
+      "DS-2CD2387G2-LU"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "24/7 colour",
+    "short_description": "8MP ColorVu 24/7 colour camera."
+  },
+  {
+    "list_id": 48,
+    "sku": "DS-2CD2386G2-ISU",
+    "name": "Hikvision AcuSense 8MP Camera",
+    "brand": "Hikvision",
+    "category_path": "security-surveillance/cctv-cameras",
+    "street_price": 2950,
+    "match_terms": [
+      "acusense 8mp"
+    ],
+    "match_skus": [
+      "DS-2CD2386G2-ISU"
+    ],
+    "exclude_name_terms": [
+      "nvr"
+    ],
+    "featured": false,
+    "sales_angle": "AI detection",
+    "short_description": "8MP AcuSense AI detection camera."
+  },
+  {
+    "list_id": 49,
+    "sku": "DS-7732NXI-I4/16P/S",
+    "name": "Hikvision 32-Channel AcuSense NVR",
+    "brand": "Hikvision",
+    "category_path": "security-surveillance/nvr-systems",
+    "street_price": 15950,
+    "match_terms": [
+      "32-channel acusense nvr"
+    ],
+    "match_skus": [
+      "DS-7732NXI-I4/16P/S",
+      "DS-7732NXI-I4/S"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Commercial CCTV",
+    "short_description": "32-channel AcuSense NVR."
+  },
+  {
+    "list_id": 50,
+    "sku": "DS-9664NXI-I8/S",
+    "name": "Hikvision 64-Channel AI NVR",
+    "brand": "Hikvision",
+    "category_path": "security-surveillance/nvr-systems",
+    "street_price": 33350,
+    "match_terms": [
+      "64-channel acusense nvr",
+      "64-channel ai nvr"
+    ],
+    "match_skus": [
+      "DS-9664NXI-I8/S"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Large sites",
+    "short_description": "64-channel AI NVR."
+  },
+  {
+    "list_id": 51,
+    "sku": "DS-2DE7A425IW-AEB",
+    "name": "Hikvision 25x DarkFighter PTZ Camera",
+    "brand": "Hikvision",
+    "category_path": "security-surveillance/ptz-cameras",
+    "street_price": 18900,
+    "match_terms": [
+      "darkfighter ptz"
+    ],
+    "match_skus": [
+      "DS-2DE7A425IW-AEB"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Municipal/security",
+    "short_description": "DarkFighter PTZ for municipal and perimeter security."
+  },
+  {
+    "list_id": 52,
+    "sku": "DS-2TD2617-10",
+    "name": "Hikvision Thermal Bi-Spectrum Camera",
+    "brand": "Hikvision",
+    "category_path": "security-surveillance/ai-cameras",
+    "street_price": 28900,
+    "match_terms": [
+      "thermal bi-spectrum",
+      "thermal bi spectrum"
+    ],
+    "match_skus": [
+      "DS-2TD2617-10"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Specialist",
+    "short_description": "Thermal bi-spectrum camera for specialist sites."
+  },
+  {
+    "list_id": 53,
+    "sku": "IPC2124SB-ADF40KMC-I0",
+    "name": "Uniview 4MP Starlight ANPR Camera",
+    "brand": "Uniview",
+    "category_path": "security-surveillance/ai-cameras",
+    "street_price": 9900,
+    "match_terms": [
+      "uniview anpr",
+      "starlight anpr"
+    ],
+    "match_skus": [
+      "IPC2124SB-ADF40KMC-I0"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Alternative ANPR",
+    "short_description": "Uniview starlight ANPR alternative."
+  },
+  {
+    "list_id": 54,
+    "sku": "IPC3618SB-ADF28KMC-I0",
+    "name": "Uniview 8MP AI ColorHunter Camera",
+    "brand": "Uniview",
+    "category_path": "security-surveillance/cctv-cameras",
+    "street_price": 3250,
+    "match_terms": [
+      "colorhunter"
+    ],
+    "match_skus": [
+      "IPC3618SB-ADF28KMC-I0"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Business security",
+    "short_description": "8MP ColorHunter business security camera."
+  },
+  {
+    "list_id": 55,
+    "sku": "P3265-LVE",
+    "name": "Axis P3265-LVE Outdoor IP Camera",
+    "brand": "Axis",
+    "category_path": "security-surveillance/ip-cameras",
+    "street_price": 12900,
+    "match_terms": [
+      "axis p3265"
+    ],
+    "match_skus": [
+      "P3265-LVE"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Premium projects",
+    "short_description": "Axis P-series outdoor IP camera for premium projects."
+  },
+  {
+    "list_id": 56,
+    "sku": "Q6135-LE",
+    "name": "Axis Q6135-LE PTZ Camera",
+    "brand": "Axis",
+    "category_path": "security-surveillance/ptz-cameras",
+    "street_price": 28900,
+    "match_terms": [
+      "axis q6135"
+    ],
+    "match_skus": [
+      "Q6135-LE"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Government/critical",
+    "short_description": "Axis Q-series PTZ for government and critical sites."
+  },
+  {
+    "list_id": 57,
+    "sku": "UF-SOLAR-AI-4G-KIT",
+    "name": "4G Solar AI Security Camera Kit",
+    "brand": "Urban Focus",
+    "category_path": "security-surveillance/solar-cameras",
+    "street_price": 9000,
+    "match_terms": [
+      "4g solar ai security",
+      "solar ai security camera kit"
+    ],
+    "match_skus": [
+      "UF-SOLAR-AI-4G-KIT"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Farms/construction",
+    "short_description": "4G solar AI camera kit for farms and construction."
+  },
+  {
+    "list_id": 58,
+    "sku": "DS-K1T673DWX",
+    "name": "Hikvision Face Recognition Terminal",
+    "brand": "Hikvision",
+    "category_path": "security-surveillance/facial-recognition-systems",
+    "street_price": 8900,
+    "match_terms": [
+      "ds-k1t673",
+      "hikvision face recognition terminal"
+    ],
+    "match_skus": [
+      "DS-K1T673DWX"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Business/security",
+    "short_description": "Hikvision face terminal for business access."
+  },
+  {
+    "list_id": 59,
+    "sku": "DS-K2604T",
+    "name": "Hikvision Biometric Access Controller",
+    "brand": "Hikvision",
+    "category_path": "security-surveillance/access-control",
+    "street_price": 5450,
+    "match_terms": [
+      "ds-k2604",
+      "hikvision biometric access"
+    ],
+    "match_skus": [
+      "DS-K2604T"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Corporate",
+    "short_description": "Hikvision biometric access controller."
+  },
+  {
+    "list_id": 60,
+    "sku": "MB560-VL",
+    "name": "ZKTeco Face + Fingerprint Terminal",
+    "brand": "ZKTeco",
+    "category_path": "security-surveillance/biometric-systems",
+    "street_price": 4250,
+    "match_terms": [
+      "mb560",
+      "zkteco face"
+    ],
+    "match_skus": [
+      "MB560-VL"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Schools/offices",
+    "short_description": "ZKTeco face and fingerprint terminal for schools and offices."
+  },
+  {
+    "list_id": 61,
+    "sku": "SRT3000XLI",
+    "name": "APC Smart-UPS SRT 3000VA Rackmount",
+    "brand": "APC",
+    "category_path": "solar-power/ups-systems",
+    "street_price": 41200,
+    "match_terms": [
+      "srt3000xli",
+      "smart-ups srt 3000"
+    ],
+    "match_skus": [
+      "SRT3000XLI"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "Server rooms",
+    "short_description": "3000VA online rack UPS. FirstShop ~R40,999; priced to cover card fees."
+  },
+  {
+    "list_id": 62,
+    "sku": "SRT5000XLI",
+    "name": "APC Smart-UPS SRT 5000VA",
+    "brand": "APC",
+    "category_path": "solar-power/ups-systems",
+    "street_price": 68900,
+    "match_terms": [
+      "srt5000xli",
+      "smart-ups srt 5000"
+    ],
+    "match_skus": [
+      "SRT5000XLI"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Enterprise",
+    "short_description": "5000VA online UPS for enterprise server rooms."
+  },
+  {
+    "list_id": 63,
+    "sku": "SRT6KXLI",
+    "name": "APC Smart-UPS SRT 6000VA",
+    "brand": "APC",
+    "category_path": "solar-power/ups-systems",
+    "street_price": 82500,
+    "match_terms": [
+      "srt6kxli",
+      "smart-ups srt 6000"
+    ],
+    "match_skus": [
+      "SRT6KXLI"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Data centre",
+    "short_description": "6000VA online UPS for data-centre loads."
+  },
+  {
+    "list_id": 64,
+    "sku": "9PX3000RT",
+    "name": "Eaton 9PX 3000VA Rackmount UPS",
+    "brand": "Eaton",
+    "category_path": "solar-power/ups-systems",
+    "street_price": 38900,
+    "match_terms": [
+      "eaton 9px 3000",
+      "9px3000"
+    ],
+    "match_skus": [
+      "9PX3000RT"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Enterprise",
+    "short_description": "Eaton 9PX 3kVA rackmount online UPS."
+  },
+  {
+    "list_id": 65,
+    "sku": "9PX5KIRTN",
+    "name": "Eaton 9PX 5000VA Online UPS",
+    "brand": "Eaton",
+    "category_path": "solar-power/ups-systems",
+    "street_price": 64900,
+    "match_terms": [
+      "eaton 9px 5000",
+      "9px5k"
+    ],
+    "match_skus": [
+      "9PX5KIRTN"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Server rooms",
+    "short_description": "Eaton 9PX 5kVA online UPS."
+  },
+  {
+    "list_id": 66,
+    "sku": "GXT5-3000IRT2UXL",
+    "name": "Vertiv Liebert GXT5 3000VA",
+    "brand": "Vertiv",
+    "category_path": "solar-power/ups-systems",
+    "street_price": 36500,
+    "match_terms": [
+      "gxt5 3000",
+      "liebert gxt5"
+    ],
+    "match_skus": [
+      "GXT5-3000IRT2UXL"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Enterprise",
+    "short_description": "Liebert GXT5 3kVA enterprise UPS."
+  },
+  {
+    "list_id": 67,
+    "sku": "RCT-OL3000-RM",
+    "name": "RCT 3000VA Rackmount Online UPS",
+    "brand": "RCT",
+    "category_path": "solar-power/ups-systems",
+    "street_price": 18900,
+    "match_terms": [
+      "rct 3000va"
+    ],
+    "match_skus": [
+      "RCT-OL3000-RM"
+    ],
+    "exclude_name_terms": [
+      "rct 6000"
+    ],
+    "featured": false,
+    "sales_angle": "Value business",
+    "short_description": "Value 3kVA rack online UPS."
+  },
+  {
+    "list_id": 68,
+    "sku": "RCT-OL6000-RM",
+    "name": "RCT 6000VA Rackmount Online UPS",
+    "brand": "RCT",
+    "category_path": "solar-power/ups-systems",
+    "street_price": 32900,
+    "match_terms": [
+      "rct 6000va"
+    ],
+    "match_skus": [
+      "RCT-OL6000-RM"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "High-capacity",
+    "short_description": "High-capacity 6kVA rack online UPS."
+  },
+  {
+    "list_id": 69,
+    "sku": "AP9641",
+    "name": "APC Network Management Card",
+    "brand": "APC",
+    "category_path": "solar-power/ups-systems",
+    "street_price": 5450,
+    "match_terms": [
+      "ap9641"
+    ],
+    "match_skus": [
+      "AP9641"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Remote UPS management",
+    "short_description": "Remote UPS network management card."
+  },
+  {
+    "list_id": 70,
+    "sku": "AP8853",
+    "name": "APC Metered Rack PDU with Remote Monitoring",
+    "brand": "APC",
+    "category_path": "solar-power/power-backup-solutions",
+    "street_price": 12900,
+    "match_terms": [
+      "ap8853"
+    ],
+    "match_skus": [
+      "AP8853"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Data centres",
+    "short_description": "Managed rack PDU with remote monitoring."
+  },
+  {
+    "list_id": 71,
+    "sku": "R360-ENTRY",
+    "name": "Dell PowerEdge R360 1U Entry Server",
+    "brand": "Dell",
+    "category_path": "computing-office/desktops",
+    "street_price": 48900,
+    "match_terms": [
+      "poweredge r360"
+    ],
+    "match_skus": [
+      "R360-ENTRY"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "SME/server rooms",
+    "short_description": "Current 1U entry PowerEdge for SME server rooms."
+  },
+  {
+    "list_id": 72,
+    "sku": "R660-CLASS",
+    "name": "Dell PowerEdge R660 Class Server",
+    "brand": "Dell",
+    "category_path": "computing-office/desktops",
+    "street_price": 78900,
+    "match_terms": [
+      "poweredge r660"
+    ],
+    "match_skus": [
+      "R660-CLASS"
+    ],
+    "exclude_name_terms": [
+      "r670"
+    ],
+    "featured": false,
+    "sales_angle": "Enterprise",
+    "short_description": "Enterprise 1U PowerEdge class server."
+  },
+  {
+    "list_id": 73,
+    "sku": "R760-CLASS",
+    "name": "Dell PowerEdge R760 Class Server",
+    "brand": "Dell",
+    "category_path": "computing-office/desktops",
+    "street_price": 98900,
+    "match_terms": [
+      "poweredge r760"
+    ],
+    "match_skus": [
+      "R760-CLASS"
+    ],
+    "exclude_name_terms": [
+      "r770"
+    ],
+    "featured": false,
+    "sales_angle": "Virtualisation",
+    "short_description": "2U virtualisation-class PowerEdge."
+  },
+  {
+    "list_id": 74,
+    "sku": "DL360-GEN11",
+    "name": "HPE ProLiant DL360 current generation",
+    "brand": "HPE",
+    "category_path": "computing-office/desktops",
+    "street_price": 72500,
+    "match_terms": [
+      "proliant dl360"
+    ],
+    "match_skus": [
+      "DL360-GEN11"
+    ],
+    "exclude_name_terms": [
+      "dl380"
+    ],
+    "featured": false,
+    "sales_angle": "Government/corporate",
+    "short_description": "1U ProLiant DL360 for government and corporate."
+  },
+  {
+    "list_id": 75,
+    "sku": "DL380-GEN11",
+    "name": "HPE ProLiant DL380 current generation",
+    "brand": "HPE",
+    "category_path": "computing-office/desktops",
+    "street_price": 86500,
+    "match_terms": [
+      "proliant dl380"
+    ],
+    "match_skus": [
+      "DL380-GEN11"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "High-volume",
+    "short_description": "2U ProLiant DL380 high-volume server."
+  },
+  {
+    "list_id": 76,
+    "sku": "SR630-V3",
+    "name": "Lenovo ThinkSystem SR630 V3 Server",
+    "brand": "Lenovo",
+    "category_path": "computing-office/desktops",
+    "street_price": 74500,
+    "match_terms": [
+      "thinksystem sr630"
+    ],
+    "match_skus": [
+      "SR630-V3"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Enterprise",
+    "short_description": "ThinkSystem SR630 V3 enterprise 1U server."
+  },
+  {
+    "list_id": 77,
+    "sku": "RS3626XS+",
+    "name": "Synology RackStation RS3626xs+",
+    "brand": "Synology",
+    "category_path": "computing-office/storage-devices",
+    "street_price": 68900,
+    "match_terms": [
+      "rs3626xs"
+    ],
+    "match_skus": [
+      "RS3626XS+"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "High-value storage",
+    "short_description": "High-value 12-bay RackStation."
+  },
+  {
+    "list_id": 78,
+    "sku": "DS1825+",
+    "name": "Synology DS1825+ 8-Bay NAS",
+    "brand": "Synology",
+    "category_path": "computing-office/storage-devices",
+    "street_price": 18900,
+    "match_terms": [
+      "ds1825"
+    ],
+    "match_skus": [
+      "DS1825+"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "SME/media",
+    "short_description": "8-bay DS1825+ for SME and media."
+  },
+  {
+    "list_id": 79,
+    "sku": "DS925+",
+    "name": "Synology DS925+ 4-Bay NAS",
+    "brand": "Synology",
+    "category_path": "computing-office/storage-devices",
+    "street_price": 12500,
+    "match_terms": [
+      "ds925+"
+    ],
+    "match_skus": [
+      "DS925+"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "SME backup",
+    "short_description": "4-bay DS925+ SME backup NAS."
+  },
+  {
+    "list_id": 80,
+    "sku": "TS-873A",
+    "name": "QNAP 8-Bay 10GbE NAS",
+    "brand": "QNAP",
+    "category_path": "computing-office/storage-devices",
+    "street_price": 22900,
+    "match_terms": [
+      "ts-873",
+      "qnap 8-bay 10gbe"
+    ],
+    "match_skus": [
+      "TS-873A"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Creative/business",
+    "short_description": "8-bay 10GbE NAS for creative and business."
+  },
+  {
+    "list_id": 81,
+    "sku": "ST20000NT001",
+    "name": "Seagate IronWolf Pro 20TB NAS HDD",
+    "brand": "Seagate",
+    "category_path": "computing-office/storage-devices",
+    "street_price": 10900,
+    "match_terms": [
+      "ironwolf pro 20"
+    ],
+    "match_skus": [
+      "ST20000NT001"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "NAS upgrades",
+    "short_description": "20TB IronWolf Pro NAS drive. 22/24TB quoted on request."
+  },
+  {
+    "list_id": 82,
+    "sku": "WD221KFGX",
+    "name": "WD Red Pro 22TB NAS HDD",
+    "brand": "WD",
+    "category_path": "computing-office/storage-devices",
+    "street_price": 11900,
+    "match_terms": [
+      "red pro 22",
+      "wd221kfgx"
+    ],
+    "match_skus": [
+      "WD221KFGX"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "NAS upgrades",
+    "short_description": "22TB WD Red Pro NAS drive."
+  },
+  {
+    "list_id": 83,
+    "sku": "MZQL23T8HCLS",
+    "name": "Samsung Enterprise NVMe SSD 3.84TB",
+    "brand": "Samsung",
+    "category_path": "computing-office/storage-devices",
+    "street_price": 14500,
+    "match_terms": [
+      "mzql23t8hcls",
+      "enterprise nvme 3.84"
+    ],
+    "match_skus": [
+      "MZQL23T8HCLS"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Server upgrade",
+    "short_description": "3.84TB enterprise NVMe for server upgrades."
+  },
+  {
+    "list_id": 84,
+    "sku": "X710-T2L",
+    "name": "Intel 10GbE PCIe RJ45 Network Adapter",
+    "brand": "Intel",
+    "category_path": "networking-connectivity/fibre-equipment",
+    "street_price": 4250,
+    "match_terms": [
+      "x710-t2l"
+    ],
+    "match_skus": [
+      "X710-T2L"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Upgrade product",
+    "short_description": "10GbE RJ45 PCIe NIC."
+  },
+  {
+    "list_id": 85,
+    "sku": "XXV710-DA2",
+    "name": "Intel 25GbE SFP28 Server NIC",
+    "brand": "Intel",
+    "category_path": "networking-connectivity/fibre-equipment",
+    "street_price": 5450,
+    "match_terms": [
+      "xxv710-da2",
+      "25gbe sfp28"
+    ],
+    "match_skus": [
+      "XXV710-DA2"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Data centre",
+    "short_description": "25GbE SFP28 server NIC."
+  },
+  {
+    "list_id": 86,
+    "sku": "CF-40-5G",
+    "name": "Panasonic Toughbook 40 5G",
+    "brand": "Panasonic",
+    "category_path": "industrial-commercial/warehouse-technology",
+    "street_price": 78900,
+    "match_terms": [
+      "toughbook 40"
+    ],
+    "match_skus": [
+      "CF-40-5G"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "Mining/field",
+    "short_description": "Rugged 5G Toughbook 40 for mining and field work."
+  },
+  {
+    "list_id": 87,
+    "sku": "FZ-G2-5G",
+    "name": "Panasonic Toughbook G2 5G",
+    "brand": "Panasonic",
+    "category_path": "industrial-commercial/warehouse-technology",
+    "street_price": 52900,
+    "match_terms": [
+      "toughbook g2"
+    ],
+    "match_skus": [
+      "FZ-G2-5G"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Field work",
+    "short_description": "Rugged 5G Toughbook G2 tablet."
+  },
+  {
+    "list_id": 88,
+    "sku": "S510",
+    "name": "Getac S510 Rugged Laptop",
+    "brand": "Getac",
+    "category_path": "industrial-commercial/warehouse-technology",
+    "street_price": 48900,
+    "match_terms": [
+      "getac s510"
+    ],
+    "match_skus": [
+      "S510"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Mining/logistics",
+    "short_description": "Getac S510 rugged laptop for mining and logistics."
+  },
+  {
+    "list_id": 89,
+    "sku": "F110",
+    "name": "Getac F110 Rugged Tablet",
+    "brand": "Getac",
+    "category_path": "industrial-commercial/warehouse-technology",
+    "street_price": 42900,
+    "match_terms": [
+      "getac f110"
+    ],
+    "match_skus": [
+      "F110"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Government/field",
+    "short_description": "Getac F110 rugged tablet for government field work."
+  },
+  {
+    "list_id": 90,
+    "sku": "SM-X306B",
+    "name": "Samsung Galaxy Tab Active5 Pro 5G",
+    "brand": "Samsung",
+    "category_path": "industrial-commercial/warehouse-technology",
+    "street_price": 14900,
+    "match_terms": [
+      "tab active5 pro",
+      "galaxy tab active5"
+    ],
+    "match_skus": [
+      "SM-X306B"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Enterprise mobility",
+    "short_description": "Enterprise rugged Android tablet with 5G."
+  },
+  {
+    "list_id": 91,
+    "sku": "ET65",
+    "name": "Zebra ET65 Rugged Android Tablet",
+    "brand": "Zebra",
+    "category_path": "industrial-commercial/warehouse-technology",
+    "street_price": 28900,
+    "match_terms": [
+      "zebra et65"
+    ],
+    "match_skus": [
+      "ET65"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Warehouse/logistics",
+    "short_description": "Zebra ET65 for warehouse and logistics."
+  },
+  {
+    "list_id": 92,
+    "sku": "RT8",
+    "name": "Oukitel RT8 Rugged Tablet",
+    "brand": "Oukitel",
+    "category_path": "industrial-commercial/warehouse-technology",
+    "street_price": 8900,
+    "match_terms": [
+      "oukitel rt8"
+    ],
+    "match_skus": [
+      "RT8"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Affordable rugged",
+    "short_description": "Affordable rugged tablet for field operations."
+  },
+  {
+    "list_id": 93,
+    "sku": "ARMOR-PAD-5G",
+    "name": "Ulefone Rugged LTE/5G Tablet",
+    "brand": "Ulefone",
+    "category_path": "industrial-commercial/warehouse-technology",
+    "street_price": 7900,
+    "match_terms": [
+      "ulefone rugged"
+    ],
+    "match_skus": [
+      "ARMOR-PAD-5G"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Field operations",
+    "short_description": "Ulefone rugged LTE/5G tablet."
+  },
+  {
+    "list_id": 94,
+    "sku": "RALLY-BAR",
+    "name": "Logitech Rally Bar",
+    "brand": "Logitech",
+    "category_path": "digital-signage/interactive-displays",
+    "street_price": 42900,
+    "match_terms": [
+      "rally bar"
+    ],
+    "match_skus": [
+      "RALLY-BAR"
+    ],
+    "exclude_name_terms": [
+      "mini"
+    ],
+    "featured": false,
+    "sales_angle": "Boardrooms",
+    "short_description": "Logitech Rally Bar for boardrooms."
+  },
+  {
+    "list_id": 95,
+    "sku": "RALLY-BAR-MINI",
+    "name": "Logitech Rally Bar Mini",
+    "brand": "Logitech",
+    "category_path": "digital-signage/interactive-displays",
+    "street_price": 28900,
+    "match_terms": [
+      "rally bar mini"
+    ],
+    "match_skus": [
+      "RALLY-BAR-MINI"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Small meeting rooms",
+    "short_description": "Rally Bar Mini for small meeting rooms."
+  },
+  {
+    "list_id": 96,
+    "sku": "TAP-IP",
+    "name": "Logitech Tap IP",
+    "brand": "Logitech",
+    "category_path": "digital-signage/interactive-displays",
+    "street_price": 12500,
+    "match_terms": [
+      "tap ip"
+    ],
+    "match_skus": [
+      "TAP-IP"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Teams/Zoom rooms",
+    "short_description": "Tap IP controller for Teams and Zoom rooms."
+  },
+  {
+    "list_id": 97,
+    "sku": "MB65",
+    "name": "Yealink MeetingBoard 65",
+    "brand": "Yealink",
+    "category_path": "digital-signage/interactive-displays",
+    "street_price": 58900,
+    "match_terms": [
+      "meetingboard 65"
+    ],
+    "match_skus": [
+      "MB65"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "Boardrooms",
+    "short_description": "65-inch MeetingBoard for boardrooms."
+  },
+  {
+    "list_id": 98,
+    "sku": "MB86",
+    "name": "Yealink MeetingBoard 86",
+    "brand": "Yealink",
+    "category_path": "digital-signage/interactive-displays",
+    "street_price": 78900,
+    "match_terms": [
+      "meetingboard 86"
+    ],
+    "match_skus": [
+      "MB86"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Large rooms",
+    "short_description": "86-inch MeetingBoard for large rooms."
+  },
+  {
+    "list_id": 99,
+    "sku": "MS-AIX1-PRO",
+    "name": "MINISFORUM AI X1 Pro",
+    "brand": "MINISFORUM",
+    "category_path": "smart-solutions/iot-devices",
+    "street_price": 18900,
+    "match_terms": [
+      "minisforum ai x1"
+    ],
+    "match_skus": [
+      "MS-AIX1-PRO"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "New category",
+    "short_description": "MINISFORUM AI X1 / X1 Pro edge AI mini PC."
+  },
+  {
+    "list_id": 100,
+    "sku": "JETSON-AGX-ORIN-64",
+    "name": "NVIDIA Jetson AGX Orin 64GB Developer Kit",
+    "brand": "NVIDIA",
+    "category_path": "smart-solutions/iot-devices",
+    "street_price": 42900,
+    "match_terms": [
+      "jetson agx orin"
+    ],
+    "match_skus": [
+      "JETSON-AGX-ORIN-64"
+    ],
+    "exclude_name_terms": [
+      "nano"
+    ],
+    "featured": false,
+    "sales_angle": "AI/CCTV/robotics",
+    "short_description": "Jetson AGX Orin for AI, CCTV analytics and robotics. Orin Nano quoted on request."
+  }
+]

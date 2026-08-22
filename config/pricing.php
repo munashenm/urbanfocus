@@ -22,6 +22,12 @@ return [
     'legacy_markup_percent' => (float) env('PRICE_LEGACY_MARKUP_PERCENT', 40),
 
     /*
+    | Paystack card/EFT (~2.9% + R1) plus bank receiving charges.
+    | Applied after product markup so street prices stay viable.
+    */
+    'payment_fee_percent' => (float) env('PRICE_PAYMENT_FEE_PERCENT', 3.9),
+
+    /*
     | Longest category path wins. Values are markup percent on VAT-inclusive cost.
     */
     'category_markups' => [

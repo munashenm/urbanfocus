@@ -11,6 +11,12 @@ class CompetitivePricingTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['pricing.payment_fee_percent' => 0]);
+    }
+
     public function test_reprices_dell_pro_15_from_legacy_forty_percent(): void
     {
         $product = Product::factory()->create([

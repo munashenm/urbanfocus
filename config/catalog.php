@@ -330,4 +330,10 @@ return [
     'excluded_pinnacle_roots' => [
         'on-promo',
     ],
+
+    /*
+    | Curated Urban Focus target-range SKUs (laptops, 5G, UniFi, CCTV, UPS, servers).
+    | Synced with `php artisan catalog:sync-target-range`. Existing store matches are skipped.
+    */
+    'target_range_path' => database_path('data/target-range-products.json'),
 ];

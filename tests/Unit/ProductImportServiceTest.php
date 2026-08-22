@@ -30,6 +30,7 @@ class ProductImportServiceTest extends TestCase
             'pricing.round_to' => 50,
             'pricing.round_mode' => 'up',
             'pricing.low_cost_threshold' => 20,
+            'pricing.payment_fee_percent' => 0,
         ]);
 
         $this->import = new ProductImportService(

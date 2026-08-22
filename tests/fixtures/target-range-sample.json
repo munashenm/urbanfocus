@@ -1,0 +1,173 @@
+[
+  {
+    "list_id": 5,
+    "sku": "EBX-G1I-14-5G",
+    "name": "HP EliteBook X G1i 14 5G Ultra 7 32GB 1TB Win 11 Pro",
+    "brand": "HP",
+    "category_path": "computing-office/laptops",
+    "street_price": 45900,
+    "match_terms": [
+      "elitebook x g1i"
+    ],
+    "match_skus": [
+      "EBX-G1I-14-5G"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "Push heavily",
+    "short_description": "14-inch 5G EliteBook X for field and corporate mobility. Ultra 7, 32GB, 1TB."
+  },
+  {
+    "list_id": 7,
+    "sku": "AD3U3ET",
+    "name": "HP EliteBook 8 G1i 16 Next Gen AI Core U7-258V 32GB 2TB Win 11 Pro Notebook",
+    "brand": "HP",
+    "category_path": "computing-office/laptops",
+    "street_price": 46600,
+    "match_terms": [
+      "elitebook 8 g1i 16"
+    ],
+    "match_skus": [
+      "AD3U3ET"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Enterprise 16\"",
+    "short_description": "16-inch EliteBook 8 G1i corporate notebook."
+  },
+  {
+    "list_id": 11,
+    "sku": "21QC001HZA",
+    "name": "Lenovo ThinkPad T14 Gen 6 Intel Core Ultra 7 16GB 1TB Win 11 Pro",
+    "brand": "Lenovo",
+    "category_path": "computing-office/laptops",
+    "street_price": 32900,
+    "match_terms": [
+      "thinkpad t14 gen 6"
+    ],
+    "match_skus": [
+      "21QC001HZA"
+    ],
+    "exclude_name_terms": [
+      "lte",
+      "5g"
+    ],
+    "featured": false,
+    "sales_angle": "High-volume B2B",
+    "short_description": "High-volume B2B ThinkPad T14 Gen 6. Street-priced against FirstShop Wi-Fi configs."
+  },
+  {
+    "list_id": 12,
+    "sku": "21QC000YZA",
+    "name": "Lenovo ThinkPad T14 Gen 6 LTE/5G Intel Core Ultra 7 16GB 512GB Win 11 Pro",
+    "brand": "Lenovo",
+    "category_path": "computing-office/laptops",
+    "street_price": 35500,
+    "match_terms": [
+      "thinkpad t14 gen 6 lte",
+      "thinkpad t14 gen 6 5g"
+    ],
+    "match_skus": [
+      "21QC000YZA"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "Rare configuration",
+    "short_description": "ThinkPad T14 Gen 6 with LTE/5G \u2014 uncommon RFQ configuration."
+  },
+  {
+    "list_id": 21,
+    "sku": "RUTX50",
+    "name": "Teltonika RUTX50 5G Industrial Router Dual SIM",
+    "brand": "Teltonika",
+    "category_path": "networking-connectivity/routers",
+    "street_price": 10400,
+    "match_terms": [
+      "rutx50"
+    ],
+    "match_skus": [
+      "RUTX50",
+      "RUTX50000000"
+    ],
+    "exclude_name_terms": [],
+    "featured": true,
+    "sales_angle": "Major opportunity",
+    "short_description": "Industrial 5G dual-SIM router. Priced between FirstShop (R9,999) and Amazon (R10,920) to cover card fees."
+  },
+  {
+    "list_id": 33,
+    "sku": "U7-PRO",
+    "name": "Ubiquiti UniFi U7 Pro Wi-Fi 7 Access Point",
+    "brand": "Ubiquiti",
+    "category_path": "networking-connectivity/access-points",
+    "street_price": 5150,
+    "match_terms": [
+      "u7 pro"
+    ],
+    "match_skus": [
+      "U7-PRO"
+    ],
+    "exclude_name_terms": [
+      "max"
+    ],
+    "featured": true,
+    "sales_angle": "Strong seller",
+    "short_description": "UniFi U7 Pro Wi-Fi 7 access point."
+  },
+  {
+    "list_id": 34,
+    "sku": "U7-PRO-MAX",
+    "name": "Ubiquiti UniFi U7 Pro Max Wi-Fi 7 Access Point",
+    "brand": "Ubiquiti",
+    "category_path": "networking-connectivity/access-points",
+    "street_price": 6850,
+    "match_terms": [
+      "u7 pro max"
+    ],
+    "match_skus": [
+      "U7-PRO-MAX"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "High-density",
+    "short_description": "High-density UniFi Wi-Fi 7 Pro Max AP."
+  },
+  {
+    "list_id": 94,
+    "sku": "RALLY-BAR",
+    "name": "Logitech Rally Bar",
+    "brand": "Logitech",
+    "category_path": "digital-signage/interactive-displays",
+    "street_price": 42900,
+    "match_terms": [
+      "rally bar"
+    ],
+    "match_skus": [
+      "RALLY-BAR"
+    ],
+    "exclude_name_terms": [
+      "mini"
+    ],
+    "featured": false,
+    "sales_angle": "Boardrooms",
+    "short_description": "Logitech Rally Bar for boardrooms."
+  },
+  {
+    "list_id": 95,
+    "sku": "RALLY-BAR-MINI",
+    "name": "Logitech Rally Bar Mini",
+    "brand": "Logitech",
+    "category_path": "digital-signage/interactive-displays",
+    "street_price": 28900,
+    "match_terms": [
+      "rally bar mini"
+    ],
+    "match_skus": [
+      "RALLY-BAR-MINI"
+    ],
+    "exclude_name_terms": [],
+    "featured": false,
+    "sales_angle": "Small meeting rooms",
+    "short_description": "Rally Bar Mini for small meeting rooms."
+  }
+]

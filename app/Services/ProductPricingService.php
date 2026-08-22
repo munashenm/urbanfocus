@@ -74,6 +74,10 @@ class ProductPricingService
         $threshold = (float) config('pricing.low_cost_threshold', 20);
 
         $markedUp = $costPrice * (1 + ($markup / 100));
+        $paymentFee = (float) config('pricing.payment_fee_percent', 0);
+        if ($paymentFee > 0) {
+            $markedUp *= (1 + ($paymentFee / 100));
+        }
         $mode = config('pricing.round_mode', 'up');
 
         if ($threshold > 0 && $costPrice < $threshold) {

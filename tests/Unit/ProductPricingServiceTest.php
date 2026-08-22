@@ -18,6 +18,7 @@ class ProductPricingServiceTest extends TestCase
             'pricing.round_to' => 50,
             'pricing.round_mode' => 'up',
             'pricing.low_cost_threshold' => 20,
+            'pricing.payment_fee_percent' => 0,
         ]);
 
         $this->pricing = new ProductPricingService;
@@ -88,6 +89,16 @@ class ProductPricingServiceTest extends TestCase
         $this->assertSame(8.0, $this->pricing->markupPercentFor(10000, null, [
             'name' => 'Business notebook',
             'category_path' => 'computing-office/laptops',
+        ]));
+    }
+
+    public function test_payment_fee_keeps_dell_above_gateway_cost(): void
+    {
+        config(['pricing.payment_fee_percent' => 3.9]);
+
+        $this->assertSame(20000.0, $this->pricing->retailPrice(17821.43, null, [
+            'name' => 'Dell Pro 15 Essential Intel Core i7 Professional',
+            'brand' => 'Dell',
         ]));
     }
 }
