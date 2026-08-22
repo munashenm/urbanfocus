@@ -18,7 +18,13 @@ return [
 
     'brands' => [
         'ubiquiti' => ['source' => 'wm-ubiquiti.svg', 'label' => 'Ubiquiti'],
-        'cambium-networks' => ['source' => 'wm-cambium-networks.svg', 'label' => 'Cambium Networks'],
+        'cambium-networks' => [
+            'source' => 'wm-cambium-networks.svg',
+            'label' => 'Cambium Networks',
+            'view_box' => [231, 146, 258, 43],
+            'padding_x' => 6,
+            'padding_y' => 8,
+        ],
         'dahua' => ['source' => 'wm-dahua.svg', 'label' => 'Dahua'],
         'hikvision' => ['source' => 'wm-hikvision.svg', 'label' => 'Hikvision'],
         'sophos' => [

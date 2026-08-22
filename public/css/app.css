@@ -382,7 +382,8 @@ a:hover { color: var(--uf-blue); }
 .brand-logo-card--sophos img,
 .brand-logo-card--lenovo img,
 .brand-logo-card--samsung img,
-.brand-logo-card--starlink img {
+.brand-logo-card--starlink img,
+.brand-logo-card--cambium-networks img {
     max-width: 116px;
     max-height: 44px;
 }

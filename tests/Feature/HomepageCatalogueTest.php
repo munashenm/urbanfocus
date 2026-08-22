@@ -105,13 +105,22 @@ class HomepageCatalogueTest extends TestCase
             'is_active' => true,
             'sort_order' => 2,
         ]);
+        Brand::create([
+            'name' => 'Cambium Networks',
+            'slug' => 'cambium-networks',
+            'logo' => 'images/brands/cambium-networks.svg',
+            'is_active' => true,
+            'sort_order' => 3,
+        ]);
 
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('brand-logo-card--sophos', false)
             ->assertSee('brand-logo-card--lenovo', false)
+            ->assertSee('brand-logo-card--cambium-networks', false)
             ->assertSee('images/brands/sophos.svg', false)
-            ->assertSee('images/brands/lenovo.svg', false);
+            ->assertSee('images/brands/lenovo.svg', false)
+            ->assertSee('images/brands/cambium-networks.svg', false);
 
         $css = file_get_contents(public_path('css/app.css'));
         $this->assertNotFalse($css);
@@ -119,13 +128,19 @@ class HomepageCatalogueTest extends TestCase
         $this->assertStringContainsString('min-height: 56px', $css);
         $this->assertStringContainsString('.brand-logo-card--sophos img', $css);
         $this->assertStringContainsString('.brand-logo-card--lenovo img', $css);
+        $this->assertStringContainsString('.brand-logo-card--cambium-networks img', $css);
 
         $sophos = file_get_contents(public_path('images/brands/sophos.svg'));
         $lenovo = file_get_contents(public_path('images/brands/lenovo.svg'));
+        $cambium = file_get_contents(public_path('images/brands/cambium-networks.svg'));
         $this->assertNotFalse($sophos);
         $this->assertNotFalse($lenovo);
+        $this->assertNotFalse($cambium);
         $this->assertMatchesRegularExpression('/scale\(0\.[7-9]/', $sophos);
         $this->assertMatchesRegularExpression('/scale\([3-9]\./', $lenovo);
+        $this->assertMatchesRegularExpression('/scale\(0\.[5-9]/', $cambium);
         $this->assertStringNotContainsString('M0 0h192', $sophos);
+        $this->assertStringNotContainsString('Layer_1', $cambium);
+        $this->assertLessThan(4000, strlen($cambium));
     }
 }

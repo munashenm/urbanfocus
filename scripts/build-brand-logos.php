@@ -168,6 +168,10 @@ function importGraphicNodes(DOMNode $node, DOMElement $targetGroup, DOMDocument 
             continue;
         }
 
+        if (isHiddenGraphic($child)) {
+            continue;
+        }
+
         if ($tag === 'g') {
             if (isBackgroundGraphic($child)) {
                 continue;
@@ -188,6 +192,23 @@ function importGraphicNodes(DOMNode $node, DOMElement $targetGroup, DOMDocument 
             $targetGroup->appendChild(cloneGraphicElement($child, $targetDoc, $fill));
         }
     }
+}
+
+function isHiddenGraphic(DOMElement $element): bool
+{
+    $display = strtolower(trim($element->getAttribute('display')));
+    if ($display === 'none') {
+        return true;
+    }
+
+    $style = strtolower($element->getAttribute('style'));
+    if (str_contains($style, 'display:none') || str_contains($style, 'display: none')) {
+        return true;
+    }
+
+    $class = ' '.$element->getAttribute('class').' ';
+
+    return str_contains($class, ' st0 ');
 }
 
 function isBackgroundGraphic(DOMElement $element): bool
