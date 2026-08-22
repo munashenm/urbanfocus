@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Brand;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class HomepageCatalogueTest extends TestCase
@@ -87,6 +89,23 @@ class HomepageCatalogueTest extends TestCase
 
     public function test_homepage_featured_brands_enlarge_small_wordmarks(): void
     {
+        Cache::flush();
+
+        Brand::create([
+            'name' => 'Sophos',
+            'slug' => 'sophos',
+            'logo' => 'images/brands/sophos.svg',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        Brand::create([
+            'name' => 'Lenovo',
+            'slug' => 'lenovo',
+            'logo' => 'images/brands/lenovo.svg',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('brand-logo-card--sophos', false)
