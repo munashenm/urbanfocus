@@ -34,6 +34,13 @@ class PublicAssetSync
 
         if (! is_file($canaryTarget) || filemtime($canarySource) > filemtime($canaryTarget)) {
             self::syncAll($sourceRoot, $publicPath);
+
+            return;
+        }
+
+        $imageCanary = '/images/target-range/tr-laptop-14.jpg';
+        if (is_file($sourceRoot.$imageCanary) && ! is_file($publicPath.$imageCanary)) {
+            self::copyDirectory($sourceRoot.'/images/target-range', $publicPath.'/images/target-range');
         }
     }
 

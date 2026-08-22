@@ -74,6 +74,22 @@ class TargetRangeCatalogTest extends TestCase
         $this->assertTrue($product->fresh()->images()->exists());
     }
 
+    public function test_attaches_photos_when_web_root_is_separate_from_laravel_public(): void
+    {
+        $emptyPublic = sys_get_temp_dir().'/uf-public-html-'.uniqid();
+        mkdir($emptyPublic.'/images', 0755, true);
+        $this->app->usePublicPath($emptyPublic);
+
+        $result = app(TargetRangeCatalogService::class)->sync();
+        $router = Product::where('sku', 'RUTX50')->first();
+
+        $this->assertSame(9, $result['created']);
+        $this->assertGreaterThan(0, $result['imaged']);
+        $this->assertNotNull($router);
+        $this->assertTrue($router->images()->exists());
+        $this->assertFileExists($emptyPublic.'/images/target-range/tr-5g-router.jpg');
+    }
+
     public function test_skips_existing_name_match_with_a_different_sku(): void
     {
         Product::factory()->create([

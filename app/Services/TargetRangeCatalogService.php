@@ -52,6 +52,7 @@ class TargetRangeCatalogService
     {
         $this->refreshIndex();
         $this->categories->ensureCanonicalTree();
+        $this->publishListingImages();
 
         $created = 0;
         $skipped = 0;
@@ -268,9 +269,38 @@ class TargetRangeCatalogService
     protected function listingImagePath(array $item): ?string
     {
         $file = $this->listingImageFile($item);
-        $path = public_path('images/target-range/'.$file);
 
-        return is_file($path) ? $path : null;
+        foreach ([
+            base_path('public/images/target-range/'.$file),
+            public_path('images/target-range/'.$file),
+        ] as $path) {
+            if (is_file($path) && is_readable($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    protected function publishListingImages(): void
+    {
+        $source = base_path('public/images/target-range');
+        $target = public_path('images/target-range');
+
+        if (! is_dir($source) || realpath($source) === realpath($target)) {
+            return;
+        }
+
+        if (! is_dir($target) && ! @mkdir($target, 0755, true) && ! is_dir($target)) {
+            return;
+        }
+
+        foreach (glob($source.'/tr-*.jpg') ?: [] as $file) {
+            $dest = $target.'/'.basename($file);
+            if (! is_file($dest) || filemtime($file) > filemtime($dest)) {
+                @copy($file, $dest);
+            }
+        }
     }
 
     /**

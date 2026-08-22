@@ -127,7 +127,7 @@ class ImageService
 
     protected function looksLikeImage(string $contents): bool
     {
-        if (@getimagesizefromstring($contents) !== false) {
+        if (function_exists('getimagesizefromstring') && @getimagesizefromstring($contents) !== false) {
             return true;
         }
 
