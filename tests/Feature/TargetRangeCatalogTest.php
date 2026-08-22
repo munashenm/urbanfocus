@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\ProductPricingService;
 use App\Services\TargetRangeCatalogService;
+use App\Services\TargetRangeListingCopy;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -259,17 +260,19 @@ class TargetRangeCatalogTest extends TestCase
         $router = Product::where('sku', 'RUTX50')->firstOrFail();
         $html = (string) $router->description;
 
-        $this->assertGreaterThan(800, strlen(strip_tags($html)));
+        $this->assertGreaterThan(400, strlen(strip_tags($html)));
         $this->assertStringContainsString('Teltonika RUTX50', $html);
-        $this->assertStringContainsString('South Africa', $html);
-        $this->assertStringContainsString('<h2>', $html);
+        $this->assertStringContainsString('<h3>Advantages</h3>', $html);
+        $this->assertStringContainsString('<h3>Suitable for</h3>', $html);
         $this->assertStringContainsString('<h3>Key specifications</h3>', $html);
-        $this->assertStringContainsString('Urban Focus', $html);
+        $this->assertStringContainsString('5G', $html);
+        $this->assertStringNotContainsString('Paystack', $html);
+        $this->assertStringNotContainsString('under-quote', $html);
         $this->assertNotEmpty($router->meta_title);
         $this->assertNotEmpty($router->meta_description);
         $this->assertLessThanOrEqual(70, mb_strlen((string) $router->meta_title));
         $this->assertLessThanOrEqual(160, mb_strlen((string) $router->meta_description));
-        $this->assertStringContainsString('South Africa', (string) $router->short_description);
+        $this->assertStringContainsString('5G', (string) $router->short_description);
 
         $router->update([
             'description' => '<p>Old thin copy.</p>',
@@ -279,7 +282,27 @@ class TargetRangeCatalogTest extends TestCase
 
         $again = app(TargetRangeCatalogService::class)->sync();
         $this->assertSame(1, $again['updated']);
-        $this->assertGreaterThan(800, strlen(strip_tags((string) $router->fresh()->description)));
+        $this->assertGreaterThan(400, strlen(strip_tags((string) $router->fresh()->description)));
         $this->assertStringContainsString('Key specifications', (string) $router->fresh()->description);
+        $this->assertStringContainsString('Advantages', (string) $router->fresh()->description);
+    }
+
+    public function test_description_matches_spec_sheet_layout_like_distributor_listings(): void
+    {
+        $html = app(TargetRangeListingCopy::class)->descriptionHtml([
+            'sku' => 'P16-RTX',
+            'name' => 'Lenovo ThinkPad P16 RTX Workstation Win 11 Pro',
+            'brand' => 'Lenovo',
+            'category_path' => 'computing-office/laptops',
+            'short_description' => 'ThinkPad P16 RTX workstation for CAD and GIS.',
+        ]);
+
+        $this->assertStringContainsString('<h3>Advantages</h3>', $html);
+        $this->assertStringContainsString('<h3>Suitable for</h3>', $html);
+        $this->assertStringContainsString('<h3>Key specifications</h3>', $html);
+        $this->assertStringContainsString('NVIDIA RTX', $html);
+        $this->assertStringContainsString('Windows 11 Pro', $html);
+        $this->assertStringContainsString('CAD/CAM', $html);
+        $this->assertStringNotContainsString('Urban Focus is a South African B2B', $html);
     }
 }

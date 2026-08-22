@@ -707,6 +707,8 @@ class Product extends Model
             $specs['Dimensions'] = $this->dimensions;
         }
 
+        unset($specs['Urban Focus range'], $specs['Sales focus'], $specs['Supply']);
+
         return $specs;
     }
 
