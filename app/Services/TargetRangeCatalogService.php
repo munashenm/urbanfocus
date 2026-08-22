@@ -663,10 +663,8 @@ class TargetRangeCatalogService
 
     protected function hydrate(object $row): Product
     {
-        if ($row instanceof Product) {
-            return $row;
-        }
+        $id = (int) ($row->id ?? 0);
 
-        return Product::withTrashed()->findOrFail($row->id);
+        return Product::withTrashed()->findOrFail($id);
     }
 }
