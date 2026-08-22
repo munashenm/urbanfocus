@@ -75,6 +75,56 @@
     </div>
 
     <div class="col-lg-6">
+        <div class="card h-100 border-success"><div class="card-body">
+            <h2 class="h5 fw-bold text-success">Add target-range products</h2>
+            <p class="small text-muted mb-3">
+                Adds up to {{ number_format($targetRangeCount) }} curated business SKUs (laptops, 5G, UniFi, CCTV, UPS, servers).
+                Existing store matches are skipped. Prices already include Paystack and bank charges.
+                No Terminal or <code>php artisan</code> needed.
+            </p>
+
+            @if(session('target_range_preview'))
+                @php $preview = session('target_range_preview'); @endphp
+                <div class="alert alert-secondary small mb-3">
+                    <strong>Preview</strong> (nothing written yet)<br>
+                    Would create: <strong>{{ $preview['created'] ?? 0 }}</strong>,
+                    already on store: {{ $preview['skipped'] ?? 0 }},
+                    errors: {{ $preview['errors'] ?? 0 }}
+                    @if(!empty($preview['samples']))
+                        <ul class="mb-0 ps-3 mt-2">
+                            @foreach(array_slice($preview['samples'], 0, 12) as $sample)
+                                <li>
+                                    {{ strtoupper($sample['action'] ?? '') }}
+                                    {{ $sample['sku'] ?? '' }}
+                                    — {{ $sample['name'] ?? '' }}
+                                    @if(!empty($sample['reason'])) ({{ $sample['reason'] }}) @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            @endif
+
+            @if($targetRangeCount > 0)
+                <div class="d-flex flex-wrap gap-2">
+                    <form action="{{ route('admin.catalog.sync-target-range-preview') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary">Preview (no changes)</button>
+                    </form>
+                    <form action="{{ route('admin.catalog.sync-target-range') }}" method="POST" onsubmit="return confirm('Create missing target-range products? Existing store listings will not be duplicated.')">
+                        @csrf
+                        <button type="submit" class="btn btn-success">Add missing products</button>
+                    </form>
+                </div>
+            @else
+                <div class="alert alert-warning small mb-0">
+                    Catalog file not found. Pull the latest <code>master</code> so <code>database/data/target-range-products.json</code> is on the server.
+                </div>
+            @endif
+        </div></div>
+    </div>
+
+    <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Export Products</h2>
             <p class="small text-muted">Download all products as CSV for backup or re-import.</p>

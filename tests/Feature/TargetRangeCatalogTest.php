@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Product;
+use App\Models\User;
 use App\Services\ProductPricingService;
 use App\Services\TargetRangeCatalogService;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -129,5 +131,27 @@ class TargetRangeCatalogTest extends TestCase
         $this->assertSame(0, $second['created']);
         $this->assertSame(100, $second['skipped']);
         $this->assertSame(100, Product::count());
+    }
+
+    public function test_admin_can_preview_and_add_target_range_without_artisan(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        $admin = User::factory()->create(['is_admin' => true, 'is_active' => true]);
+        $admin->syncRoles(['super-admin']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.catalog.sync-target-range-preview'))
+            ->assertRedirect();
+
+        $this->assertSame(0, Product::count());
+
+        $this->actingAs($admin)
+            ->from(route('admin.catalog.index'))
+            ->post(route('admin.catalog.sync-target-range'))
+            ->assertRedirect(route('admin.catalog.index'))
+            ->assertSessionHas('success');
+
+        $this->assertSame(9, Product::count());
+        $this->assertNotNull(Product::where('sku', 'RUTX50')->first());
     }
 }

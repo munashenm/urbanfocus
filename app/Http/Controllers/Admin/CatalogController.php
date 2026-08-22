@@ -12,6 +12,7 @@ use App\Services\ProductCleanupService;
 use App\Services\ProductExportService;
 use App\Services\ProductImportService;
 use App\Services\ProductSeoService;
+use App\Services\TargetRangeCatalogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -29,6 +30,12 @@ class CatalogController extends Controller
         $merchantIssueLabels = Product::googleMerchantIssueLabels();
         $ineligibleSample = $merchant->ineligibleProducts(10);
         $importPricing = app(ProductImportService::class)->pricingPolicy();
+        $targetRangeCount = 0;
+        try {
+            $targetRangeCount = count(app(TargetRangeCatalogService::class)->items());
+        } catch (\Throwable) {
+            $targetRangeCount = 0;
+        }
 
         $feeds = [
             ['name' => 'Google Merchant Center', 'url' => route('feeds.google'), 'format' => 'XML'],
@@ -44,7 +51,7 @@ class CatalogController extends Controller
             ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
         ];
 
-        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing'));
+        return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing', 'targetRangeCount'));
     }
 
     public function import(Request $request, ProductImportService $importService): RedirectResponse
@@ -252,6 +259,40 @@ class CatalogController extends Controller
             report($e);
 
             return back()->with('error', 'Category assignment failed: '.$e->getMessage());
+        }
+    }
+
+    public function syncTargetRangePreview(TargetRangeCatalogService $catalog): RedirectResponse
+    {
+        try {
+            @set_time_limit(120);
+            $result = $catalog->sync(dryRun: true);
+
+            return back()->with('target_range_preview', $result);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Target-range preview failed: '.$e->getMessage());
+        }
+    }
+
+    public function syncTargetRange(TargetRangeCatalogService $catalog): RedirectResponse
+    {
+        try {
+            @set_time_limit(0);
+
+            $result = $catalog->sync();
+            $message = "Created {$result['created']} target-range product(s). Already on the store: {$result['skipped']}. Errors: {$result['errors']}.";
+
+            if ($result['errors'] > 0) {
+                return back()->with('warning', $message);
+            }
+
+            return back()->with('success', $message);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Target-range sync failed: '.$e->getMessage());
         }
     }
 
