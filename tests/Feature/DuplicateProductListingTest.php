@@ -26,9 +26,7 @@ class DuplicateProductListingTest extends TestCase
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee($newer->name, false)
-            ->assertSee('/product/hdmi-port-socket-ps5-newer', false)
-            ->assertDontSee('/product/hdmi-port-socket-ps5-older', false);
+            ->assertDontSee('HDMI Port Socket', false);
 
         $this->get(route('shop.index', ['q' => 'HDMI Port Socket']))
             ->assertOk()

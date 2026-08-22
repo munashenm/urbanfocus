@@ -108,6 +108,45 @@ return [
     ],
 
     /*
+    | First homepage product row: mix from these category paths (2 each),
+    | not whatever was imported most recently (HDMI sockets, helmet cameras).
+    */
+    'popular_category_paths' => [
+        'networking-connectivity',
+        'computing-office/laptops',
+        'security-surveillance',
+        'computing-office/storage-devices',
+    ],
+
+    /*
+    | Shop-by-category tiles: South Africa IT demand first.
+    */
+    'category_priority' => [
+        'networking-connectivity',
+        'computing-office',
+        'security-surveillance',
+        'solar-power',
+        'business-retail',
+        'industrial-iot',
+        'digital-signage',
+    ],
+
+    /*
+    | Keep accessories and niche imports off homepage product rows.
+    */
+    'exclude_name_terms' => [
+        'hdmi',
+        'helmet',
+        'body worn',
+        'body-worn',
+        'bwc-',
+        'playstation',
+        'ps5',
+        'dash cam',
+        'dashcam',
+    ],
+
+    /*
     | Brand logos shown above homepage product rows (slug order preserved).
     | Networking uses product cards only — no logo strip.
     */

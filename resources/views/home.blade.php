@@ -142,13 +142,13 @@
     </div>
 </section>
 
-@if($latestProducts->count())
+@if($popularProducts->count())
     @include('partials.home-product-section', [
-        'title' => 'Current Range',
-        'subtitle' => 'Live catalogue products currently available to order.',
+        'title' => 'Top Selling in South Africa',
+        'subtitle' => 'Networking, business laptops, CCTV and storage — the categories SA businesses buy most.',
         'url' => route('shop.index'),
         'linkLabel' => 'Shop All Products',
-        'products' => $latestProducts,
+        'products' => $popularProducts,
     ])
 @endif
 

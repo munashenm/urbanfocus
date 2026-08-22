@@ -22,13 +22,9 @@ class HomeController extends Controller
     {
         $featuredProducts = $this->remember('home.featured_v4', fn () => $this->curatedFeaturedProducts(8));
 
-        $latestProducts = $this->remember('home.latest_v3', function () {
-            $products = Product::with('images')->forStorefront()->latest()->take(16)->get();
+        $popularProducts = $this->remember('home.popular_sa_v1', fn () => $this->popularSouthAfricaProducts(8));
 
-            return app(CatalogDeduper::class)->uniqueCollection($products)->take(8);
-        });
-
-        $topSellers = $this->remember('home.top_sellers_v4', fn () => $this->topSellerProducts(8));
+        $topSellers = $this->remember('home.top_sellers_v5', fn () => $this->topSellerProducts(8));
 
         $networkingProducts = $this->remember('home.networking_v5', fn () => $this->networkingShowcaseProducts(8));
 
@@ -44,16 +40,10 @@ class HomeController extends Controller
             config('homepage.section_product_brands.cctv', [])
         ));
 
-        $categories = $this->remember('home.categories', fn () => Category::where('is_active', true)
-            ->whereNull('parent_id')
-            ->visibleInCatalog()
-            ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])
-            ->orderBy('sort_order')
-            ->take(12)
-            ->get());
+        $categories = $this->remember('home.categories_v2', fn () => $this->homepageCategories(12));
 
-        [$latestProducts, $topSellers, $laptopProducts, $networkingProducts, $securityProducts, $featuredProducts] = $this->dedupeHomepageRows([
-            $latestProducts,
+        [$popularProducts, $topSellers, $laptopProducts, $networkingProducts, $securityProducts, $featuredProducts] = $this->dedupeHomepageRows([
+            $popularProducts,
             $topSellers,
             $laptopProducts,
             $networkingProducts,
@@ -103,7 +93,7 @@ class HomeController extends Controller
         $sectionBrands = $this->remember('home.section_brands', fn () => $this->sectionBrands());
 
         return view('home', compact(
-            'featuredProducts', 'latestProducts', 'topSellers', 'networkingProducts',
+            'featuredProducts', 'popularProducts', 'topSellers', 'networkingProducts',
             'laptopProducts', 'securityProducts', 'categories', 'brands', 'banners',
             'articles', 'featuredArticle', 'heroSlides', 'solutionBlocks', 'categoryIcons', 'sectionBrands'
         ));
@@ -201,6 +191,8 @@ class HomeController extends Controller
             ->forStorefront()
             ->whereIn('category_id', $ids);
 
+        $this->applyHomepageExclusions($base);
+
         if ($preferredBrandSlugs !== []) {
             $brandNames = $this->brandNamesForSlugs($preferredBrandSlugs);
 
@@ -240,6 +232,7 @@ class HomeController extends Controller
             ->whereIn('category_id', $categoryIds)
             ->whereIn(DB::raw('LOWER(TRIM(brand))'), $brandNames);
 
+        $this->applyHomepageExclusions($query);
         $this->applyExcludedBrands($query, $config['exclude_brands'] ?? []);
         $this->applyExcludedNameTerms($query, $config['exclude_name_terms'] ?? []);
 
@@ -276,6 +269,7 @@ class HomeController extends Controller
             ->whereIn('category_id', $categoryIds)
             ->whereIn(DB::raw('LOWER(TRIM(brand))'), $brandNames);
 
+        $this->applyHomepageExclusions($query);
         $this->applyExcludedBrands($query, $config['exclude_brands'] ?? []);
         $this->applyExcludedNameTerms($query, $config['exclude_name_terms'] ?? []);
 
@@ -316,6 +310,92 @@ class HomeController extends Controller
         }
     }
 
+    protected function applyHomepageExclusions($query): void
+    {
+        $this->applyExcludedNameTerms($query, config('homepage.exclude_name_terms', []));
+    }
+
+    protected function applyPopularTypeOrder($query): void
+    {
+        $query->orderByRaw(
+            "CASE
+                WHEN LOWER(name) LIKE '%switch%' OR LOWER(name) LIKE '%access point%' OR LOWER(name) LIKE '%unifi%' OR LOWER(name) LIKE '%router%' THEN 0
+                WHEN LOWER(name) LIKE '%laptop%' OR LOWER(name) LIKE '%latitude%' OR LOWER(name) LIKE '%thinkpad%' OR LOWER(name) LIKE '%elitebook%' OR LOWER(name) LIKE '%notebook%' THEN 1
+                WHEN (LOWER(name) LIKE '%camera%' OR LOWER(name) LIKE '% nvr%' OR LOWER(name) LIKE '%hikvision%' OR LOWER(name) LIKE '%dahua%') AND LOWER(name) NOT LIKE '%helmet%' THEN 2
+                WHEN LOWER(name) LIKE '%nas%' OR LOWER(name) LIKE '%storage%' OR LOWER(name) LIKE '%ssd%' THEN 3
+                ELSE 8
+            END"
+        );
+    }
+
+    /**
+     * Mix products from the categories SA businesses buy most, instead of newest imports.
+     */
+    protected function popularSouthAfricaProducts(int $limit)
+    {
+        $perGroup = 2;
+        $collected = collect();
+        $paths = config('homepage.popular_category_paths', []);
+        $laptopBrands = config('homepage.section_product_brands.laptops', []);
+        $cctvBrands = config('homepage.section_product_brands.cctv', []);
+
+        foreach ($paths as $path) {
+            $preferred = match ($path) {
+                'computing-office/laptops' => $laptopBrands,
+                'security-surveillance' => $cctvBrands,
+                default => [],
+            };
+
+            if ($path === 'networking-connectivity') {
+                $batch = $this->networkingShowcaseProducts($perGroup);
+                if ($batch->isEmpty()) {
+                    $batch = $this->categoryProducts($path, $perGroup);
+                }
+            } else {
+                $batch = $this->categoryProducts($path, $perGroup, $preferred);
+            }
+
+            $collected = $collected->concat($batch);
+        }
+
+        if ($collected->count() < $limit) {
+            $fallback = Product::with('images')->forStorefront();
+            $this->applyHomepageExclusions($fallback);
+
+            if ($collected->isNotEmpty()) {
+                $fallback->whereNotIn('id', $collected->pluck('id')->all());
+            }
+
+            $this->applyPopularTypeOrder($fallback);
+            $fallback->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest());
+
+            $collected = $collected->concat($fallback->take($limit)->get());
+        }
+
+        return app(CatalogDeduper::class)->uniqueCollection($collected)->take($limit);
+    }
+
+    protected function homepageCategories(int $limit)
+    {
+        $categories = Category::where('is_active', true)
+            ->whereNull('parent_id')
+            ->visibleInCatalog()
+            ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])
+            ->orderBy('sort_order')
+            ->get();
+
+        $priority = config('homepage.category_priority', []);
+        if ($priority === []) {
+            return $categories->take($limit)->values();
+        }
+
+        return $categories->sortBy(function (Category $category) use ($priority) {
+            $index = array_search($category->slug, $priority, true);
+
+            return $index === false ? 1000 + (int) $category->sort_order : $index;
+        })->take($limit)->values();
+    }
+
     /** @param list<string> $slugs @return list<string> */
     protected function brandNamesForSlugs(array $slugs): array
     {
@@ -337,6 +417,7 @@ class HomeController extends Controller
         $categorySlugs = config('homepage.top_seller_categories', []);
 
         $query = Product::with('images')->forStorefront();
+        $this->applyHomepageExclusions($query);
 
         if ($brands !== []) {
             $normalized = array_map(fn (string $brand) => mb_strtolower(trim($brand)), $brands);
