@@ -83,17 +83,21 @@ class TargetRangeCatalogService
                         }
                     }
 
-                    if ($this->isCatalogOwnedProduct($existing, $item) && ($this->shouldUpdatePrice($existing, $item) || $this->shouldRefreshCopy($existing, $item))) {
+                    $exactSku = $this->isExactCatalogSku($existing, $item);
+                    $updatePrice = $exactSku && $this->shouldUpdatePrice($existing, $item);
+                    $updateCopy = $exactSku && $this->shouldRefreshCopy($existing, $item);
+
+                    if ($updatePrice || $updateCopy) {
                         $newPrice = $this->retailStreetPrice($item);
                         $reasons = [];
-                        if ($this->shouldUpdatePrice($existing, $item)) {
+                        if ($updatePrice) {
                             $reasons[] = 'Was R'.number_format((float) $existing->price, 0).' → R'.number_format($newPrice, 0).' ('.$this->topupPercent().'% catalogue top-up)';
                         }
-                        if ($this->shouldRefreshCopy($existing, $item)) {
-                            $reasons[] = 'Professional SEO description refreshed';
+                        if ($updateCopy) {
+                            $reasons[] = 'Spec-sheet description refreshed';
                         }
                         if (! $dryRun) {
-                            $this->applyListingContent($existing, $item);
+                            $this->applyListingContent($existing, $item, $updatePrice);
                         }
                         $updated++;
                         if (count($samples) < 25) {
@@ -260,10 +264,16 @@ class TargetRangeCatalogService
     /**
      * @param  array<string, mixed>  $item
      */
-    protected function isCatalogOwnedProduct(Product $product, array $item): bool
+    protected function isExactCatalogSku(Product $product, array $item): bool
     {
         $catalogSku = $this->normalizeCode((string) ($item['sku'] ?? ''));
-        if ($catalogSku === '' || $this->normalizeCode((string) $product->sku) !== $catalogSku) {
+
+        return $catalogSku !== '' && $this->normalizeCode((string) $product->sku) === $catalogSku;
+    }
+
+    protected function isCatalogOwnedProduct(Product $product, array $item): bool
+    {
+        if (! $this->isExactCatalogSku($product, $item)) {
             return false;
         }
 
@@ -295,9 +305,9 @@ class TargetRangeCatalogService
     /**
      * @param  array<string, mixed>  $item
      */
-    protected function applyListingContent(Product $product, array $item): void
+    protected function applyListingContent(Product $product, array $item, bool $updatePrice = true): void
     {
-        $product->update([
+        $payload = [
             'short_description' => $this->copy->shortDescription($item),
             'description' => $this->copy->descriptionHtml($item),
             'meta_title' => $this->copy->metaTitle($item),
@@ -305,9 +315,14 @@ class TargetRangeCatalogService
             'meta_keywords' => $this->copy->metaKeywords($item),
             'specifications' => $this->copy->specifications($item),
             'warranty_months' => $this->copy->warrantyMonths($item),
-            'price' => $this->retailStreetPrice($item),
-            'cost_price' => $this->impliedCostPrice($item),
-        ]);
+        ];
+
+        if ($updatePrice) {
+            $payload['price'] = $this->retailStreetPrice($item);
+            $payload['cost_price'] = $this->impliedCostPrice($item);
+        }
+
+        $product->update($payload);
     }
 
     public function topupPercent(): float

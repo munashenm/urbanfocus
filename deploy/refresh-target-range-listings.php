@@ -118,15 +118,9 @@ foreach ($items as $item) {
         || abs($current - $retail) < 0.51
         || abs($current - $tenPercent) < 0.51;
 
-    if (! $ours) {
-        $skipped++;
-        echo "SKIP      {$sku}  existing store listing at R".number_format($current, 0)."\n";
-        continue;
-    }
-
     $html = $copy->descriptionHtml($item);
     $needsCopy = trim((string) $product->description) !== trim($html);
-    $needsPrice = abs($current - $retail) >= 0.01;
+    $needsPrice = $ours && abs($current - $retail) >= 0.01;
 
     if (! $needsCopy && ! $needsPrice) {
         $already++;
@@ -149,7 +143,7 @@ foreach ($items as $item) {
         } catch (Throwable) {
         }
 
-        $product->update([
+        $payload = [
             'short_description' => $copy->shortDescription($item),
             'description' => $html,
             'meta_title' => $copy->metaTitle($item),
@@ -157,9 +151,12 @@ foreach ($items as $item) {
             'meta_keywords' => $copy->metaKeywords($item),
             'specifications' => $copy->specifications($item),
             'warranty_months' => $copy->warrantyMonths($item),
-            'price' => $retail,
-            'cost_price' => $cost,
-        ]);
+        ];
+        if ($needsPrice) {
+            $payload['price'] = $retail;
+            $payload['cost_price'] = $cost;
+        }
+        $product->update($payload);
     }
 
     $updated++;

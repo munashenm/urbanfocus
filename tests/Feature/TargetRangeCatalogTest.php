@@ -60,8 +60,10 @@ class TargetRangeCatalogTest extends TestCase
         $result = app(TargetRangeCatalogService::class)->sync();
 
         $this->assertSame(8, $result['created']);
-        $this->assertSame(1, $result['skipped']);
+        $this->assertSame(1, $result['updated']);
+        $this->assertSame(0, $result['skipped']);
         $this->assertSame(1, Product::where('sku', 'AD3U3ET')->count());
+        $this->assertStringContainsString('Key specifications', (string) Product::where('sku', 'AD3U3ET')->first()?->description);
     }
 
     public function test_backfills_a_photo_when_an_existing_match_has_none(): void
@@ -211,9 +213,10 @@ class TargetRangeCatalogTest extends TestCase
         $result = app(TargetRangeCatalogService::class)->sync();
 
         $this->assertSame(8, $result['created']);
-        $this->assertSame(0, $result['updated']);
-        $this->assertSame(1, $result['skipped']);
+        $this->assertSame(1, $result['updated']);
+        $this->assertSame(0, $result['skipped']);
         $this->assertSame(1999.0, (float) $product->fresh()->price);
+        $this->assertStringContainsString('Key specifications', (string) $product->fresh()->description);
     }
 
     public function test_admin_catalog_page_loads_with_target_range_card(): void
@@ -304,5 +307,28 @@ class TargetRangeCatalogTest extends TestCase
         $this->assertStringContainsString('Windows 11 Pro', $html);
         $this->assertStringContainsString('CAD/CAM', $html);
         $this->assertStringNotContainsString('Urban Focus is a South African B2B', $html);
+    }
+
+    public function test_every_target_range_sku_gets_a_spec_sheet_description(): void
+    {
+        config(['catalog.target_range_path' => database_path('data/target-range-products.json')]);
+
+        $copy = app(TargetRangeListingCopy::class);
+        $items = app(TargetRangeCatalogService::class)->items();
+        $this->assertCount(100, $items);
+
+        foreach ($items as $item) {
+            $html = $copy->descriptionHtml($item);
+            $this->assertStringContainsString('<h3>Advantages</h3>', $html, $item['sku']);
+            $this->assertStringContainsString('<h3>Suitable for</h3>', $html, $item['sku']);
+            $this->assertStringContainsString('<h3>Key specifications</h3>', $html, $item['sku']);
+            $this->assertStringContainsString((string) $item['name'], $html, $item['sku']);
+            $this->assertGreaterThan(300, strlen(strip_tags($html)), $item['sku']);
+        }
+
+        $result = app(TargetRangeCatalogService::class)->sync();
+        $this->assertSame(100, $result['created']);
+        $this->assertSame(100, Product::where('description', 'like', '%Key specifications%')->count());
+        $this->assertSame(100, Product::where('description', 'like', '%Advantages%')->count());
     }
 }
