@@ -76,6 +76,10 @@
 
     <div class="col-lg-6">
         <div class="card h-100 border-success"><div class="card-body">
+            @php
+                $targetRangeCount = $targetRangeCount ?? 0;
+                $canSyncTargetRange = \Illuminate\Support\Facades\Route::has('admin.catalog.sync-target-range');
+            @endphp
             <h2 class="h5 fw-bold text-success">Add target-range products</h2>
             <p class="small text-muted mb-3">
                 Adds up to {{ number_format($targetRangeCount) }} curated business SKUs (laptops, 5G, UniFi, CCTV, UPS, servers).
@@ -106,7 +110,7 @@
                 </div>
             @endif
 
-            @if($targetRangeCount > 0)
+            @if($canSyncTargetRange && $targetRangeCount > 0)
                 <div class="d-flex flex-wrap gap-2">
                     <form action="{{ route('admin.catalog.sync-target-range-preview') }}" method="POST">
                         @csrf
@@ -119,7 +123,7 @@
                 </div>
             @else
                 <div class="alert alert-warning small mb-0">
-                    Catalog file not found. Pull the latest <code>master</code> so <code>database/data/target-range-products.json</code> is on the server.
+                    Refresh this page once after pulling <code>master</code>. If the buttons still do not appear, run <code>public_html/clear-cache.php</code> (copy from <code>deploy/clear-cache.php</code>) so Laravel drops its old route cache.
                 </div>
             @endif
         </div></div>

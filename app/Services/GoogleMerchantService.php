@@ -9,10 +9,6 @@ class GoogleMerchantService
 {
     public function feedStats(): array
     {
-        $products = Product::with(['category', 'images'])
-            ->where('is_active', true)
-            ->get();
-
         $issueCounts = [
             'no_image' => 0,
             'no_description' => 0,
@@ -22,25 +18,32 @@ class GoogleMerchantService
         ];
 
         $eligible = 0;
+        $total = 0;
 
-        foreach ($products as $product) {
-            $issues = $product->googleMerchantIssues();
+        Product::with('images')
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->chunkById(200, function ($products) use (&$issueCounts, &$eligible, &$total) {
+                foreach ($products as $product) {
+                    $total++;
+                    $issues = $product->googleMerchantIssues();
 
-            if ($issues === []) {
-                $eligible++;
-            }
+                    if ($issues === []) {
+                        $eligible++;
+                    }
 
-            foreach ($issues as $issue) {
-                if (isset($issueCounts[$issue])) {
-                    $issueCounts[$issue]++;
+                    foreach ($issues as $issue) {
+                        if (isset($issueCounts[$issue])) {
+                            $issueCounts[$issue]++;
+                        }
+                    }
                 }
-            }
-        }
+            });
 
         return [
-            'total_active' => $products->count(),
+            'total_active' => $total,
             'eligible' => $eligible,
-            'ineligible' => $products->count() - $eligible,
+            'ineligible' => $total - $eligible,
             'issues' => $issueCounts,
             'feed_url' => route('feeds.google'),
         ];

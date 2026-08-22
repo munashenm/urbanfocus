@@ -15,6 +15,7 @@ use App\Services\ProductSeoService;
 use App\Services\TargetRangeCatalogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -23,27 +24,74 @@ class CatalogController extends Controller
 {
     public function index(GoogleMerchantService $merchant, ProductCleanupService $cleanup, CategoryConsolidationService $consolidation): View
     {
+        $this->forgetStaleRouteCache();
+
         $apiKey = Setting::get('api_key') ?: config('app.api_key');
-        $feedStats = $merchant->feedStats();
-        $nonItPreview = $cleanup->previewNonItCleanup();
-        $categoryConsolidationPreview = $consolidation->preview();
-        $merchantIssueLabels = Product::googleMerchantIssueLabels();
-        $ineligibleSample = $merchant->ineligibleProducts(10);
-        $importPricing = app(ProductImportService::class)->pricingPolicy();
-        $targetRangeCount = 0;
+        $feedStats = $this->emptyFeedStats();
+        $nonItPreview = [
+            'terms_loaded' => 0,
+            'it_heads_loaded' => 0,
+            'total_products' => 0,
+            'excluded_categories' => [],
+            'products_to_delete' => 0,
+            'categories_to_delete' => 0,
+            'sample_products' => [],
+        ];
+        $categoryConsolidationPreview = [
+            'products_to_move' => 0,
+            'empty_categories' => 0,
+            'sample_moves' => [],
+        ];
+        $ineligibleSample = [];
+        $importPricing = [
+            'markup_percent' => (float) config('pricing.markup_percent', 15),
+            'round_to' => (int) config('pricing.round_to', 50),
+            'round_mode' => (string) config('pricing.round_mode', 'up'),
+            'low_cost_threshold' => (float) config('pricing.low_cost_threshold', 20),
+            'example' => ['cost' => 100, 'retail' => 150],
+            'low_cost_example' => ['cost' => 4, 'retail' => 5.6],
+        ];
+
         try {
-            $targetRangeCount = count(app(TargetRangeCatalogService::class)->items());
-        } catch (\Throwable) {
-            $targetRangeCount = 0;
+            $feedStats = $merchant->feedStats();
+        } catch (\Throwable $e) {
+            report($e);
         }
 
+        try {
+            $nonItPreview = $cleanup->previewNonItCleanup();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        try {
+            $categoryConsolidationPreview = $consolidation->preview();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        try {
+            $ineligibleSample = $merchant->ineligibleProducts(10);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        try {
+            $importPricing = app(ProductImportService::class)->pricingPolicy();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        $merchantIssueLabels = Product::googleMerchantIssueLabels();
+        $targetRangeCount = $this->targetRangeCount();
+
         $feeds = [
-            ['name' => 'Google Merchant Center', 'url' => route('feeds.google'), 'format' => 'XML'],
-            ['name' => 'Bob Shop product feed (XML)', 'url' => route('feeds.bobshop'), 'format' => 'XML'],
-            ['name' => 'Bob Shop BulkLoad CSV', 'url' => route('feeds.bobshop.csv'), 'format' => 'CSV'],
-            ['name' => 'PriceCheck comparison CSV', 'url' => route('feeds.pricecheck'), 'format' => 'CSV'],
-            ['name' => 'PriceCheck product feed (XML)', 'url' => route('feeds.pricecheck.xml'), 'format' => 'XML'],
-            ['name' => 'XML Sitemap', 'url' => route('sitemap'), 'format' => 'XML'],
+            ['name' => 'Google Merchant Center', 'url' => Route::has('feeds.google') ? route('feeds.google') : url('/feeds/google.xml'), 'format' => 'XML'],
+            ['name' => 'Bob Shop product feed (XML)', 'url' => Route::has('feeds.bobshop') ? route('feeds.bobshop') : url('/feeds/bobshop.xml'), 'format' => 'XML'],
+            ['name' => 'Bob Shop BulkLoad CSV', 'url' => Route::has('feeds.bobshop.csv') ? route('feeds.bobshop.csv') : url('/feeds/bobshop.csv'), 'format' => 'CSV'],
+            ['name' => 'PriceCheck comparison CSV', 'url' => Route::has('feeds.pricecheck') ? route('feeds.pricecheck') : url('/feeds/pricecheck.csv'), 'format' => 'CSV'],
+            ['name' => 'PriceCheck product feed (XML)', 'url' => Route::has('feeds.pricecheck.xml') ? route('feeds.pricecheck.xml') : url('/feeds/pricecheck.xml'), 'format' => 'XML'],
+            ['name' => 'XML Sitemap', 'url' => Route::has('sitemap') ? route('sitemap') : url('/sitemap.xml'), 'format' => 'XML'],
         ];
 
         $apiEndpoints = [
@@ -311,6 +359,57 @@ class CatalogController extends Controller
             report($e);
 
             return back()->with('error', 'Category merge failed: '.$e->getMessage());
+        }
+    }
+
+    protected function targetRangeCount(): int
+    {
+        $path = (string) (config('catalog.target_range_path') ?: database_path('data/target-range-products.json'));
+        if (! is_readable($path)) {
+            return 0;
+        }
+
+        try {
+            $decoded = json_decode((string) file_get_contents($path), true);
+
+            return is_array($decoded) ? count($decoded) : 0;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /** @return array{total_active: int, eligible: int, ineligible: int, issues: array<string, int>, feed_url: string} */
+    protected function emptyFeedStats(): array
+    {
+        return [
+            'total_active' => 0,
+            'eligible' => 0,
+            'ineligible' => 0,
+            'issues' => [
+                'no_image' => 0,
+                'no_description' => 0,
+                'no_price' => 0,
+                'no_brand' => 0,
+                'no_identifier' => 0,
+            ],
+            'feed_url' => Route::has('feeds.google') ? route('feeds.google') : url('/feeds/google.xml'),
+        ];
+    }
+
+    protected function forgetStaleRouteCache(): void
+    {
+        if (Route::has('admin.catalog.sync-target-range')) {
+            return;
+        }
+
+        foreach (glob(base_path('bootstrap/cache/routes*.php')) ?: [] as $file) {
+            @unlink($file);
+        }
+
+        foreach (glob(storage_path('framework/views/*.php')) ?: [] as $file) {
+            if (basename($file) !== '.gitignore') {
+                @unlink($file);
+            }
         }
     }
 }

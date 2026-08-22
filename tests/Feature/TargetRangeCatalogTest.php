@@ -151,6 +151,19 @@ class TargetRangeCatalogTest extends TestCase
         $this->assertSame(100, Product::count());
     }
 
+    public function test_admin_catalog_page_loads_with_target_range_card(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        $admin = User::factory()->create(['is_admin' => true, 'is_active' => true]);
+        $admin->syncRoles(['super-admin']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.catalog.index'))
+            ->assertOk()
+            ->assertSee('Add target-range products', false)
+            ->assertSee('Preview (no changes)', false);
+    }
+
     public function test_admin_can_preview_and_add_target_range_without_artisan(): void
     {
         $this->seed(RolePermissionSeeder::class);
