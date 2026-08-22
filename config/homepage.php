@@ -108,6 +108,11 @@ return [
     ],
 
     /*
+    | Each homepage product row is a complete 4x2 grid.
+    */
+    'row_limit' => 8,
+
+    /*
     | First homepage product row: mix from these category paths (2 each),
     | not whatever was imported most recently (HDMI sockets, helmet cameras).
     */
@@ -160,7 +165,7 @@ return [
     | When loading category product rows, prefer these brand slugs first.
     */
     'section_product_brands' => [
-        'laptops' => ['dell', 'hp', 'lenovo'],
+        'laptops' => ['dell', 'hp', 'lenovo', 'microsoft', 'asus'],
         'cctv' => ['hikvision', 'dahua'],
     ],
 

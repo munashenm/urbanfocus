@@ -20,36 +20,14 @@ class HomeController extends Controller
 {
     public function index(): View
     {
-        $featuredProducts = $this->remember('home.featured_v4', fn () => $this->curatedFeaturedProducts(8));
+        $limit = (int) config('homepage.row_limit', 8);
 
-        $popularProducts = $this->remember('home.popular_sa_v1', fn () => $this->popularSouthAfricaProducts(8));
-
-        $topSellers = $this->remember('home.top_sellers_v5', fn () => $this->topSellerProducts(8));
-
-        $networkingProducts = $this->remember('home.networking_v5', fn () => $this->networkingShowcaseProducts(8));
-
-        $laptopProducts = $this->remember('home.laptops_v5', fn () => $this->categoryProducts(
-            'computing-office/laptops',
-            8,
-            config('homepage.section_product_brands.laptops', [])
-        ));
-
-        $securityProducts = $this->remember('home.security_v2', fn () => $this->categoryProducts(
-            'security-surveillance',
-            8,
-            config('homepage.section_product_brands.cctv', [])
-        ));
+        [$popularProducts, $topSellers, $laptopProducts, $networkingProducts, $securityProducts, $featuredProducts] = $this->remember(
+            'home.product_rows_v1',
+            fn () => $this->homepageProductRows($limit)
+        );
 
         $categories = $this->remember('home.categories_v2', fn () => $this->homepageCategories(12));
-
-        [$popularProducts, $topSellers, $laptopProducts, $networkingProducts, $securityProducts, $featuredProducts] = $this->dedupeHomepageRows([
-            $popularProducts,
-            $topSellers,
-            $laptopProducts,
-            $networkingProducts,
-            $securityProducts,
-            $featuredProducts,
-        ]);
 
         if ($featuredProducts->count() < 4) {
             $featuredProducts = collect();
@@ -100,53 +78,57 @@ class HomeController extends Controller
     }
 
     /**
-     * Featured row only when there is a real curated set from the live catalogue.
-     * Sparse leftover "deal" flags should not become a one-product homepage section.
+     * Build unique homepage rows of equal length. Category rows are filled
+     * before Top Sellers so a laptop shown in Business Laptops is not also
+     * consumed by an earlier overlapping query.
+     *
+     * @return list<Collection<int, Product>>
      */
-    protected function curatedFeaturedProducts(int $limit)
+    protected function homepageProductRows(int $limit): array
     {
-        $featured = Product::with('images')
-            ->forStorefront()
-            ->where('is_featured', true)
-            ->latest()
-            ->take($limit)
-            ->get();
+        $popular = $this->popularSouthAfricaProducts($limit);
+        $used = $popular->pluck('id')->all();
 
-        return $featured->count() >= 4 ? $featured : collect();
+        $laptops = $this->categoryProducts(
+            'computing-office/laptops',
+            $limit,
+            config('homepage.section_product_brands.laptops', []),
+            $used
+        );
+        $used = array_merge($used, $laptops->pluck('id')->all());
+
+        $networking = $this->networkingShowcaseProducts($limit, $used);
+        $used = array_merge($used, $networking->pluck('id')->all());
+
+        $security = $this->categoryProducts(
+            'security-surveillance',
+            $limit,
+            config('homepage.section_product_brands.cctv', []),
+            $used
+        );
+        $used = array_merge($used, $security->pluck('id')->all());
+
+        $topSellers = $this->topSellerProducts($limit, $used);
+        $used = array_merge($used, $topSellers->pluck('id')->all());
+
+        $featured = $this->curatedFeaturedProducts($limit, $used);
+
+        return [$popular, $topSellers, $laptops, $networking, $security, $featured];
     }
 
     /**
-     * Keep homepage rows unique so the same SKU is not repeated down the page.
-     *
-     * @param  list<Collection<int, Product>>  $rows
-     * @return list<Collection<int, Product>>
+     * Featured row only when there is a real curated set from the live catalogue.
+     * Sparse leftover "deal" flags should not become a one-product homepage section.
      */
-    protected function dedupeHomepageRows(array $rows): array
+    protected function curatedFeaturedProducts(int $limit, array $excludeIds = [])
     {
-        $used = [];
-        $deduper = app(CatalogDeduper::class);
+        $featured = Product::with('images')
+            ->forStorefront()
+            ->where('is_featured', true);
+        $this->applyExcludedIds($featured, $excludeIds);
+        $featured = $featured->latest()->take($limit)->get();
 
-        return array_map(function ($products) use (&$used, $deduper) {
-            if ($products->isEmpty()) {
-                return $products;
-            }
-
-            return $products->reject(function (Product $product) use (&$used, $deduper) {
-                $keys = ['id:'.$product->id, $deduper->listingKey($product)];
-
-                foreach ($keys as $key) {
-                    if (isset($used[$key])) {
-                        return true;
-                    }
-                }
-
-                foreach ($keys as $key) {
-                    $used[$key] = true;
-                }
-
-                return false;
-            })->values();
-        }, $rows);
+        return $featured->count() >= 4 ? $featured : collect();
     }
 
     /** @return array<string, Collection<int, Brand>> */
@@ -177,8 +159,9 @@ class HomeController extends Controller
 
     /**
      * @param  list<string>  $preferredBrandSlugs
+     * @param  list<int>  $excludeIds
      */
-    protected function categoryProducts(string $slug, int $limit, array $preferredBrandSlugs = [])
+    protected function categoryProducts(string $slug, int $limit, array $preferredBrandSlugs = [], array $excludeIds = [])
     {
         $category = app(CategoryMapperService::class)->resolveCategoryForFilter($slug);
         if (! $category) {
@@ -192,34 +175,43 @@ class HomeController extends Controller
             ->whereIn('category_id', $ids);
 
         $this->applyHomepageExclusions($base);
+        $this->applyExcludedIds($base, $excludeIds);
+
+        $selected = collect();
 
         if ($preferredBrandSlugs !== []) {
             $brandNames = $this->brandNamesForSlugs($preferredBrandSlugs);
 
             if ($brandNames !== []) {
-                $preferred = (clone $base)
+                $selected = (clone $base)
                     ->whereIn(DB::raw('LOWER(TRIM(brand))'), $brandNames)
                     ->latest()
                     ->take($limit)
                     ->get();
-
-                if ($preferred->isNotEmpty()) {
-                    return $preferred;
-                }
             }
         }
 
-        return $base->latest()->take($limit)->get();
+        if ($selected->count() < $limit) {
+            $rest = (clone $base)
+                ->when($selected->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $selected->pluck('id')->all()))
+                ->latest()
+                ->take($limit - $selected->count())
+                ->get();
+
+            $selected = $selected->concat($rest);
+        }
+
+        return $selected->values();
     }
 
-    protected function networkingShowcaseProducts(int $limit)
+    protected function networkingShowcaseProducts(int $limit, array $excludeIds = [])
     {
         $config = config('homepage.networking_showcase', []);
         $brandSlugs = $config['brand_slugs'] ?? [];
         $brandNames = $this->brandNamesForSlugs($brandSlugs);
 
         if ($brandNames === []) {
-            return collect();
+            return $this->categoryProducts('networking-connectivity', $limit, [], $excludeIds);
         }
 
         $categoryIds = $this->categoryIdsForSlugs($config['category_slugs'] ?? []);
@@ -233,6 +225,7 @@ class HomeController extends Controller
             ->whereIn(DB::raw('LOWER(TRIM(brand))'), $brandNames);
 
         $this->applyHomepageExclusions($query);
+        $this->applyExcludedIds($query, $excludeIds);
         $this->applyExcludedBrands($query, $config['exclude_brands'] ?? []);
         $this->applyExcludedNameTerms($query, $config['exclude_name_terms'] ?? []);
 
@@ -250,17 +243,24 @@ class HomeController extends Controller
             ->take($limit)
             ->get();
 
-        if ($results->count() < min(4, $limit)) {
-            $fallback = $this->networkingShowcaseFallback($limit, $brandNames, $config);
-
-            return $fallback->count() > $results->count() ? $fallback : $results;
+        if ($results->count() < $limit) {
+            $fallback = $this->networkingShowcaseFallback($limit, $brandNames, $config, $excludeIds);
+            $results = $this->mergeUniqueProducts($results, $fallback, $limit);
         }
 
-        return $results;
+        if ($results->count() < $limit) {
+            $results = $this->mergeUniqueProducts(
+                $results,
+                $this->categoryProducts('networking-connectivity', $limit, [], $excludeIds),
+                $limit
+            );
+        }
+
+        return $results->values();
     }
 
-    /** @param list<string> $brandNames @param array<string, mixed> $config */
-    protected function networkingShowcaseFallback(int $limit, array $brandNames, array $config)
+    /** @param list<string> $brandNames @param array<string, mixed> $config @param list<int> $excludeIds */
+    protected function networkingShowcaseFallback(int $limit, array $brandNames, array $config, array $excludeIds = [])
     {
         $categoryIds = $this->categoryIdsForSlugs(['networking-connectivity']);
 
@@ -270,6 +270,7 @@ class HomeController extends Controller
             ->whereIn(DB::raw('LOWER(TRIM(brand))'), $brandNames);
 
         $this->applyHomepageExclusions($query);
+        $this->applyExcludedIds($query, $excludeIds);
         $this->applyExcludedBrands($query, $config['exclude_brands'] ?? []);
         $this->applyExcludedNameTerms($query, $config['exclude_name_terms'] ?? []);
 
@@ -286,6 +287,31 @@ class HomeController extends Controller
             ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
             ->take($limit)
             ->get();
+    }
+
+    /**
+     * @param  Collection<int, Product>  $primary
+     * @param  Collection<int, Product>  $extra
+     * @return Collection<int, Product>
+     */
+    protected function mergeUniqueProducts(Collection $primary, Collection $extra, int $limit): Collection
+    {
+        $seen = $primary->pluck('id')->flip();
+
+        foreach ($extra as $product) {
+            if ($primary->count() >= $limit) {
+                break;
+            }
+
+            if ($seen->has($product->id)) {
+                continue;
+            }
+
+            $seen->put($product->id, true);
+            $primary->push($product);
+        }
+
+        return $primary->values();
     }
 
     /** @param list<string> $brands */
@@ -313,6 +339,14 @@ class HomeController extends Controller
     protected function applyHomepageExclusions($query): void
     {
         $this->applyExcludedNameTerms($query, config('homepage.exclude_name_terms', []));
+    }
+
+    /** @param list<int> $ids */
+    protected function applyExcludedIds($query, array $ids): void
+    {
+        if ($ids !== []) {
+            $query->whereNotIn('id', $ids);
+        }
     }
 
     protected function applyPopularTypeOrder($query): void
@@ -411,13 +445,14 @@ class HomeController extends Controller
             ->all();
     }
 
-    protected function topSellerProducts(int $limit)
+    protected function topSellerProducts(int $limit, array $excludeIds = [])
     {
         $brands = config('homepage.top_seller_brands', []);
         $categorySlugs = config('homepage.top_seller_categories', []);
 
         $query = Product::with('images')->forStorefront();
         $this->applyHomepageExclusions($query);
+        $this->applyExcludedIds($query, $excludeIds);
 
         if ($brands !== []) {
             $normalized = array_map(fn (string $brand) => mb_strtolower(trim($brand)), $brands);

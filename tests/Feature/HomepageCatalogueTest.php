@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
+use App\Services\CategoryMapperService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -142,5 +144,112 @@ class HomepageCatalogueTest extends TestCase
         $this->assertStringNotContainsString('M0 0h192', $sophos);
         $this->assertStringNotContainsString('Layer_1', $cambium);
         $this->assertLessThan(4000, strlen($cambium));
+    }
+
+    public function test_homepage_product_rows_each_show_eight_products(): void
+    {
+        Cache::flush();
+        $this->seedBalancedHomepageCatalogue();
+
+        $html = $this->get(route('home'))->assertOk()->getContent();
+
+        $this->assertSame(8, $this->productCardsInSection($html, 'Top Selling in South Africa'));
+        $this->assertSame(8, $this->productCardsInSection($html, 'Top Sellers'));
+        $this->assertSame(8, $this->productCardsInSection($html, 'Business Laptops'));
+        $this->assertSame(8, $this->productCardsInSection($html, 'Networking Solutions'));
+        $this->assertSame(8, $this->productCardsInSection($html, 'CCTV & Security'));
+        $this->assertSame(1, substr_count($html, 'id="heroCarousel"'), 'Homepage header should not repeat inside product rows.');
+    }
+
+    protected function seedBalancedHomepageCatalogue(): void
+    {
+        app(CategoryMapperService::class)->ensureCanonicalTree();
+
+        foreach ([
+            ['Ubiquiti', 'ubiquiti'],
+            ['MikroTik', 'mikrotik'],
+            ['TP-Link', 'tp-link'],
+            ['Dell', 'dell'],
+            ['HP', 'hp'],
+            ['Lenovo', 'lenovo'],
+            ['Hikvision', 'hikvision'],
+            ['Dahua', 'dahua'],
+        ] as [$name, $slug]) {
+            Brand::query()->updateOrCreate(
+                ['slug' => $slug],
+                ['name' => $name, 'is_active' => true]
+            );
+        }
+
+        $networking = Category::query()->where('slug', 'networking-connectivity')->whereNull('parent_id')->firstOrFail();
+        $computing = Category::query()->where('slug', 'computing-office')->whereNull('parent_id')->firstOrFail();
+        $laptops = Category::query()->where('slug', 'laptops')->where('parent_id', $computing->id)->firstOrFail();
+        $storage = Category::query()->where('slug', 'storage-devices')->where('parent_id', $computing->id)->firstOrFail();
+        $security = Category::query()->where('slug', 'security-surveillance')->whereNull('parent_id')->firstOrFail();
+
+        foreach (range(1, 12) as $i) {
+            Product::factory()->create([
+                'name' => "UniFi Switch Ultra {$i}",
+                'brand' => 'Ubiquiti',
+                'sku' => "NET-SW-{$i}",
+                'category_id' => $networking->id,
+            ]);
+            Product::factory()->create([
+                'name' => "Dell Latitude 544{$i}",
+                'brand' => 'Dell',
+                'sku' => "LAP-DELL-{$i}",
+                'category_id' => $laptops->id,
+            ]);
+            Product::factory()->create([
+                'name' => "Hikvision Dome Camera {$i}",
+                'brand' => 'Hikvision',
+                'sku' => "CCTV-HK-{$i}",
+                'category_id' => $security->id,
+            ]);
+            Product::factory()->create([
+                'name' => "NAS Storage Unit {$i}",
+                'brand' => 'ASUS',
+                'sku' => "STOR-{$i}",
+                'category_id' => $storage->id,
+            ]);
+        }
+    }
+
+    protected function productCardsInSection(string $html, string $title): int
+    {
+        $heading = '<h2 class="section-title mb-0">'.$title.'</h2>';
+        $encoded = '<h2 class="section-title mb-0">'.e($title).'</h2>';
+        $start = strpos($html, $heading);
+        if ($start === false) {
+            $start = strpos($html, $encoded);
+        }
+        $this->assertNotFalse($start, "Missing homepage section: {$title}");
+
+        $nextHeadings = [
+            'Top Selling in South Africa',
+            'Top Sellers',
+            'Business Laptops',
+            'Networking Solutions',
+            'CCTV & Security',
+            'Featured Products',
+            'Trusted by Businesses Across South Africa',
+        ];
+
+        $end = strlen($html);
+        foreach ($nextHeadings as $next) {
+            if ($next === $title) {
+                continue;
+            }
+
+            foreach ([$next, e($next)] as $needle) {
+                $headingHtml = '<h2 class="section-title mb-0">'.$needle.'</h2>';
+                $pos = strpos($html, $headingHtml, $start + 1);
+                if ($pos !== false && $pos < $end) {
+                    $end = $pos;
+                }
+            }
+        }
+
+        return substr_count(substr($html, $start, $end - $start), 'class="product-card h-100"');
     }
 }
