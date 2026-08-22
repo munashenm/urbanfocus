@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\ProductImage;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -16,6 +17,7 @@ class TargetRangeCatalogService
         protected CategoryMapperService $categories,
         protected ProductPricingService $pricing,
         protected CatalogDeduper $deduper,
+        protected ImageService $images,
     ) {}
 
     public function catalogPath(): string
@@ -44,7 +46,7 @@ class TargetRangeCatalogService
     }
 
     /**
-     * @return array{created: int, skipped: int, errors: int, samples: list<array<string, mixed>>}
+     * @return array{created: int, skipped: int, imaged: int, errors: int, samples: list<array<string, mixed>>}
      */
     public function sync(bool $dryRun = false, ?string $path = null, ?string $sku = null): array
     {
@@ -53,6 +55,7 @@ class TargetRangeCatalogService
 
         $created = 0;
         $skipped = 0;
+        $imaged = 0;
         $errors = 0;
         $samples = [];
 
@@ -65,6 +68,14 @@ class TargetRangeCatalogService
                 $existing = $this->findExisting($item);
 
                 if ($existing) {
+                    if (! $existing->images()->exists()) {
+                        if (! $dryRun && $this->attachListingImage($existing, $item)) {
+                            $imaged++;
+                        } elseif ($dryRun) {
+                            $imaged++;
+                        }
+                    }
+
                     $skipped++;
                     if (count($samples) < 25) {
                         $samples[] = [
@@ -95,6 +106,9 @@ class TargetRangeCatalogService
                 }
 
                 $product = $this->createProduct($item);
+                if ($this->attachListingImage($product, $item)) {
+                    $imaged++;
+                }
                 $this->rememberCreated($product);
                 $created++;
 
@@ -121,12 +135,12 @@ class TargetRangeCatalogService
             }
         }
 
-        if (! $dryRun && $created > 0) {
+        if (! $dryRun && ($created > 0 || $imaged > 0)) {
             $this->deduper->clearCache();
             Cache::forget('home.product_rows_v1');
         }
 
-        return compact('created', 'skipped', 'errors', 'samples');
+        return compact('created', 'skipped', 'imaged', 'errors', 'samples');
     }
 
     /**
@@ -215,6 +229,131 @@ class TargetRangeCatalogService
             'is_deal' => false,
             'is_active' => true,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    public function attachListingImage(Product $product, array $item): bool
+    {
+        if ($product->images()->exists()) {
+            return false;
+        }
+
+        $source = $this->listingImagePath($item);
+        if ($source === null || ! is_readable($source)) {
+            return false;
+        }
+
+        $contents = (string) file_get_contents($source);
+        $path = $this->images->storeProductImageFromBinary($contents, (int) $product->id, pathinfo($source, PATHINFO_EXTENSION) ?: 'jpg');
+        if (! $path) {
+            return false;
+        }
+
+        ProductImage::create([
+            'product_id' => $product->id,
+            'path' => $path,
+            'alt_text' => $product->name,
+            'sort_order' => 0,
+            'is_primary' => true,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    protected function listingImagePath(array $item): ?string
+    {
+        $file = $this->listingImageFile($item);
+        $path = public_path('images/target-range/'.$file);
+
+        return is_file($path) ? $path : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    protected function listingImageFile(array $item): string
+    {
+        $name = mb_strtolower(trim(($item['name'] ?? '').' '.($item['brand'] ?? '').' '.($item['category_path'] ?? '').' '.($item['sku'] ?? '')));
+
+        if (str_contains($name, 'macbook')) {
+            return 'tr-macbook.jpg';
+        }
+        if (str_contains($name, 'toughbook 40') || str_contains($name, 'getac s510') || str_contains($name, 'rugged laptop')) {
+            return 'tr-rugged-laptop.jpg';
+        }
+        if (str_contains($name, 'tablet') || str_contains($name, 'toughbook g2') || str_contains($name, 'getac f110') || str_contains($name, 'zebra') || str_contains($name, 'oukitel') || str_contains($name, 'ulefone') || str_contains($name, 'tab active')) {
+            return 'tr-rugged-tablet.jpg';
+        }
+        if (str_contains($name, 'zbook') || str_contains($name, 'pro max 16') || str_contains($name, 'thinkpad p16') || str_contains($name, 'proart') || str_contains($name, 'workstation')) {
+            return 'tr-workstation.jpg';
+        }
+        if (str_contains($name, 'x1 carbon') || str_contains($name, 'omnibook') || str_contains($name, 'premium') || str_contains($name, 'flip')) {
+            return 'tr-laptop-executive.jpg';
+        }
+        if (preg_match('/\b16\b|16-inch|g1i 16|pro 16|l16/', $name)) {
+            return 'tr-laptop-16.jpg';
+        }
+        if (str_contains($name, 'laptop') || str_contains($name, 'thinkpad') || str_contains($name, 'elitebook') || str_contains($name, 'computing-office/laptops')) {
+            return 'tr-laptop-14.jpg';
+        }
+        if (str_contains($name, 'meetingboard')) {
+            return 'tr-meetingboard.jpg';
+        }
+        if (str_contains($name, 'rally') || str_contains($name, 'tap ip')) {
+            return 'tr-rally-bar.jpg';
+        }
+        if (str_contains($name, 'jetson') || str_contains($name, 'minisforum') || str_contains($name, 'orin')) {
+            return 'tr-edge-ai.jpg';
+        }
+        if (str_contains($name, 'solar')) {
+            return 'tr-solar-camera.jpg';
+        }
+        if (str_contains($name, 'ptz') || str_contains($name, 'q6135')) {
+            return 'tr-cctv-ptz.jpg';
+        }
+        if (str_contains($name, 'nvr')) {
+            return 'tr-nvr.jpg';
+        }
+        if (str_contains($name, 'face') || str_contains($name, 'biometric') || str_contains($name, 'zkteco') || str_contains($name, 'access controller') || str_contains($name, 'facial-recognition') || str_contains($name, 'access-control')) {
+            return 'tr-access-control.jpg';
+        }
+        if (str_contains($name, 'camera') || str_contains($name, 'cctv') || str_contains($name, 'ip-cameras')) {
+            return 'tr-cctv-bullet.jpg';
+        }
+        if (str_contains($name, 'ups') || str_contains($name, 'pdu') || str_contains($name, 'ap9641') || str_contains($name, 'ap8853')) {
+            return 'tr-ups.jpg';
+        }
+        if (str_contains($name, 'poweredge') || str_contains($name, 'proliant') || str_contains($name, 'thinksystem') || str_contains($name, 'computing-office/desktops')) {
+            return 'tr-server.jpg';
+        }
+        if (str_contains($name, 'ironwolf') || str_contains($name, 'red pro') || str_contains($name, 'nvme') || str_contains($name, 'hdd')) {
+            return 'tr-hdd.jpg';
+        }
+        if (str_contains($name, 'nas') || str_contains($name, 'ds1825') || str_contains($name, 'ds925') || str_contains($name, 'rs3626') || str_contains($name, 'qnap')) {
+            return 'tr-nas.jpg';
+        }
+        if (str_contains($name, 'pcie') || str_contains($name, 'sfp28') || str_contains($name, 'x710') || str_contains($name, 'xxv710') || str_contains($name, 'network adapter')) {
+            return 'tr-nic.jpg';
+        }
+        if (str_contains($name, 'access point') || str_contains($name, 'eap') || str_contains($name, 'u7') || str_contains($name, 'gwn7670') || str_contains($name, 'wifi 7') || str_contains($name, 'wi-fi 7') || str_contains($name, 'access-points') || str_contains($name, 'rap73')) {
+            return 'tr-wifi-ap.jpg';
+        }
+        if (str_contains($name, 'switch') || str_contains($name, 'crs') || str_contains($name, 'switches')) {
+            return 'tr-switch.jpg';
+        }
+        if (str_contains($name, 'ccr') || str_contains($name, 'chateau')) {
+            return 'tr-core-router.jpg';
+        }
+        if (str_contains($name, 'router') || str_contains($name, 'rut') || str_contains($name, 'trb') || str_contains($name, 'peplink') || str_contains($name, 'ur75') || str_contains($name, 'routers')) {
+            return 'tr-5g-router.jpg';
+        }
+
+        return 'tr-laptop-14.jpg';
     }
 
     /**

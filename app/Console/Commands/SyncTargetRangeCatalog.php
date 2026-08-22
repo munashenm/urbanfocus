@@ -39,8 +39,8 @@ class SyncTargetRangeCatalog extends Command
         }
 
         $this->info($dryRun
-            ? "Dry run: {$result['created']} would be created, {$result['skipped']} already on the store, {$result['errors']} errors."
-            : "Created: {$result['created']}. Skipped (already on store): {$result['skipped']}. Errors: {$result['errors']}."
+            ? "Dry run: {$result['created']} would be created, {$result['skipped']} already on the store, {$result['imaged']} would get photos, {$result['errors']} errors."
+            : "Created: {$result['created']}. Skipped (already on store): {$result['skipped']}. Photos attached: {$result['imaged']}. Errors: {$result['errors']}."
         );
 
         if (! $dryRun && $result['created'] > 0) {

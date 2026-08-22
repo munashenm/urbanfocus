@@ -282,7 +282,7 @@ class CatalogController extends Controller
             @set_time_limit(0);
 
             $result = $catalog->sync();
-            $message = "Created {$result['created']} target-range product(s). Already on the store: {$result['skipped']}. Errors: {$result['errors']}.";
+            $message = "Created {$result['created']} target-range product(s). Already on the store: {$result['skipped']}. Photos attached: {$result['imaged']}. Errors: {$result['errors']}.";
 
             if ($result['errors'] > 0) {
                 return back()->with('warning', $message);

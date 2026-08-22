@@ -33,6 +33,37 @@ class ImageService
         return $path;
     }
 
+    public function storeProductImageFromBinary(string $contents, int $productId, string $extension = 'jpg'): ?string
+    {
+        if ($contents === '' || ! $this->looksLikeImage($contents)) {
+            return null;
+        }
+
+        $extension = strtolower($extension);
+        if (! in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+            $extension = 'jpg';
+        }
+
+        try {
+            if ($this->canConvertWebp() && @imagecreatefromstring($contents) !== false) {
+                $directory = 'products/'.$productId;
+                $baseName = (string) Str::uuid();
+                $webpPath = $directory.'/'.$baseName.'.webp';
+
+                if ($this->storeBinaryAsWebp($contents, $webpPath, $directory, $baseName)) {
+                    return $webpPath;
+                }
+            }
+
+            $path = 'products/'.$productId.'/'.Str::uuid().'.'.$extension;
+            $this->storeBytes($path, $contents);
+
+            return $path;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function delete(string $path): void
     {
         Storage::disk('public')->delete($path);

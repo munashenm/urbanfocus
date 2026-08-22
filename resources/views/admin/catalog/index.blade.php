@@ -89,6 +89,7 @@
                     <strong>Preview</strong> (nothing written yet)<br>
                     Would create: <strong>{{ $preview['created'] ?? 0 }}</strong>,
                     already on store: {{ $preview['skipped'] ?? 0 }},
+                    photos: {{ $preview['imaged'] ?? 0 }},
                     errors: {{ $preview['errors'] ?? 0 }}
                     @if(!empty($preview['samples']))
                         <ul class="mb-0 ps-3 mt-2">

@@ -39,6 +39,7 @@ class TargetRangeCatalogTest extends TestCase
         $this->assertTrue($router->in_stock);
         $this->assertSame(0, $router->stock_quantity);
         $this->assertSame('Teltonika', $router->brand);
+        $this->assertTrue($router->images()->exists());
     }
 
     public function test_skips_existing_sku_and_does_not_duplicate(): void
@@ -55,6 +56,22 @@ class TargetRangeCatalogTest extends TestCase
         $this->assertSame(8, $result['created']);
         $this->assertSame(1, $result['skipped']);
         $this->assertSame(1, Product::where('sku', 'AD3U3ET')->count());
+    }
+
+    public function test_backfills_a_photo_when_an_existing_match_has_none(): void
+    {
+        $product = Product::factory()->create([
+            'sku' => 'RUTX50',
+            'name' => 'Teltonika RUTX50 already listed',
+            'slug' => 'existing-rutx50',
+            'brand' => 'Teltonika',
+        ]);
+
+        $result = app(TargetRangeCatalogService::class)->sync();
+
+        $this->assertSame(8, $result['created']);
+        $this->assertGreaterThan(0, $result['imaged']);
+        $this->assertTrue($product->fresh()->images()->exists());
     }
 
     public function test_skips_existing_name_match_with_a_different_sku(): void
@@ -125,6 +142,7 @@ class TargetRangeCatalogTest extends TestCase
         $this->assertSame(100, $first['created']);
         $this->assertSame(100, Product::count());
         $this->assertSame(100, Product::query()->distinct()->count('sku'));
+        $this->assertSame(100, Product::has('images')->count());
 
         $second = app(TargetRangeCatalogService::class)->sync();
 

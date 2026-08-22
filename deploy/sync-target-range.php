@@ -77,6 +77,7 @@ try {
 echo ($dryRun ? "PREVIEW (no changes made)\n" : "APPLIED\n");
 echo "Created / would create: {$result['created']}\n";
 echo "Already on store: {$result['skipped']}\n";
+echo "Photos attached: {$result['imaged']}\n";
 echo "Errors: {$result['errors']}\n\n";
 
 foreach ($result['samples'] as $sample) {
