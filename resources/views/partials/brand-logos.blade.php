@@ -16,6 +16,7 @@
 
             return [
                 'name' => $brand->name,
+                'slug' => $brand->slug ?? \Illuminate\Support\Str::slug($brand->name),
                 'url' => ! empty($brand->slug)
                     ? route('brands.show', $brand->slug)
                     : route('shop.index', ['brand' => $brand->name]),
@@ -27,6 +28,7 @@
     if ($brandItems->isEmpty()) {
         $brandItems = $defaults->map(fn ($b) => [
             'name' => $b['name'],
+            'slug' => $b['slug'] ?? \Illuminate\Support\Str::slug($b['name']),
             'url' => route('brands.show', $b['slug'] ?? \Illuminate\Support\Str::slug($b['name'])),
             'logo' => $b['logo'],
         ]);
@@ -36,9 +38,9 @@
 @if($brandItems->count())
 <div class="brand-carousel d-flex flex-wrap justify-content-center gap-3">
     @foreach($brandItems as $brand)
-        <a href="{{ $brand['url'] }}" class="brand-logo-card" title="{{ $brand['name'] }}">
+        <a href="{{ $brand['url'] }}" class="brand-logo-card brand-logo-card--{{ $brand['slug'] ?? \Illuminate\Support\Str::slug($brand['name']) }}" title="{{ $brand['name'] }}">
             @if(!empty($brand['logo']))
-                <img src="{{ asset($brand['logo']) }}" alt="{{ $brand['name'] }}" loading="lazy" width="120" height="36">
+                <img src="{{ asset($brand['logo']) }}" alt="{{ $brand['name'] }}" loading="lazy" width="140" height="42">
             @else
                 <span class="brand-logo-fallback">{{ $brand['name'] }}</span>
             @endif

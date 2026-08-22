@@ -84,4 +84,29 @@ class HomepageCatalogueTest extends TestCase
             ->assertSee('Top Selling in South Africa', false)
             ->assertSee('Outdoor Telecom Cabinet', false);
     }
+
+    public function test_homepage_featured_brands_enlarge_small_wordmarks(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('brand-logo-card--sophos', false)
+            ->assertSee('brand-logo-card--lenovo', false)
+            ->assertSee('images/brands/sophos.svg', false)
+            ->assertSee('images/brands/lenovo.svg', false);
+
+        $css = file_get_contents(public_path('css/app.css'));
+        $this->assertNotFalse($css);
+        $this->assertStringContainsString('min-width: 120px', $css);
+        $this->assertStringContainsString('min-height: 56px', $css);
+        $this->assertStringContainsString('.brand-logo-card--sophos img', $css);
+        $this->assertStringContainsString('.brand-logo-card--lenovo img', $css);
+
+        $sophos = file_get_contents(public_path('images/brands/sophos.svg'));
+        $lenovo = file_get_contents(public_path('images/brands/lenovo.svg'));
+        $this->assertNotFalse($sophos);
+        $this->assertNotFalse($lenovo);
+        $this->assertMatchesRegularExpression('/scale\(0\.[7-9]/', $sophos);
+        $this->assertMatchesRegularExpression('/scale\([3-9]\./', $lenovo);
+        $this->assertStringNotContainsString('M0 0h192', $sophos);
+    }
 }

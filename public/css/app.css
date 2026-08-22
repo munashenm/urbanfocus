@@ -359,12 +359,13 @@ a:hover { color: var(--uf-blue); }
     justify-content: center;
     min-width: 120px;
     min-height: 56px;
-    padding: 0.75rem 1.25rem;
+    padding: 0.4rem 0.65rem;
     background: #fff;
     border: 1px solid var(--uf-gray-200);
     border-radius: 10px;
     text-decoration: none;
     transition: all 0.2s;
+    overflow: hidden;
 }
 .brand-logo-card:hover {
     border-color: var(--uf-blue);
@@ -372,11 +373,26 @@ a:hover { color: var(--uf-blue); }
     transform: translateY(-2px);
 }
 .brand-logo-card img {
-    max-width: 110px;
-    max-height: 36px;
+    max-width: 112px;
+    max-height: 42px;
     width: auto;
     height: auto;
     object-fit: contain;
+}
+.brand-logo-card--sophos img,
+.brand-logo-card--lenovo img,
+.brand-logo-card--samsung img,
+.brand-logo-card--starlink img {
+    max-width: 116px;
+    max-height: 44px;
+}
+.brand-logo-card--dell img,
+.brand-logo-card--hp img,
+.brand-logo-card--huawei img,
+.brand-logo-card--lg img,
+.brand-logo-card--logitech img,
+.brand-logo-card--microsoft img {
+    max-height: 44px;
 }
 .brand-logo-fallback {
     font-weight: 700;

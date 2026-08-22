@@ -33,16 +33,22 @@ foreach ($config['brands'] as $slug => $meta) {
         exit(1);
     }
 
+    $brandPaddingX = (float) ($meta['padding_x'] ?? $paddingX);
+    $brandPaddingY = (float) ($meta['padding_y'] ?? $paddingY);
+    $brandMaxW = $canvasW - (2 * $brandPaddingX);
+    $brandMaxH = $canvasH - (2 * $brandPaddingY);
+
     $normalized = normalizeBrandSvg(
         file_get_contents($sourcePath),
         $label,
         $canvasW,
         $canvasH,
-        $maxW,
-        $maxH,
-        $paddingX,
-        $paddingY,
-        $fill
+        $brandMaxW,
+        $brandMaxH,
+        $brandPaddingX,
+        $brandPaddingY,
+        $fill,
+        $meta['view_box'] ?? null
     );
 
     file_put_contents($outPath, $normalized);
@@ -61,7 +67,8 @@ function normalizeBrandSvg(
     float $maxH,
     float $paddingX,
     float $paddingY,
-    string $fill
+    string $fill,
+    ?array $viewBoxOverride = null
 ): string {
     $svg = trim($svg);
     if ($svg === '') {
@@ -81,7 +88,9 @@ function normalizeBrandSvg(
         throw new RuntimeException("Root element is not svg for {$label}");
     }
 
-    [$srcX, $srcY, $srcW, $srcH] = resolveViewBox($root);
+    [$srcX, $srcY, $srcW, $srcH] = is_array($viewBoxOverride) && count($viewBoxOverride) === 4
+        ? array_map('floatval', array_values($viewBoxOverride))
+        : resolveViewBox($root);
 
     if ($srcW <= 0 || $srcH <= 0) {
         throw new RuntimeException("Invalid viewBox for {$label}");
@@ -160,22 +169,53 @@ function importGraphicNodes(DOMNode $node, DOMElement $targetGroup, DOMDocument 
         }
 
         if ($tag === 'g') {
-            $cloned = cloneGraphicElement($child, $targetDoc, $fill);
+            if (isBackgroundGraphic($child)) {
+                continue;
+            }
+
+            $cloned = cloneGraphicElement($child, $targetDoc, $fill, false);
             $targetGroup->appendChild($cloned);
             importGraphicNodes($child, $cloned, $targetDoc, $fill);
 
             continue;
         }
 
-        if (in_array($tag, ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line', 'text', 'use'], true)) {
+        if (in_array($tag, ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line', 'text'], true)) {
+            if (isBackgroundGraphic($child)) {
+                continue;
+            }
+
             $targetGroup->appendChild(cloneGraphicElement($child, $targetDoc, $fill));
         }
     }
 }
 
-function cloneGraphicElement(DOMElement $element, DOMDocument $targetDoc, string $fill): DOMElement
+function isBackgroundGraphic(DOMElement $element): bool
 {
-    $clone = $targetDoc->importNode($element, true);
+    $fill = strtolower(trim($element->getAttribute('fill')));
+    if (in_array($fill, ['#fff', '#ffffff', 'white', 'rgb(255,255,255)', '#fffefe'], true)) {
+        return true;
+    }
+
+    $d = $element->getAttribute('d');
+    if ($d !== '' && preg_match('/^M0\s+0h[\d.]+\s*v[\d.]+\s*H0/i', $d)) {
+        return true;
+    }
+
+    if (strtolower($element->tagName) === 'rect') {
+        $width = parseSvgLength($element->getAttribute('width'));
+        $height = parseSvgLength($element->getAttribute('height'));
+        if ($width >= 180 && $height >= 180) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function cloneGraphicElement(DOMElement $element, DOMDocument $targetDoc, string $fill, bool $deep = true): DOMElement
+{
+    $clone = $targetDoc->importNode($element, $deep);
     if (! $clone instanceof DOMElement) {
         throw new RuntimeException('Could not clone SVG element');
     }
