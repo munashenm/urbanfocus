@@ -11,7 +11,7 @@
 
             <div class="alert alert-info small mb-3">
                 <strong>Pricing policy:</strong>
-                CSV price = cost → {{ $importPricing['markup_percent'] }}% markup.
+                CSV price = cost. Compared products use a lower markup (laptops / Dell / HP / Lenovo 8%, networking &amp; CCTV 12%). Everything else → {{ $importPricing['markup_percent'] }}% fallback.
                 @if($importPricing['low_cost_threshold'] > 0)
                     Cost under R{{ number_format($importPricing['low_cost_threshold'], 0) }}: markup only (e.g. R{{ number_format($importPricing['low_cost_example']['cost'], 0) }} → R{{ number_format($importPricing['low_cost_example']['retail'], 2) }}).
                     R{{ number_format($importPricing['low_cost_threshold'], 0) }} and above: rounded {{ $importPricing['round_mode'] === 'up' ? 'up' : 'to nearest' }} to R{{ $importPricing['round_to'] }}

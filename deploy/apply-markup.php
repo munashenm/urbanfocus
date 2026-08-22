@@ -3,8 +3,8 @@
 /**
  * Apply markup + price rounding to all products (cPanel)
  *
- * Uses PRICE_MARKUP_PERCENT and PRICE_ROUND_TO from urbanfocus/.env
- * Default: 40% markup, round UP to next R50 (cost under R20: markup only)
+ * Uses competitive category/brand markups from config/pricing.php
+ * Laptops and Dell/HP/Lenovo (R4000+): 8%. Networking/CCTV: 12%. Fallback: PRICE_MARKUP_PERCENT.
  *
  * 1. Set in .env: PRICE_MARKUP_PERCENT=40, PRICE_ROUND_TO=50, PRICE_ROUND_MODE=up, PRICE_LOW_COST_THRESHOLD=20
  * 2. Copy to public_html/apply-markup.php and set APPLY_KEY
@@ -38,28 +38,23 @@ $app = require_once $laravelRoot.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-$markup = config('pricing.markup_percent', 40);
+$pricing = $app->make(App\Services\ProductPricingService::class);
 $roundTo = config('pricing.round_to', 50);
 $mode = config('pricing.round_mode', 'up');
 $threshold = config('pricing.low_cost_threshold', 20);
 
-echo "Apply pricing: {$markup}% markup";
-if ($threshold > 0) {
-    echo ", cost under R{$threshold}: markup only, else round {$mode} to R{$roundTo}";
-} else {
-    echo ", round {$mode} to R{$roundTo}";
-}
-echo "\n";
+echo "Apply competitive pricing (laptops 8%, networking/CCTV 12%, fallback ".config('pricing.markup_percent')."%)\n";
+echo "Round {$mode} to R{$roundTo}; cost under R{$threshold}: markup only\n";
 echo str_repeat('-', 40)."\n";
 
-$pricing = $app->make(App\Services\ProductPricingService::class);
 $result = $pricing->applyToAllProducts();
 
 echo "Updated: {$result['updated']}\n";
+echo "Prices reduced: {$result['reduced']}\n";
+echo "Unchanged: {$result['unchanged']}\n";
 echo "Skipped (no cost/price): {$result['skipped']}\n";
-echo "\nExamples (cost → retail):\n";
-echo "  R4 → R".number_format($pricing->retailPrice(4), 2)." (under R{$threshold})\n";
-echo "  R100 → R".number_format($pricing->retailPrice(100), 0)."\n";
-echo "  R250 → R".number_format($pricing->retailPrice(250), 0)."\n";
-echo "  R500 → R".number_format($pricing->retailPrice(500), 0)."\n";
+echo "\nExamples:\n";
+echo "  Accessory R4 → R".number_format($pricing->retailPrice(4), 2)."\n";
+echo "  Generic R100 → R".number_format($pricing->retailPrice(100), 0)."\n";
+echo "  Dell laptop R17821 → R".number_format($pricing->retailPrice(17821, null, ['name' => 'Dell Pro 15 Essential', 'brand' => 'Dell']), 0)."\n";
 echo "\nDELETE public_html/apply-markup.php now.\n";

@@ -286,6 +286,7 @@ class ProductImportService
 
         return [
             'markup_percent' => $markup,
+            'category_markups' => config('pricing.category_markups', []),
             'round_to' => $roundTo,
             'round_mode' => (string) config('pricing.round_mode', 'up'),
             'low_cost_threshold' => $threshold,
@@ -353,8 +354,13 @@ class ProductImportService
         }
 
         $importSource = $data['import_source'] ?? null;
+        $pricingContext = [
+            'name' => $name,
+            'brand' => $data['brand'] ?? null,
+            'category_path' => $data['categories'] ?? '',
+        ];
         $storedCost = $this->pricing->importCostPrice($costPrice, $importSource);
-        $retailPrice = $this->pricing->retailPriceForImport($costPrice, $importSource);
+        $retailPrice = $this->pricing->retailPriceForImport($costPrice, $importSource, $pricingContext);
         if ($retailPrice <= 0) {
             return ['action' => 'skip', 'reason' => 'no_price', 'name' => $name];
         }
@@ -388,7 +394,11 @@ class ProductImportService
         $saleCost = round($this->parsePrice($data['sale_price'] ?? ''), 2);
         $importSource = $data['import_source'] ?? null;
         $salePrice = $saleCost > 0
-            ? $this->pricing->retailPriceForImport($saleCost, $importSource)
+            ? $this->pricing->retailPriceForImport($saleCost, $importSource, [
+                'name' => $name,
+                'brand' => $data['brand'] ?? null,
+                'category_path' => $data['categories'] ?? '',
+            ])
             : 0.0;
         $stockQty = (int) preg_replace('/\D/', '', $data['stock'] ?? '0');
         $inStockValue = strtolower($data['in_stock'] ?? '1');

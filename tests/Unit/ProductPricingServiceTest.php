@@ -38,7 +38,7 @@ class ProductPricingServiceTest extends TestCase
     public function test_threshold_boundary_uses_round_to_fifty_at_twenty(): void
     {
         $this->assertSame(50.0, $this->pricing->retailPrice(20.0));
-        $this->assertSame(28.0, $this->pricing->retailPrice(19.99));
+        $this->assertSame(27.99, $this->pricing->retailPrice(19.99));
     }
 
     public function test_scoop_import_adds_vat_before_markup_and_rounding(): void
@@ -47,5 +47,47 @@ class ProductPricingServiceTest extends TestCase
 
         $this->assertSame(546.25, $this->pricing->importCostPrice(475.0, 'scoop'));
         $this->assertSame(800.0, $this->pricing->retailPriceForImport(475.0, 'scoop'));
+    }
+
+    public function test_dell_pro_essential_uses_street_margin_not_forty_percent(): void
+    {
+        $price = $this->pricing->retailPrice(17821.43, null, [
+            'name' => 'Dell Pro 15 Essential Intel Core i7 Professional',
+            'brand' => 'Dell',
+        ]);
+
+        $this->assertSame(19250.0, $price);
+        $this->assertSame(8.0, $this->pricing->markupPercentFor(17821.43, null, [
+            'name' => 'Dell Pro 15 Essential Intel Core i7 Professional',
+            'brand' => 'Dell',
+        ]));
+    }
+
+    public function test_high_ticket_dell_without_laptop_in_title_still_uses_eight_percent(): void
+    {
+        $this->assertSame(8.0, $this->pricing->markupPercentFor(17821.43, null, [
+            'name' => 'Dell PV15250 Core i7 Professional',
+            'brand' => 'Dell',
+        ]));
+    }
+
+    public function test_dell_accessory_keeps_higher_markup(): void
+    {
+        $this->assertSame(28.0, $this->pricing->markupPercentFor(200, null, [
+            'name' => 'Dell laptop charger 65W',
+            'brand' => 'Dell',
+        ]));
+        $this->assertSame(40.0, $this->pricing->markupPercentFor(150, null, [
+            'name' => 'Dell MS116 Mouse',
+            'brand' => 'Dell',
+        ]));
+    }
+
+    public function test_laptop_category_path_uses_eight_percent(): void
+    {
+        $this->assertSame(8.0, $this->pricing->markupPercentFor(10000, null, [
+            'name' => 'Business notebook',
+            'category_path' => 'computing-office/laptops',
+        ]));
     }
 }
