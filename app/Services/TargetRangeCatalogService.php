@@ -22,6 +22,7 @@ class TargetRangeCatalogService
         protected ProductPricingService $pricing,
         protected CatalogDeduper $deduper,
         protected ImageService $images,
+        protected TargetRangeListingCopy $copy,
     ) {}
 
     public function catalogPath(): string
@@ -82,10 +83,17 @@ class TargetRangeCatalogService
                         }
                     }
 
-                    if ($this->shouldUpdatePrice($existing, $item)) {
+                    if ($this->isCatalogOwnedProduct($existing, $item) && ($this->shouldUpdatePrice($existing, $item) || $this->shouldRefreshCopy($existing, $item))) {
                         $newPrice = $this->retailStreetPrice($item);
+                        $reasons = [];
+                        if ($this->shouldUpdatePrice($existing, $item)) {
+                            $reasons[] = 'Was R'.number_format((float) $existing->price, 0).' → R'.number_format($newPrice, 0).' ('.$this->topupPercent().'% catalogue top-up)';
+                        }
+                        if ($this->shouldRefreshCopy($existing, $item)) {
+                            $reasons[] = 'Professional SEO description refreshed';
+                        }
                         if (! $dryRun) {
-                            $this->applyRetailPrice($existing, $item);
+                            $this->applyListingContent($existing, $item);
                         }
                         $updated++;
                         if (count($samples) < 25) {
@@ -95,7 +103,7 @@ class TargetRangeCatalogService
                                 'sku' => $item['sku'],
                                 'name' => $item['name'],
                                 'price' => $newPrice,
-                                'reason' => 'Was R'.number_format((float) $existing->price, 0).' → R'.number_format($newPrice, 0).' ('.$this->topupPercent().'% catalogue top-up)',
+                                'reason' => implode('; ', $reasons),
                             ];
                         }
 
@@ -267,28 +275,44 @@ class TargetRangeCatalogService
         $current = (float) $product->price;
         $street = (float) ($item['street_price'] ?? 0);
         $retail = $this->retailStreetPrice($item);
+        $previousTopup = $this->roundRetail($street * 1.10);
 
-        return abs($current - $street) < 0.51 || abs($current - $retail) < 0.51;
+        return abs($current - $street) < 0.51
+            || abs($current - $retail) < 0.51
+            || abs($current - $previousTopup) < 0.51;
     }
 
     /**
      * @param  array<string, mixed>  $item
      */
-    protected function applyRetailPrice(Product $product, array $item): void
+    public function shouldRefreshCopy(Product $product, array $item): bool
     {
-        $specs = is_array($product->specifications) ? $product->specifications : [];
-        $specs[self::CATALOG_RANGE_SPEC_KEY] = self::CATALOG_RANGE_SPEC_VALUE;
+        return trim((string) $product->description) !== trim($this->copy->descriptionHtml($item))
+            || trim((string) $product->short_description) !== trim($this->copy->shortDescription($item))
+            || trim((string) $product->meta_description) !== trim($this->copy->metaDescription($item));
+    }
 
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    protected function applyListingContent(Product $product, array $item): void
+    {
         $product->update([
+            'short_description' => $this->copy->shortDescription($item),
+            'description' => $this->copy->descriptionHtml($item),
+            'meta_title' => $this->copy->metaTitle($item),
+            'meta_description' => $this->copy->metaDescription($item),
+            'meta_keywords' => $this->copy->metaKeywords($item),
+            'specifications' => $this->copy->specifications($item),
+            'warranty_months' => $this->copy->warrantyMonths($item),
             'price' => $this->retailStreetPrice($item),
             'cost_price' => $this->impliedCostPrice($item),
-            'specifications' => $specs,
         ]);
     }
 
     public function topupPercent(): float
     {
-        return max(0, (float) config('pricing.target_range_topup_percent', 10));
+        return max(0, (float) config('pricing.target_range_topup_percent', 15));
     }
 
     protected function roundRetail(float $price): float
@@ -314,8 +338,6 @@ class TargetRangeCatalogService
     {
         $retail = $this->retailStreetPrice($item);
         $category = $this->categories->resolveCategoryForFilter((string) $item['category_path']);
-        $short = trim((string) ($item['short_description'] ?? ''));
-        $angle = trim((string) ($item['sales_angle'] ?? ''));
 
         return Product::create([
             'category_id' => $category?->id,
@@ -323,8 +345,8 @@ class TargetRangeCatalogService
             'model_number' => (string) $item['sku'],
             'name' => (string) $item['name'],
             'slug' => $this->uniqueSlug((string) $item['name'], (string) $item['sku']),
-            'short_description' => $short,
-            'description' => $this->description($item),
+            'short_description' => $this->copy->shortDescription($item),
+            'description' => $this->copy->descriptionHtml($item),
             'price' => $retail,
             'sale_price' => null,
             'cost_price' => $this->impliedCostPrice($item),
@@ -332,17 +354,12 @@ class TargetRangeCatalogService
             'manage_stock' => false,
             'in_stock' => true,
             'brand' => (string) ($item['brand'] ?? ''),
-            'warranty_months' => $this->warrantyMonths((string) ($item['category_path'] ?? ''), (string) $item['name']),
+            'warranty_months' => $this->copy->warrantyMonths($item),
             'delivery_days' => $this->deliveryDays((string) ($item['category_path'] ?? '')),
-            'specifications' => array_filter([
-                'Model' => (string) $item['sku'],
-                'Brand' => (string) ($item['brand'] ?? ''),
-                'Sales focus' => $angle,
-                self::CATALOG_RANGE_SPEC_KEY => self::CATALOG_RANGE_SPEC_VALUE,
-                'Availability' => 'Available to order — typically 5–10 working days',
-            ]),
-            'meta_title' => Str::limit((string) $item['name'].' | Urban Focus', 70, ''),
-            'meta_description' => Str::limit($short !== '' ? $short : (string) $item['name'], 160, ''),
+            'specifications' => $this->copy->specifications($item),
+            'meta_title' => $this->copy->metaTitle($item),
+            'meta_description' => $this->copy->metaDescription($item),
+            'meta_keywords' => $this->copy->metaKeywords($item),
             'is_featured' => (bool) ($item['featured'] ?? false),
             'is_deal' => false,
             'is_active' => true,
@@ -508,13 +525,7 @@ class TargetRangeCatalogService
      */
     protected function description(array $item): string
     {
-        $parts = array_filter([
-            trim((string) ($item['short_description'] ?? '')),
-            ! empty($item['sales_angle']) ? 'Urban Focus use: '.$item['sales_angle'].'.' : null,
-            'Configuration and lead time confirmed on quote. Price includes a buffer for Paystack and bank charges, plus a '.rtrim(rtrim(number_format($this->topupPercent(), 1), '0'), '.').'% catalogue top-up.',
-        ]);
-
-        return '<p>'.implode('</p><p>', array_map(fn (string $p) => e($p), $parts)).'</p>';
+        return $this->copy->descriptionHtml($item);
     }
 
     protected function warrantyMonths(string $path, string $name): int

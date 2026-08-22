@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Apply 10% top-up to new catalogue products (cPanel File Manager — no git pull needed)
+ * Apply 15% top-up to new catalogue products (cPanel File Manager — no git pull needed)
  *
  * Git pull in cPanel often updates a different folder than the live Laravel app.
  * This script changes prices in the database directly.
@@ -18,7 +18,7 @@
 declare(strict_types=1);
 
 const APPLY_KEY = 'CHANGE-ME-target-range-topup-secret';
-const TOPUP_PERCENT = 10.0;
+const TOPUP_PERCENT = 15.0;
 const ROUND_TO = 50;
 
 header('X-Robots-Tag: noindex, nofollow');

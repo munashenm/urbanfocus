@@ -35,7 +35,7 @@ class TargetRangeCatalogTest extends TestCase
 
         $router = Product::where('sku', 'RUTX50')->first();
         $this->assertNotNull($router);
-        $this->assertSame(11450.0, (float) $router->price);
+        $this->assertSame(12000.0, (float) $router->price);
         $this->assertFalse($router->manage_stock);
         $this->assertTrue($router->in_stock);
         $this->assertSame(0, $router->stock_quantity);
@@ -149,7 +149,7 @@ class TargetRangeCatalogTest extends TestCase
         $pricing = new ProductPricingService;
 
         $this->assertTrue($pricing->applyToProduct($product->fresh()));
-        $this->assertSame(11450.0, (float) $product->fresh()->price);
+        $this->assertSame(12000.0, (float) $product->fresh()->price);
     }
 
     public function test_full_catalog_creates_one_hundred_unique_products_then_skips_on_rerun(): void
@@ -189,7 +189,7 @@ class TargetRangeCatalogTest extends TestCase
         $this->assertSame(8, $result['created']);
         $this->assertSame(1, $result['updated']);
         $this->assertSame(0, $result['skipped']);
-        $this->assertSame(11450.0, (float) $product->fresh()->price);
+        $this->assertSame(12000.0, (float) $product->fresh()->price);
         $this->assertGreaterThan(0, (float) $product->fresh()->cost_price);
         $this->assertSame(
             TargetRangeCatalogService::CATALOG_RANGE_SPEC_VALUE,
@@ -249,5 +249,37 @@ class TargetRangeCatalogTest extends TestCase
 
         $this->assertSame(9, Product::count());
         $this->assertNotNull(Product::where('sku', 'RUTX50')->first());
+    }
+
+    public function test_writes_professional_seo_copy_on_create_and_refresh(): void
+    {
+        $result = app(TargetRangeCatalogService::class)->sync();
+        $this->assertSame(9, $result['created']);
+
+        $router = Product::where('sku', 'RUTX50')->firstOrFail();
+        $html = (string) $router->description;
+
+        $this->assertGreaterThan(800, strlen(strip_tags($html)));
+        $this->assertStringContainsString('Teltonika RUTX50', $html);
+        $this->assertStringContainsString('South Africa', $html);
+        $this->assertStringContainsString('<h2>', $html);
+        $this->assertStringContainsString('<h3>Key specifications</h3>', $html);
+        $this->assertStringContainsString('Urban Focus', $html);
+        $this->assertNotEmpty($router->meta_title);
+        $this->assertNotEmpty($router->meta_description);
+        $this->assertLessThanOrEqual(70, mb_strlen((string) $router->meta_title));
+        $this->assertLessThanOrEqual(160, mb_strlen((string) $router->meta_description));
+        $this->assertStringContainsString('South Africa', (string) $router->short_description);
+
+        $router->update([
+            'description' => '<p>Old thin copy.</p>',
+            'short_description' => 'Thin',
+            'meta_description' => 'Old',
+        ]);
+
+        $again = app(TargetRangeCatalogService::class)->sync();
+        $this->assertSame(1, $again['updated']);
+        $this->assertGreaterThan(800, strlen(strip_tags((string) $router->fresh()->description)));
+        $this->assertStringContainsString('Key specifications', (string) $router->fresh()->description);
     }
 }

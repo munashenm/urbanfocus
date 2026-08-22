@@ -82,10 +82,11 @@
             <h2 class="h5 fw-bold text-success">Add target-range products</h2>
             <p class="small text-muted mb-3">
                 Adds up to {{ number_format($targetRangeCount) }} curated business SKUs (laptops, 5G, UniFi, CCTV, UPS, servers).
-                Existing store matches are skipped. Prices include Paystack/bank charges plus a
-                <strong>{{ rtrim(rtrim(number_format(config('pricing.target_range_topup_percent', 10), 1), '0'), '.') }}% top-up</strong>
-                on these new listings only (not the rest of the catalogue).
-                Re-run to attach missing photos and apply the top-up to products we already added.
+                Existing store matches are skipped. Each listing gets a full professional description for Google.
+                Prices include Paystack/bank charges plus a
+                <strong>{{ rtrim(rtrim(number_format(config('pricing.target_range_topup_percent', 15), 1), '0'), '.') }}% top-up</strong>
+                so we stay competitive without undercharging.
+                Re-run to refresh descriptions, attach missing photos and apply the top-up.
                 No Terminal or <code>php artisan</code> needed.
             </p>
 
@@ -119,7 +120,7 @@
                         @csrf
                         <button type="submit" class="btn btn-outline-secondary">Preview (no changes)</button>
                     </form>
-                    <form action="{{ url('/admin/catalog/sync-target-range') }}" method="POST" onsubmit="return confirm('Create missing target-range products and apply the 10% price top-up on listings we added? Existing store SKUs will not be duplicated or repriced.')">
+                    <form action="{{ url('/admin/catalog/sync-target-range') }}" method="POST" onsubmit="return confirm('Create missing target-range products, refresh professional descriptions, and apply the catalogue price top-up on listings we added? Existing store SKUs will not be duplicated or repriced.')">
                         @csrf
                         <button type="submit" class="btn btn-success">Add missing products / update prices</button>
                     </form>

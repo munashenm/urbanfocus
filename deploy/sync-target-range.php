@@ -4,7 +4,7 @@
  * Add curated target-range products (cPanel — no Terminal / no artisan)
  *
  * Skips any SKU or model already on the store. Safe to re-run.
- * Applies a 10% top-up on products we added from this catalogue (not other store SKUs).
+ * Applies the catalogue price top-up and professional SEO descriptions on products we added.
  *
  * 1. Git pull latest master (or copy the new files into urbanfocus/)
  * 2. Copy this file to public_html/sync-target-range.php

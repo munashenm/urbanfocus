@@ -356,7 +356,7 @@ class CatalogController extends Controller
 
             $result = $catalog->sync();
             $updated = $result['updated'] ?? 0;
-            $message = "Created {$result['created']} target-range product(s). Prices updated: {$updated}. Already on the store: {$result['skipped']}. Photos attached: {$result['imaged']}. Errors: {$result['errors']}.";
+            $message = "Created {$result['created']} target-range product(s). Listings refreshed (descriptions/prices): {$updated}. Already on the store: {$result['skipped']}. Photos attached: {$result['imaged']}. Errors: {$result['errors']}.";
 
             if ($result['errors'] > 0) {
                 return back()->with('warning', $message);
