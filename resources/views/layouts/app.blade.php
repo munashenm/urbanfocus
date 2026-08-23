@@ -8,6 +8,8 @@
     <meta name="description" content="@yield('meta_description', config('seo.defaults.description'))">
     @hasSection('meta_robots')
         <meta name="robots" content="@yield('meta_robots')">
+    @else
+        <meta name="robots" content="index, follow, max-image-preview:large">
     @endif
     @hasSection('meta_keywords')
         <meta name="keywords" content="@yield('meta_keywords')">
@@ -29,6 +31,9 @@
     <meta property="og:locale" content="{{ config('seo.defaults.locale', 'en_ZA') }}">
     @hasSection('og_image')
         <meta property="og:image" content="@yield('og_image')">
+        @hasSection('og_image_alt')
+            <meta property="og:image:alt" content="@yield('og_image_alt')">
+        @endif
     @else
         <meta property="og:image" content="{{ asset('images/logo-stacked.png') }}">
     @endif

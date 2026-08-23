@@ -219,7 +219,16 @@ class FeedService
         }
 
         if ($product->category) {
-            $this->writeGoogleElement($writer, 'product_type', $product->category->name);
+            $this->writeGoogleElement($writer, 'product_type', $product->bobShopCategoryPath());
+        }
+
+        if ($label = $product->availabilityLabel()) {
+            $this->writeGoogleElement($writer, 'custom_label_0', $label);
+        }
+
+        $range = trim((string) (($product->specifications ?? [])['Urban Focus range'] ?? ''));
+        if ($range !== '') {
+            $this->writeGoogleElement($writer, 'custom_label_1', $range);
         }
 
         if ($product->hasValidGtin()) {
@@ -617,7 +626,11 @@ class FeedService
             $this->addGoogleChild($item, 'additional_image_link', $this->feedAbsoluteUrl($imageUrl), $ns);
         }
 
-        $availability = $product->googleFeedAvailability() === 'in_stock' ? 'in stock' : 'out of stock';
+        $availability = match ($product->googleFeedAvailability()) {
+            'out_of_stock' => 'out of stock',
+            'backorder', 'preorder' => 'available for order',
+            default => 'in stock',
+        };
         $this->addGoogleChild($item, 'availability', $availability, $ns);
         $this->addGoogleChild($item, 'condition', config('google-merchant.condition', 'new'), $ns);
         $this->addGoogleChild($item, 'price', $this->formatPrice((float) $product->price), $ns);
@@ -633,7 +646,16 @@ class FeedService
         }
 
         if ($product->category) {
-            $this->addGoogleChild($item, 'product_type', $product->category->name, $ns);
+            $this->addGoogleChild($item, 'product_type', $product->bobShopCategoryPath(), $ns);
+        }
+
+        if ($label = $product->availabilityLabel()) {
+            $this->addGoogleChild($item, 'custom_label_0', $label, $ns);
+        }
+
+        $range = trim((string) (($product->specifications ?? [])['Urban Focus range'] ?? ''));
+        if ($range !== '') {
+            $this->addGoogleChild($item, 'custom_label_1', $range, $ns);
         }
 
         if ($product->hasValidGtin()) {

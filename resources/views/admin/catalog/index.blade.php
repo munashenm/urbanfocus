@@ -134,6 +134,65 @@
     </div>
 
     <div class="col-lg-6">
+        <div class="card h-100 border-dark"><div class="card-body">
+            @php
+                $specialistCount = $specialistCount ?? 0;
+            @endphp
+            <h2 class="h5 fw-bold">Add specialist technology products</h2>
+            <p class="small text-muted mb-3">
+                Adds up to {{ number_format($specialistCount) }} Nitrokey, PiKVM, Hailo, Proxmox, Nextcloud, OPNsense and Urban Focus solution SKUs.
+                Existing store matches are skipped. Each listing is written for South African Google, Google Shopping and Google Images
+                (title, MPN, brand, FAQ schema, JPEG photo, availability label).
+                Prices include a
+                <strong>{{ rtrim(rtrim(number_format(config('pricing.specialist_topup_percent', 15), 1), '0'), '.') }}% top-up</strong>
+                on street estimates. Quote-only software and enterprise kits stay orderable via Request a Quote.
+                Re-run to refresh descriptions, attach missing photos and apply the top-up.
+            </p>
+
+            @if(session('specialist_preview'))
+                @php $preview = session('specialist_preview'); @endphp
+                <div class="alert alert-secondary small mb-3">
+                    <strong>Preview</strong> (nothing written yet)<br>
+                    Would create: <strong>{{ $preview['created'] ?? 0 }}</strong>,
+                    would update: {{ $preview['updated'] ?? 0 }},
+                    already on store: {{ $preview['skipped'] ?? 0 }},
+                    photos: {{ $preview['imaged'] ?? 0 }},
+                    errors: {{ $preview['errors'] ?? 0 }}
+                    @if(!empty($preview['samples']))
+                        <ul class="mb-0 ps-3 mt-2">
+                            @foreach(array_slice($preview['samples'], 0, 12) as $sample)
+                                <li>
+                                    {{ strtoupper($sample['action'] ?? '') }}
+                                    {{ $sample['sku'] ?? '' }}
+                                    — {{ $sample['name'] ?? '' }}
+                                    @if(!empty($sample['reason'])) ({{ $sample['reason'] }}) @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            @endif
+
+            @if($specialistCount > 0)
+                <div class="d-flex flex-wrap gap-2">
+                    <form action="{{ url('/admin/catalog/sync-specialist/preview') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary">Preview (no changes)</button>
+                    </form>
+                    <form action="{{ url('/admin/catalog/sync-specialist') }}" method="POST" onsubmit="return confirm('Create missing specialist products, refresh SEO descriptions, and apply the specialist price top-up on listings we added? Existing store SKUs will not be duplicated or repriced.')">
+                        @csrf
+                        <button type="submit" class="btn btn-dark">Add specialist products</button>
+                    </form>
+                </div>
+            @else
+                <div class="alert alert-warning small mb-0">
+                    Pull latest <code>main</code> so <code>database/data/specialist-products.php</code> is on the server, then refresh.
+                </div>
+            @endif
+        </div></div>
+    </div>
+
+    <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Export Products</h2>
             <p class="small text-muted">Download all products as CSV for backup or re-import.</p>

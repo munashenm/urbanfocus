@@ -42,6 +42,14 @@ return [
         'computer accessories South Africa',
         'gaming laptops South Africa',
         'business IT supplier',
+        'Nitrokey South Africa',
+        'hardware security keys South Africa',
+        'PiKVM South Africa',
+        'Proxmox South Africa',
+        'Nextcloud South Africa',
+        'Hailo AI South Africa',
+        'OPNsense firewall South Africa',
+        'industrial IoT gateway South Africa',
     ],
 
     'sa_cities' => [

@@ -36,9 +36,13 @@
                 @endif
             </div>
             <div class="product-stock {{ $product->isAvailable() ? 'in-stock' : 'out-stock' }}">
-                {{ $product->isAvailable() ? 'In Stock' : 'Out of Stock' }}
+                {{ $product->availabilityLabel() }}
             </div>
-            @if($product->isAvailable())
+            @if($product->isQuoteOnly())
+                <div class="product-card-action">
+                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-primary w-100 btn-sm">{{ $product->availabilityKey() === 'contact_licensing' ? 'Contact for licensing' : 'Request a Quote' }}</a>
+                </div>
+            @elseif($product->isAvailable())
                 <form action="{{ route('cart.add', $product) }}" method="POST" class="product-card-action">
                     @csrf
                     <button type="submit" class="btn btn-primary w-100 btn-sm">Add to Cart</button>

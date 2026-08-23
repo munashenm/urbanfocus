@@ -63,7 +63,10 @@ return [
         'digital-signage' => '🖵',
         'gaming-entertainment' => '🎮',
         'business-retail' => '🏪',
-        'industrial-iot' => '🏭',
+        'industrial-commercial' => '🏭',
+        'specialist-technology' => '🔐',
+        'software-licences' => '📦',
+        'specialist-solutions' => '🛠',
     ],
 
     /*
@@ -127,12 +130,15 @@ return [
     | Shop-by-category tiles: South Africa IT demand first.
     */
     'category_priority' => [
+        'specialist-technology',
+        'software-licences',
+        'specialist-solutions',
         'networking-connectivity',
         'computing-office',
         'security-surveillance',
         'solar-power',
         'business-retail',
-        'industrial-iot',
+        'industrial-commercial',
         'digital-signage',
     ],
 

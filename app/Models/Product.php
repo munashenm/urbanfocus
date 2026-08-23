@@ -365,8 +365,58 @@ class Product extends Model
         return $this->model_number ?: $this->sku ?: null;
     }
 
+    public function availabilityKey(): ?string
+    {
+        $key = trim((string) (($this->specifications ?? [])['Availability key'] ?? ''));
+
+        return $key !== '' && array_key_exists($key, config('specialist.availability', []))
+            ? $key
+            : null;
+    }
+
+    public function availabilityMeta(): ?array
+    {
+        $key = $this->availabilityKey();
+
+        return $key ? (config("specialist.availability.{$key}") ?: null) : null;
+    }
+
+    public function availabilityLabel(): string
+    {
+        if ($meta = $this->availabilityMeta()) {
+            return (string) $meta['label'];
+        }
+
+        return $this->isAvailable() ? 'In Stock' : 'Out of Stock';
+    }
+
+    public function isQuoteOnly(): bool
+    {
+        return (bool) ($this->availabilityMeta()['quote'] ?? false);
+    }
+
+    public function listingFaqs(): array
+    {
+        $specs = $this->specifications ?? [];
+        $faqs = [];
+
+        for ($i = 1; $i <= 6; $i++) {
+            $question = trim((string) ($specs["FAQ {$i} question"] ?? ''));
+            $answer = trim((string) ($specs["FAQ {$i} answer"] ?? ''));
+            if ($question !== '' && $answer !== '') {
+                $faqs[] = ['question' => $question, 'answer' => $answer];
+            }
+        }
+
+        return $faqs;
+    }
+
     public function googleFeedAvailability(): string
     {
+        if ($meta = $this->availabilityMeta()) {
+            return (string) ($meta['google'] ?? 'in_stock');
+        }
+
         if ($this->manage_stock) {
             return $this->stock_quantity > 0 ? 'in_stock' : 'out_of_stock';
         }
@@ -667,6 +717,25 @@ class Product extends Model
 
     public function deliveryEstimate(): string
     {
+        if ($meta = $this->availabilityMeta()) {
+            if (! empty($meta['quote'])) {
+                return 'Quoted lead time after confirmation';
+            }
+
+            $days = (int) ($meta['days'] ?? ($this->delivery_days ?? 7));
+            if (($this->availabilityKey() === 'eu_stock')) {
+                return '5–10 business days from EU stock';
+            }
+            if ($this->availabilityKey() === 'special_order_eu') {
+                return 'Special order from Europe (typically 2–4 weeks)';
+            }
+            if ($this->availabilityKey() === 'in_stock_za') {
+                return '1–3 business days in South Africa';
+            }
+
+            return $days.'–'.($days + 2).' business days';
+        }
+
         $days = $this->delivery_days ?? config('shipping.default_delivery_days', 3);
 
         if (! $this->isAvailable()) {
@@ -707,7 +776,11 @@ class Product extends Model
             $specs['Dimensions'] = $this->dimensions;
         }
 
-        unset($specs['Urban Focus range'], $specs['Sales focus'], $specs['Supply']);
+        unset($specs['Urban Focus range'], $specs['Sales focus'], $specs['Supply'], $specs['Availability key']);
+
+        for ($i = 1; $i <= 6; $i++) {
+            unset($specs["FAQ {$i} question"], $specs["FAQ {$i} answer"]);
+        }
 
         return $specs;
     }
@@ -729,10 +802,12 @@ class Product extends Model
                 'url' => route('products.show', $this),
                 'priceCurrency' => config('google-merchant.currency', 'ZAR'),
                 'price' => number_format($this->effective_price, 2, '.', ''),
-                'availability' => $this->isAvailable()
-                    ? 'https://schema.org/InStock'
-                    : 'https://schema.org/OutOfStock',
+                'availability' => $this->schemaAvailabilityUrl(),
                 'itemCondition' => 'https://schema.org/NewCondition',
+                'areaServed' => [
+                    '@type' => 'Country',
+                    'name' => 'South Africa',
+                ],
                 'seller' => [
                     '@type' => 'Organization',
                     'name' => 'Urban Focus',
@@ -756,11 +831,51 @@ class Product extends Model
 
         if ($this->hasValidGtin()) {
             $schema['gtin'.$this->gtinSchemaLength()] = $this->normalizedGtin();
-        } elseif ($this->sku) {
-            $schema['mpn'] = $this->sku;
+        } elseif ($mpn = $this->googleFeedMpn()) {
+            $schema['mpn'] = $mpn;
+        }
+
+        if ($this->model_number) {
+            $schema['model'] = $this->model_number;
+        }
+
+        if ($country = config('google-merchant.country')) {
+            $schema['countryOfAssembly'] = $country === 'ZA' ? 'ZA' : $country;
         }
 
         return $schema;
+    }
+
+    public function faqSchemaArray(): ?array
+    {
+        $faqs = $this->listingFaqs();
+        if ($faqs === []) {
+            return null;
+        }
+
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => array_map(fn (array $faq) => [
+                '@type' => 'Question',
+                'name' => $faq['question'],
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => $faq['answer'],
+                ],
+            ], $faqs),
+        ];
+    }
+
+    public function schemaAvailabilityUrl(): string
+    {
+        if ($meta = $this->availabilityMeta()) {
+            return (string) ($meta['schema'] ?? 'https://schema.org/InStock');
+        }
+
+        return $this->isAvailable()
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock';
     }
 
     protected function gtinSchemaLength(): string

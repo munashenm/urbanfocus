@@ -291,11 +291,31 @@ class CatalogFilterService
 
         $root = $this->resolveRootCategory($category);
 
-        if ($this->isItCategoryHead($root->name)) {
+        if ($this->isItCategoryHead($root->name) || $this->isCanonicalTreeRoot($root)) {
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Urban Focus storefront roots from config/category_tree.php (not Pinnacle heads).
+     */
+    public function isCanonicalTreeRoot(Category $root): bool
+    {
+        $slug = strtolower(trim((string) $root->slug));
+        $name = strtolower(trim((string) $root->name));
+
+        foreach (config('category_tree.tree', []) as $parent) {
+            if ($slug !== '' && strtolower((string) ($parent['slug'] ?? '')) === $slug) {
+                return true;
+            }
+            if ($name !== '' && strtolower((string) ($parent['name'] ?? '')) === $name) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function isProductNameExcluded(Product $product): bool

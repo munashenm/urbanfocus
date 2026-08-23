@@ -9,6 +9,7 @@
 @section('og_type', 'product')
 @if($product->primary_image_url)
 @section('og_image'){{ $product->primary_image_url }}@endsection
+@section('og_image_alt', $product->imageAlt())
 @section('twitter_card', 'summary_large_image')
 @endif
 
@@ -67,8 +68,8 @@
             <div class="product-meta-cards mb-4">
                 <div class="product-meta-card">
                     <span class="label">Availability</span>
-                    <span class="{{ $product->isAvailable() ? 'text-success' : 'text-danger' }} fw-semibold">
-                        {{ $product->isAvailable() ? 'In Stock' : 'Out of Stock' }}
+                    <span class="{{ $product->isAvailable() || $product->isQuoteOnly() ? 'text-success' : 'text-danger' }} fw-semibold">
+                        {{ $product->availabilityLabel() }}
                     </span>
                 </div>
                 <div class="product-meta-card">
@@ -86,12 +87,15 @@
             @endif
 
             <div class="d-flex flex-wrap gap-2 my-4">
-                @if($product->isAvailable())
+                @if($product->isQuoteOnly())
+                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-primary btn-lg">{{ $product->availabilityKey() === 'contact_licensing' ? 'Contact us for licensing' : 'Request a Quote' }}</a>
+                @elseif($product->isAvailable())
                     <form action="{{ route('cart.add', $product) }}" method="POST" class="d-flex gap-2 align-items-center">
                         @csrf
                         <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" class="form-control product-qty-input">
                         <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
                     </form>
+                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg">Request Bulk Quote</a>
                 @else
                     <div class="checkout-card w-100">
                         <h2 class="h6 fw-bold mb-2">Notify me when back in stock</h2>
@@ -110,8 +114,8 @@
                             </div>
                         </form>
                     </div>
+                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg">Request Bulk Quote</a>
                 @endif
-                <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg">Request Bulk Quote</a>
             </div>
 
             <div class="border-top pt-3 small text-muted">
@@ -141,6 +145,15 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+            @endif
+            @if(count($product->listingFaqs()))
+                <div class="checkout-card mt-4">
+                    <h2 class="h5 fw-bold mb-3">Frequently asked questions</h2>
+                    @foreach($product->listingFaqs() as $faq)
+                        <h3 class="h6 fw-semibold mb-1">{{ $faq['question'] }}</h3>
+                        <p class="small text-muted">{{ $faq['answer'] }}</p>
+                    @endforeach
                 </div>
             @endif
         </div>
@@ -184,9 +197,11 @@
     <div class="container d-flex align-items-center justify-content-between gap-2 py-2">
         <div>
             <strong class="d-block">R {{ number_format($product->effective_price, 2) }}</strong>
-            <span class="small {{ $product->isAvailable() ? 'text-success' : 'text-danger' }}">{{ $product->isAvailable() ? 'In Stock' : 'Out of Stock' }}</span>
+            <span class="small {{ $product->isAvailable() || $product->isQuoteOnly() ? 'text-success' : 'text-danger' }}">{{ $product->availabilityLabel() }}</span>
         </div>
-        @if($product->isAvailable())
+        @if($product->isQuoteOnly())
+            <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-primary btn-sm">Request Quote</a>
+        @elseif($product->isAvailable())
             <form action="{{ route('cart.add', $product) }}" method="POST" class="d-flex align-items-center gap-2">
                 @csrf
                 <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" class="form-control form-control-sm product-qty-input" aria-label="Quantity">
@@ -207,4 +222,7 @@
 @push('schema')
 <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>
 <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>
+@if(!empty($faqSchema))
+<script type="application/ld+json">{!! json_encode($faqSchema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>
+@endif
 @endpush

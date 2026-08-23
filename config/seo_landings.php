@@ -127,4 +127,110 @@ return [
         ],
         'faqs' => [],
     ],
+
+    'hardware-security-keys-south-africa' => [
+        'title' => 'Hardware Security Keys South Africa | Nitrokey FIDO2 | Urban Focus',
+        'description' => 'Buy FIDO2 hardware security keys in South Africa. Nitrokey Passkey, Nitrokey 3 NFC and MFA kits with VAT invoices, EU stock and nationwide courier from Urban Focus.',
+        'h1' => 'Hardware Security Keys South Africa',
+        'intro' => 'Urban Focus supplies open-source Nitrokey FIDO2 / WebAuthn security keys for passwordless Microsoft 365, Google Workspace and VPN MFA across South African businesses, schools and government.',
+        'body' => [
+            'Hardware-backed passkeys stop phishing far more effectively than SMS OTP. We stock USB-A, USB-C and NFC Nitrokey models plus five-, ten- and 25-user MFA kits with enrolment support.',
+            'Ask for a quote if you need Conditional Access setup, Google Workspace 2-Step enrolment, or an HSM-backed internal PKI.',
+        ],
+        'category_slugs' => ['specialist-technology/hardware-security-keys', 'specialist-technology/hsm-pki', 'specialist-solutions/cybersecurity-solutions'],
+        'faqs' => [
+            ['question' => 'Do you sell Nitrokey in South Africa?', 'answer' => 'Yes. Urban Focus supplies Nitrokey Passkey, Nitrokey 3 and HSM models with VAT invoices and courier delivery nationwide.'],
+            ['question' => 'How fast do hardware keys arrive?', 'answer' => 'European warehouse stock is typically 5–10 business days to a South African address. Local stock, when held, ships in 1–3 business days.'],
+        ],
+    ],
+
+    'pikvm-south-africa' => [
+        'title' => 'PiKVM South Africa | Remote KVM-over-IP | Urban Focus',
+        'description' => 'Buy PiKVM V4 Plus and V4 Mini in South Africa. Remote BIOS/UEFI KVM-over-IP for servers, NVRs and branch racks with VAT invoices from Urban Focus.',
+        'h1' => 'PiKVM Remote Server Management South Africa',
+        'intro' => 'PiKVM gives Johannesburg technicians BIOS-level access to remote South African servers without flying a person to the rack. Urban Focus supplies V4 Plus, V4 Mini and complete remote-management kits.',
+        'body' => [
+            'Use PiKVM for lights-out data centre access, school server rooms, CCTV NVR recovery and branch-office support when RDP is down.',
+            'We can quote a Remote Server Management Kit, Branch Support Kit or Data Centre Remote Access Kit around the hardware.',
+        ],
+        'category_slugs' => ['specialist-technology/remote-server-management', 'specialist-solutions/managed-it-infrastructure'],
+        'faqs' => [
+            ['question' => 'Is PiKVM available in South Africa?', 'answer' => 'Yes. Urban Focus supplies PiKVM V4 Plus and V4 Mini from European stock, typically 5–10 business days, with local technical advice.'],
+        ],
+    ],
+
+    'proxmox-south-africa' => [
+        'title' => 'Proxmox South Africa | VE, Backup & Mail Gateway | Urban Focus',
+        'description' => 'Proxmox Virtual Environment, Backup Server and Mail Gateway licences in South Africa. Installation, VMware migration and managed support from Urban Focus.',
+        'h1' => 'Proxmox Licences and Support South Africa',
+        'intro' => 'Urban Focus is a South African partner for Proxmox Virtual Environment, Proxmox Backup Server and Proxmox Mail Gateway — licences, installation and VMware or Hyper-V migrations.',
+        'body' => [
+            'Replace expensive hypervisor estates with on-prem Proxmox clusters, Ceph storage and PBS disaster recovery that keeps data in South Africa.',
+            'Contact us for Community through Premium subscription quotes, HA cluster design and managed Proxmox support.',
+        ],
+        'category_slugs' => ['software-licences/virtualisation', 'specialist-solutions/private-cloud-solutions', 'specialist-solutions/backup-dr-solutions'],
+        'faqs' => [
+            ['question' => 'Can you migrate VMware to Proxmox in South Africa?', 'answer' => 'Yes. Urban Focus quotes VMware to Proxmox and Hyper-V to Proxmox migrations including cluster design, backup and cutover support.'],
+        ],
+    ],
+
+    'nextcloud-south-africa' => [
+        'title' => 'Nextcloud South Africa | Private Company Cloud | Urban Focus',
+        'description' => 'Nextcloud Enterprise private cloud in South Africa for companies, schools, legal and healthcare. Files, Talk, ONLYOFFICE and managed hosting from Urban Focus.',
+        'h1' => 'Nextcloud Private Cloud South Africa',
+        'intro' => 'Keep files, chat and office documents in South Africa with Nextcloud Enterprise. Urban Focus supplies licences, hardware and managed private-cloud hosting for POPIA-sensitive organisations.',
+        'body' => [
+            'Choose Nextcloud Files, Talk or full Enterprise Standard, Premium or Ultimate. We bundle ONLYOFFICE or Microsoft Office integration and on-prem or hosted appliances.',
+            'Typical buyers include law firms, medical practices, schools and government teams that cannot put client documents on a public hyperscaler.',
+        ],
+        'category_slugs' => ['software-licences/private-cloud-software', 'specialist-solutions/private-cloud-solutions'],
+        'faqs' => [
+            ['question' => 'Is Nextcloud a Microsoft 365 alternative in South Africa?', 'answer' => 'Yes. Combined with ONLYOFFICE it provides file sync, sharing and document collaboration under your control, billed on a South African VAT invoice.'],
+        ],
+    ],
+
+    'hailo-ai-south-africa' => [
+        'title' => 'Hailo AI Accelerators South Africa | Edge AI | Urban Focus',
+        'description' => 'Buy Hailo-8, Hailo-8L and Hailo-10H AI accelerators in South Africa. Edge CCTV analytics, ANPR and on-prem inference servers from Urban Focus.',
+        'h1' => 'Hailo Edge AI Hardware South Africa',
+        'intro' => 'Urban Focus supplies Hailo AI accelerators and complete Edge AI appliances so South African CCTV, retail and factory vision stays on site instead of a public cloud.',
+        'body' => [
+            'Choose M.2, Mini PCIe or high-performance PCIe cards, then ask us to build an analytics, ANPR, people-counting or private inference server around them.',
+            'European stock typically arrives in 5–10 business days. Enterprise AI systems are quoted to the camera count and model.',
+        ],
+        'category_slugs' => ['specialist-technology/ai-accelerators', 'specialist-technology/edge-ai', 'specialist-solutions/ai-edge-computing'],
+        'faqs' => [
+            ['question' => 'Can Hailo run CCTV analytics without sending video overseas?', 'answer' => 'Yes. Inference runs on the accelerator at the edge. Urban Focus designs private local AI servers for South African sites.'],
+        ],
+    ],
+
+    'opnsense-firewall-south-africa' => [
+        'title' => 'OPNsense Firewall South Africa | Business Edition | Urban Focus',
+        'description' => 'OPNsense Business Edition firewalls in South Africa. Mini, SME, 2.5GbE and 10GbE appliances, VPN, HA and managed firewall service from Urban Focus.',
+        'h1' => 'OPNsense Firewalls South Africa',
+        'intro' => 'Urban Focus deploys OPNsense Business Edition as an open-source alternative to closed SME firewalls — Multi-WAN, VPN, IDS/IPS and high availability with South African support.',
+        'body' => [
+            'Buy a one-year Business Edition licence, a turnkey mini or 10GbE appliance, or a managed firewall service for branches that need Multi-WAN and site-to-site VPN.',
+            'We size hardware to your throughput and can pair OPNsense with Turris or ZimaBoard platforms where a compact gateway is enough.',
+        ],
+        'category_slugs' => ['software-licences/firewall-software', 'specialist-technology/secure-routers'],
+        'faqs' => [
+            ['question' => 'Do you sell OPNsense hardware in South Africa?', 'answer' => 'Yes. Urban Focus quotes mini, SME, 2.5GbE and 10GbE OPNsense appliances plus Business Edition licensing and deployment.'],
+        ],
+    ],
+
+    'industrial-iot-south-africa' => [
+        'title' => 'Industrial IoT South Africa | ModBerry & Raspberry Pi PLC | Urban Focus',
+        'description' => 'Industrial IoT gateways in South Africa — ModBerry CM5, Sfera Labs Strato/Iono Pi, LTE, LoRa, Modbus and pump, solar and borehole monitoring from Urban Focus.',
+        'h1' => 'Industrial IoT Gateways South Africa',
+        'intro' => 'Urban Focus supplies Polish TECHBASE ModBerry and Italian Sfera Labs industrial Raspberry Pi computers for South African mining, agriculture, solar, water and manufacturing telemetry.',
+        'body' => [
+            'Configure LTE, 5G, LoRaWAN, Zigbee, Modbus, RS-485, CAN or GPS gateways on DIN-rail hardware, then add Urban Focus monitoring solutions for pumps, boreholes, gensets and cold rooms.',
+            'Enterprise and municipal systems are quoted. Hardware from European stock is typically 5–10 business days.',
+        ],
+        'category_slugs' => ['specialist-technology/industrial-iot', 'specialist-technology/plc-automation', 'specialist-solutions/industrial-iot-solutions'],
+        'faqs' => [
+            ['question' => 'Can you monitor a borehole or municipal pump remotely?', 'answer' => 'Yes. Urban Focus quotes ModBerry or Sfera-based gateways with LTE backhaul, level/current sensors and SMS or MQTT alerts for South African sites.'],
+        ],
+    ],
 ];

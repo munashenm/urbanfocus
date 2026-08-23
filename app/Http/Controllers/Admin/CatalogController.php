@@ -12,6 +12,7 @@ use App\Services\ProductCleanupService;
 use App\Services\ProductExportService;
 use App\Services\ProductImportService;
 use App\Services\ProductSeoService;
+use App\Services\SpecialistCatalogService;
 use App\Services\TargetRangeCatalogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -95,6 +96,7 @@ class CatalogController extends Controller
 
             $merchantIssueLabels = Product::googleMerchantIssueLabels();
             $targetRangeCount = $this->targetRangeCount();
+            $specialistCount = $this->specialistCount();
 
             $feeds = [
                 ['name' => 'Google Merchant Center', 'url' => url('/feeds/google.xml'), 'format' => 'XML'],
@@ -110,19 +112,25 @@ class CatalogController extends Controller
                 ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
             ];
 
-            return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing', 'targetRangeCount'));
+            return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing', 'targetRangeCount', 'specialistCount'));
         } catch (\Throwable $e) {
             report($e);
 
             $count = 0;
+            $specialistCount = 0;
             try {
                 $count = $this->targetRangeCount();
+            } catch (\Throwable) {
+            }
+            try {
+                $specialistCount = $this->specialistCount();
             } catch (\Throwable) {
             }
 
             return view('admin.catalog.simple', [
                 'error' => $e->getMessage(),
                 'targetRangeCount' => $count,
+                'specialistCount' => $specialistCount,
             ]);
         }
     }
@@ -370,6 +378,41 @@ class CatalogController extends Controller
         }
     }
 
+    public function syncSpecialistPreview(SpecialistCatalogService $catalog): RedirectResponse
+    {
+        try {
+            @set_time_limit(120);
+            $result = $catalog->sync(dryRun: true);
+
+            return back()->with('specialist_preview', $result);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Specialist catalog preview failed: '.$e->getMessage());
+        }
+    }
+
+    public function syncSpecialist(SpecialistCatalogService $catalog): RedirectResponse
+    {
+        try {
+            @set_time_limit(0);
+
+            $result = $catalog->sync();
+            $updated = $result['updated'] ?? 0;
+            $message = "Created {$result['created']} specialist product(s). Listings refreshed (descriptions/prices): {$updated}. Already on the store: {$result['skipped']}. Photos attached: {$result['imaged']}. Errors: {$result['errors']}.";
+
+            if ($result['errors'] > 0) {
+                return back()->with('warning', $message);
+            }
+
+            return back()->with('success', $message);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Specialist catalog sync failed: '.$e->getMessage());
+        }
+    }
+
     public function mergeCategories(CategoryMergeService $merge): RedirectResponse
     {
         try {
@@ -404,6 +447,24 @@ class CatalogController extends Controller
         }
     }
 
+    protected function specialistCount(): int
+    {
+        $path = (string) (config('catalog.specialist_path') ?: database_path('data/specialist-products.php'));
+        if (! is_readable($path)) {
+            return 0;
+        }
+
+        try {
+            $decoded = str_ends_with(strtolower($path), '.php')
+                ? require $path
+                : json_decode((string) file_get_contents($path), true);
+
+            return is_array($decoded) ? count($decoded) : 0;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
     /** @return array{total_active: int, eligible: int, ineligible: int, issues: array<string, int>, feed_url: string} */
     protected function emptyFeedStats(): array
     {
@@ -424,7 +485,7 @@ class CatalogController extends Controller
 
     protected function forgetStaleRouteCache(): void
     {
-        if (Route::has('admin.catalog.sync-target-range')) {
+        if (Route::has('admin.catalog.sync-target-range') && Route::has('admin.catalog.sync-specialist')) {
             return;
         }
 

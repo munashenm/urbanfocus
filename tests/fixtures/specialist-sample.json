@@ -1,0 +1,100 @@
+[
+  {
+    "list_id": 1,
+    "sku": "UF-NK-PASSKEY",
+    "name": "Nitrokey Passkey FIDO2 WebAuthn Hardware Security Key",
+    "brand": "Nitrokey",
+    "category_path": "specialist-technology/hardware-security-keys",
+    "street_price": 580,
+    "availability": "eu_stock",
+    "image_key": "security-key",
+    "family": "fido-key",
+    "match_terms": ["nitrokey passkey", "fido2 passkey"],
+    "match_skus": ["UF-NK-PASSKEY"],
+    "featured": true,
+    "short_description": "Open-source FIDO2 passkey for passwordless Microsoft 365 and Google Workspace MFA in South African businesses.",
+    "mpn": "NK-PASSKEY",
+    "specs": {
+      "Interface": "USB-A",
+      "Protocols": "FIDO2 / WebAuthn / U2F",
+      "Origin": "Germany"
+    }
+  },
+  {
+    "list_id": 7,
+    "sku": "UF-NK-HSM2",
+    "name": "Nitrokey HSM 2 USB Hardware Security Module for PKI",
+    "brand": "Nitrokey",
+    "category_path": "specialist-technology/hsm-pki",
+    "street_price": 2560,
+    "availability": "eu_stock",
+    "image_key": "hsm",
+    "family": "hsm",
+    "match_terms": ["nitrokey hsm 2"],
+    "match_skus": ["UF-NK-HSM2"],
+    "featured": true,
+    "short_description": "Open-source USB HSM for South African PKI, code signing and certificate-authority private-key protection.",
+    "mpn": "NK-HSM2",
+    "specs": {
+      "Type": "USB Hardware Security Module",
+      "API": "PKCS#11"
+    }
+  },
+  {
+    "list_id": 103,
+    "sku": "UF-FP-GEN6",
+    "name": "Fairphone Gen. 6 Repairable Sustainable Smartphone",
+    "brand": "Fairphone",
+    "category_path": "specialist-technology/specialist-smartphones",
+    "street_price": 18900,
+    "availability": "special_order_eu",
+    "image_key": "smartphone",
+    "family": "smartphone",
+    "match_terms": ["fairphone 6", "repairable smartphone"],
+    "match_skus": ["UF-FP-GEN6"],
+    "featured": false,
+    "short_description": "Repairable Fairphone Gen. 6 for South African IT teams that want spare-part support. Special order until type-approval is confirmed.",
+    "mpn": "FP6",
+    "specs": {
+      "Type": "Repairable smartphone",
+      "Origin": "Netherlands / Europe"
+    }
+  },
+  {
+    "list_id": 109,
+    "sku": "UF-PX-VE",
+    "name": "Proxmox Virtual Environment Subscription",
+    "brand": "Proxmox",
+    "category_path": "software-licences/virtualisation",
+    "street_price": 4500,
+    "availability": "contact_licensing",
+    "image_key": "software",
+    "family": "software",
+    "match_terms": ["proxmox ve subscription"],
+    "match_skus": ["UF-PX-VE"],
+    "featured": false,
+    "short_description": "Proxmox VE subscription levels quoted for South African clusters with local billing and implementation support.",
+    "mpn": "PVE-SUB",
+    "specs": {
+      "Licence": "Community / Basic / Standard / Premium"
+    }
+  },
+  {
+    "list_id": 227,
+    "sku": "UF-SOL-PWLESS",
+    "name": "Urban Focus Passwordless Authentication Solution",
+    "brand": "Urban Focus",
+    "category_path": "specialist-solutions/cybersecurity-solutions",
+    "street_price": 24500,
+    "availability": "request_quote",
+    "image_key": "solution",
+    "family": "solution",
+    "match_terms": ["passwordless authentication solution"],
+    "match_skus": ["UF-SOL-PWLESS"],
+    "featured": false,
+    "short_description": "Passwordless FIDO2 programme for South African Microsoft 365 and VPN admins using Nitrokey hardware.",
+    "specs": {
+      "Authenticators": "Nitrokey FIDO2"
+    }
+  }
+]

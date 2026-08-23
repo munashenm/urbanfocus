@@ -42,6 +42,11 @@ class PublicAssetSync
         if (is_file($sourceRoot.$imageCanary) && ! is_file($publicPath.$imageCanary)) {
             self::copyDirectory($sourceRoot.'/images/target-range', $publicPath.'/images/target-range');
         }
+
+        $specialistCanary = '/images/specialist/security-key.jpg';
+        if (is_file($sourceRoot.$specialistCanary) && ! is_file($publicPath.$specialistCanary)) {
+            self::copyDirectory($sourceRoot.'/images/specialist', $publicPath.'/images/specialist');
+        }
     }
 
     public static function syncAll(string $sourceRoot, string $publicPath): void

@@ -16,6 +16,9 @@ return [
     | Products stay in the catalogue — they are only re-ordered.
     */
     'priority_category_paths' => [
+        'specialist-technology',
+        'software-licences',
+        'specialist-solutions',
         'networking-connectivity',
         'computing-office/laptops',
         'security-surveillance',
@@ -53,6 +56,15 @@ return [
         'nas',
         'ssd',
         'workstation',
+        'nitrokey',
+        'pikvm',
+        'hailo',
+        'proxmox',
+        'nextcloud',
+        'opnsense',
+        'turris',
+        'zimaboard',
+        'fairphone',
     ],
     'browse_accessory_name_terms' => [
         'trunking',
@@ -336,4 +348,10 @@ return [
     | Synced with `php artisan catalog:sync-target-range`. Existing store matches are skipped.
     */
     'target_range_path' => database_path('data/target-range-products.json'),
+
+    /*
+    | Specialist technology catalogue (Nitrokey, PiKVM, Hailo, Proxmox, Nextcloud, …).
+    | Synced with `php artisan catalog:sync-specialist`. Existing store matches are skipped.
+    */
+    'specialist_path' => database_path('data/specialist-products.php'),
 ];
