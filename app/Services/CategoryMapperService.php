@@ -22,6 +22,8 @@ class CategoryMapperService
     /** @var array<string, array{name: string, slug: string, children?: list<array{name: string, slug: string}>}>|null */
     protected ?array $treeBySlug = null;
 
+    protected bool $canonicalTreeEnsured = false;
+
     /** @param array<string, mixed> $data */
     public function mapImportCategories(array $data): string
     {
@@ -303,6 +305,12 @@ class CategoryMapperService
 
     public function ensureCanonicalTree(): void
     {
+        if ($this->canonicalTreeEnsured && Category::query()->whereNull('parent_id')->where('slug', 'computing-office')->exists()) {
+            return;
+        }
+
+        $this->canonicalTreeEnsured = true;
+
         foreach (config('category_tree.tree', config('category_map.tree', [])) as $order => $parentData) {
             $parent = Category::updateOrCreate(
                 ['slug' => $parentData['slug']],

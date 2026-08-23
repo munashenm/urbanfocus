@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Services\Social\SocialPostingService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class SpecialistCatalogService
@@ -58,6 +61,21 @@ class SpecialistCatalogService
      */
     public function sync(bool $dryRun = false, ?string $path = null, ?string $sku = null): array
     {
+        $previousSocial = SocialPostingService::$suppress;
+        SocialPostingService::$suppress = true;
+
+        try {
+            return $this->runSync($dryRun, $path, $sku);
+        } finally {
+            SocialPostingService::$suppress = $previousSocial;
+        }
+    }
+
+    /**
+     * @return array{created: int, skipped: int, updated: int, imaged: int, errors: int, samples: list<array<string, mixed>>, error_reasons: list<string>}
+     */
+    protected function runSync(bool $dryRun = false, ?string $path = null, ?string $sku = null): array
+    {
         $this->refreshIndex();
         $this->categories->ensureCanonicalTree();
         $this->ensureBrands($dryRun);
@@ -69,6 +87,7 @@ class SpecialistCatalogService
         $imaged = 0;
         $errors = 0;
         $samples = [];
+        $errorReasons = [];
 
         foreach ($this->items($path) as $item) {
             if ($sku !== null && $sku !== '' && strcasecmp((string) $item['sku'], $sku) !== 0) {
@@ -145,8 +164,15 @@ class SpecialistCatalogService
                 }
 
                 $product = $this->createProduct($item);
-                if ($this->attachListingImage($product, $item)) {
-                    $imaged++;
+                try {
+                    if ($this->attachListingImage($product, $item)) {
+                        $imaged++;
+                    }
+                } catch (\Throwable $imageError) {
+                    Log::warning('Specialist catalog photo failed', [
+                        'sku' => $item['sku'] ?? null,
+                        'message' => $imageError->getMessage(),
+                    ]);
                 }
                 $this->rememberCreated($product);
                 $created++;
@@ -161,12 +187,18 @@ class SpecialistCatalogService
                 }
             } catch (\Throwable $e) {
                 $errors++;
-                if (count($samples) < 25) {
+                $reason = $this->shortError($e);
+                $errorReasons[$reason] = ($errorReasons[$reason] ?? 0) + 1;
+                Log::warning('Specialist catalog item failed', [
+                    'sku' => $item['sku'] ?? null,
+                    'message' => $e->getMessage(),
+                ]);
+                if (count(array_filter($samples, fn ($sample) => ($sample['action'] ?? '') === 'error')) < 15) {
                     $samples[] = [
                         'action' => 'error',
                         'sku' => $item['sku'] ?? null,
                         'name' => $item['name'] ?? null,
-                        'reason' => $e->getMessage(),
+                        'reason' => $reason,
                     ];
                 }
             }
@@ -181,7 +213,12 @@ class SpecialistCatalogService
             Cache::forget('sitemap.images.v3');
         }
 
-        return compact('created', 'skipped', 'updated', 'imaged', 'errors', 'samples');
+        $error_reasons = [];
+        foreach ($errorReasons as $reason => $count) {
+            $error_reasons[] = ((int) $count) > 1 ? $reason.' ('.$count.' times)' : $reason;
+        }
+
+        return compact('created', 'skipped', 'updated', 'imaged', 'errors', 'samples', 'error_reasons');
     }
 
     /**
@@ -231,11 +268,18 @@ class SpecialistCatalogService
      */
     protected function createProduct(array $item): Product
     {
+        return Product::withoutEvents(fn () => $this->createProductRecord($item));
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    protected function createProductRecord(array $item): Product
+    {
         $retail = $this->retailStreetPrice($item);
         $category = $this->categories->resolveCategoryForFilter((string) $item['category_path']);
         $availability = (string) ($item['availability'] ?? 'eu_stock');
-
-        return Product::create([
+        $payload = [
             'category_id' => $category?->id,
             'sku' => (string) $item['sku'],
             'model_number' => (string) ($item['mpn'] ?? $item['sku']),
@@ -260,7 +304,19 @@ class SpecialistCatalogService
             'is_featured' => (bool) ($item['featured'] ?? false),
             'is_deal' => false,
             'is_active' => true,
-        ]);
+        ];
+
+        try {
+            return Product::create($payload);
+        } catch (\Throwable $e) {
+            if (! $this->isLostConnection($e)) {
+                throw $e;
+            }
+
+            DB::reconnect();
+
+            return Product::create($payload);
+        }
     }
 
     /**
@@ -283,7 +339,7 @@ class SpecialistCatalogService
             return false;
         }
 
-        $alt = trim($product->brand.' '.$product->name.' product photo for sale in South Africa');
+        $alt = Str::limit(trim($product->brand.' '.$product->name.' product photo for sale in South Africa'), 255, '');
 
         ProductImage::create([
             'product_id' => $product->id,
@@ -455,7 +511,7 @@ class SpecialistCatalogService
             $payload['cost_price'] = $this->impliedCostPrice($item);
         }
 
-        $product->update($payload);
+        Product::withoutEvents(fn () => $product->update($payload));
     }
 
     protected function roundRetail(float $price): float
@@ -556,16 +612,37 @@ class SpecialistCatalogService
     protected function uniqueSlug(string $name, string $sku): string
     {
         $base = Str::slug($name) ?: 'product';
-        $candidate = $base;
-        $suffix = 1;
+        $skuSlug = Str::slug($this->normalizeCode($sku));
+        $candidate = $skuSlug !== '' ? Str::limit($base.'-'.$skuSlug, 255, '') : $base;
+        $suffix = 2;
 
         while (Product::withTrashed()->where('slug', $candidate)->exists()) {
-            $skuSlug = Str::slug($this->normalizeCode($sku));
-            $candidate = Str::limit($base.($skuSlug !== '' ? '-'.$skuSlug : '').($suffix > 1 ? '-'.$suffix : ''), 255, '');
+            $candidate = Str::limit($base.($skuSlug !== '' ? '-'.$skuSlug : '').'-'.$suffix, 255, '');
             $suffix++;
+            if ($suffix > 50) {
+                $candidate = Str::limit($base.'-'.$suffix.'-'.substr(sha1($sku.$suffix), 0, 8), 255, '');
+                break;
+            }
         }
 
         return $candidate;
+    }
+
+    protected function shortError(\Throwable $e): string
+    {
+        $message = trim(preg_replace('/\s+/', ' ', $e->getMessage()) ?? $e->getMessage());
+        $message = preg_replace('/\(Connection: [^)]+\)\s*/', '', $message) ?? $message;
+
+        return Str::limit($message, 220, '');
+    }
+
+    protected function isLostConnection(\Throwable $e): bool
+    {
+        $message = $e->getMessage();
+
+        return str_contains($message, 'has gone away')
+            || str_contains($message, 'Lost connection')
+            || str_contains($message, '2006');
     }
 
     /** @return Collection<int, object> */

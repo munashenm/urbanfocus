@@ -158,6 +158,9 @@
                     already on store: {{ $preview['skipped'] ?? 0 }},
                     photos: {{ $preview['imaged'] ?? 0 }},
                     errors: {{ $preview['errors'] ?? 0 }}
+                    @if(!empty($preview['error_reasons']))
+                        <div class="mt-2"><strong>Error:</strong> {{ implode(' | ', array_slice($preview['error_reasons'], 0, 3)) }}</div>
+                    @endif
                     @if(!empty($preview['samples']))
                         <ul class="mb-0 ps-3 mt-2">
                             @foreach(array_slice($preview['samples'], 0, 12) as $sample)
