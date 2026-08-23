@@ -14,7 +14,7 @@ return [
         ],
         [
             'name' => 'ITWeb',
-            'url' => 'https://www.itweb.co.za/rss/articles',
+            'url' => 'https://www.itweb.co.za/rss',
         ],
         [
             'name' => 'TechCentral',

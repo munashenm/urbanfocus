@@ -4,6 +4,7 @@ namespace App\Services\Blog;
 
 use App\Models\Article;
 use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use App\Services\CategoryMapperService;
 use Illuminate\Support\Str;
