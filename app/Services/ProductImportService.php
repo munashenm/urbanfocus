@@ -647,6 +647,8 @@ class ProductImportService
             if ($keywords !== []) {
                 $data['meta_keywords'] = Str::limit(implode(', ', $keywords), 255, '');
             }
+        } else {
+            $data['meta_keywords'] = Str::limit((string) $data['meta_keywords'], 255, '');
         }
 
         return $data;

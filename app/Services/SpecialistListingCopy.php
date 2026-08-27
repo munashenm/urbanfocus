@@ -26,7 +26,7 @@ class SpecialistListingCopy
     {
         $name = trim((string) ($item['name'] ?? 'IT product'));
 
-        return Str::limit($name.' | South Africa | Urban Focus', 70, '');
+        return $this->mysqlVarchar($name.' | South Africa | Urban Focus', 70);
     }
 
     /**
@@ -37,7 +37,7 @@ class SpecialistListingCopy
         $availability = $this->availabilityLabel($item);
         $lead = $this->shortDescription($item);
 
-        return Str::limit("Buy {$lead} VAT invoices, nationwide courier and {$availability}. Supplied by Urban Focus in South Africa.", 160, '');
+        return $this->mysqlVarchar("Buy {$lead} VAT invoices, nationwide courier and {$availability}. Supplied by Urban Focus in South Africa.", 160);
     }
 
     /**
@@ -47,17 +47,19 @@ class SpecialistListingCopy
     {
         $parts = array_filter(array_merge([
             (string) ($item['brand'] ?? ''),
-            (string) ($item['sku'] ?? ''),
             (string) ($item['name'] ?? ''),
+            (string) ($item['sku'] ?? ''),
+            (string) ($item['mpn'] ?? ''),
             $this->familyLabel($item),
+        ], array_map('strval', $item['match_terms'] ?? []), [
             'South Africa',
             'Johannesburg',
-            'buy online',
-            'supplier',
+            'Cape Town',
             'Urban Focus',
-        ], array_values($this->specs($item))));
+        ]));
 
-        return Str::limit(implode(', ', array_unique($parts)), 255, '');
+        // products.meta_keywords is VARCHAR(255); MySQL strict mode rejects anything longer.
+        return $this->mysqlVarchar(implode(', ', array_unique(array_filter($parts))), 255, cutAtComma: true);
     }
 
     /**
@@ -358,5 +360,24 @@ class SpecialistListingCopy
     protected function p(string $text): string
     {
         return '<p>'.e($text).'</p>';
+    }
+
+    /**
+     * Fit a string into a MySQL VARCHAR(n) column (character length, utf8mb4-safe).
+     */
+    protected function mysqlVarchar(string $value, int $limit, bool $cutAtComma = false): string
+    {
+        $value = trim(preg_replace('/\s+/u', ' ', $value) ?? $value);
+
+        if ($value === '' || mb_strlen($value) <= $limit) {
+            return $value;
+        }
+
+        $cut = rtrim(mb_substr($value, 0, $limit), " \t,;");
+        if ($cutAtComma && str_contains($cut, ',')) {
+            $cut = rtrim((string) preg_replace('/,[^,]*$/', '', $cut), " \t,;");
+        }
+
+        return $cut;
     }
 }

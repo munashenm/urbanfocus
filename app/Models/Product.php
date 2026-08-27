@@ -73,6 +73,17 @@ class Product extends Model
         });
     }
 
+    public function setMetaKeywordsAttribute(?string $value): void
+    {
+        if ($value === null || $value === '') {
+            $this->attributes['meta_keywords'] = $value;
+
+            return;
+        }
+
+        $this->attributes['meta_keywords'] = Str::limit($value, 255, '');
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

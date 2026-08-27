@@ -58,6 +58,8 @@ class SpecialistCatalogTest extends TestCase
         $this->assertNotNull($key->faqSchemaArray());
         $this->assertStringContainsString('South Africa', (string) $key->meta_title);
         $this->assertLessThanOrEqual(70, mb_strlen((string) $key->meta_title));
+        $this->assertNotEmpty($key->meta_keywords);
+        $this->assertLessThanOrEqual(255, mb_strlen((string) $key->meta_keywords));
         $this->assertStringContainsString('<h3>Advantages</h3>', (string) $key->description);
         $this->assertStringContainsString('<h3>Key specifications</h3>', (string) $key->description);
     }
@@ -222,6 +224,30 @@ class SpecialistCatalogTest extends TestCase
         $this->assertFalse($filter->isCategoryExcluded($root));
         $this->assertFalse($filter->isCategoryExcluded($child));
         $this->assertTrue($filter->isCanonicalTreeRoot($root));
+    }
+
+    public function test_listing_copy_fits_mysql_varchar_columns(): void
+    {
+        config(['catalog.specialist_path' => database_path('data/specialist-products.php')]);
+
+        $copy = app(SpecialistListingCopy::class);
+
+        foreach (app(SpecialistCatalogService::class)->items() as $item) {
+            $this->assertLessThanOrEqual(70, mb_strlen($copy->metaTitle($item)), $item['sku']);
+            $this->assertLessThanOrEqual(160, mb_strlen($copy->metaDescription($item)), $item['sku']);
+            $this->assertLessThanOrEqual(255, mb_strlen($copy->metaKeywords($item)), $item['sku']);
+            $this->assertNotSame('', $copy->metaKeywords($item), $item['sku']);
+        }
+    }
+
+    public function test_product_truncates_oversized_meta_keywords_before_save(): void
+    {
+        $product = Product::factory()->create([
+            'meta_keywords' => str_repeat('nitrokey, fido2, south africa, ', 20),
+        ]);
+
+        $this->assertLessThanOrEqual(255, mb_strlen((string) $product->meta_keywords));
+        $this->assertLessThanOrEqual(255, mb_strlen((string) $product->fresh()->meta_keywords));
     }
 
     public function test_full_specialist_catalog_has_unique_skus_and_valid_categories(): void
