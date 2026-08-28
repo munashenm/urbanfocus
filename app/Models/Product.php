@@ -15,6 +15,12 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * AppServiceProvider sets Schema::defaultStringLength(191), so string()
+     * columns including meta_keywords are VARCHAR(191) on MySQL.
+     */
+    public const META_KEYWORDS_MAX_LENGTH = 191;
+
     protected $fillable = [
         'category_id',
         'sku',
@@ -81,7 +87,7 @@ class Product extends Model
             return;
         }
 
-        $this->attributes['meta_keywords'] = Str::limit($value, 255, '');
+        $this->attributes['meta_keywords'] = Str::limit($value, self::META_KEYWORDS_MAX_LENGTH, '');
     }
 
     public function category(): BelongsTo

@@ -353,7 +353,7 @@ class ProductController extends Controller
             'specifications' => 'nullable|string',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
-            'meta_keywords' => 'nullable|string|max:255',
+            'meta_keywords' => 'nullable|string|max:'.Product::META_KEYWORDS_MAX_LENGTH,
             'is_featured' => 'boolean',
             'is_deal' => 'boolean',
             'deal_label' => 'nullable|string|max:50',

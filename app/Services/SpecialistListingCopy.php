@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Product;
 use Illuminate\Support\Str;
 
 class SpecialistListingCopy
@@ -58,8 +59,11 @@ class SpecialistListingCopy
             'Urban Focus',
         ]));
 
-        // products.meta_keywords is VARCHAR(255); MySQL strict mode rejects anything longer.
-        return $this->mysqlVarchar(implode(', ', array_unique(array_filter($parts))), 255, cutAtComma: true);
+        return $this->mysqlVarchar(
+            implode(', ', array_unique(array_filter($parts))),
+            Product::META_KEYWORDS_MAX_LENGTH,
+            cutAtComma: true
+        );
     }
 
     /**

@@ -645,10 +645,10 @@ class ProductImportService
                 $data['category'] ?? null,
             ]);
             if ($keywords !== []) {
-                $data['meta_keywords'] = Str::limit(implode(', ', $keywords), 255, '');
+                $data['meta_keywords'] = Str::limit(implode(', ', $keywords), Product::META_KEYWORDS_MAX_LENGTH, '');
             }
         } else {
-            $data['meta_keywords'] = Str::limit((string) $data['meta_keywords'], 255, '');
+            $data['meta_keywords'] = Str::limit((string) $data['meta_keywords'], Product::META_KEYWORDS_MAX_LENGTH, '');
         }
 
         return $data;

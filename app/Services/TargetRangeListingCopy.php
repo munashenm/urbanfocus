@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Product;
 use Illuminate\Support\Str;
 
 class TargetRangeListingCopy
@@ -57,7 +58,7 @@ class TargetRangeListingCopy
             $this->familyLabel($item),
         ], array_values($sheet['specs'])));
 
-        return Str::limit(implode(', ', array_unique($parts)), 255, '');
+        return Str::limit(implode(', ', array_unique($parts)), Product::META_KEYWORDS_MAX_LENGTH, '');
     }
 
     /**
