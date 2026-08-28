@@ -218,5 +218,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/checkout.js') }}" defer></script>
+<script src="{{ public_asset_url('js/checkout.js') }}" defer></script>
 @endpush

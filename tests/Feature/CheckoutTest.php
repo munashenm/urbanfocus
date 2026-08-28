@@ -54,15 +54,12 @@ class CheckoutTest extends TestCase
 
         $this->withSession(['cart' => [$product->id => 1]])
             ->post(route('checkout.store'), $this->validCheckoutPayload())
-            ->assertRedirect();
+            ->assertRedirect('https://paystack.test/pay/abc');
 
         $order = Order::first();
         $this->assertNotNull($order);
         $this->assertSame('paystack', $order->payment_method);
         $this->assertSame('pending', $order->payment_status);
-
-        $this->get(route('checkout.paystack.pay', $order))
-            ->assertRedirect('https://paystack.test/pay/abc');
     }
 
     public function test_unpaid_paystack_order_can_retry_without_checkout_session(): void
@@ -96,14 +93,12 @@ class CheckoutTest extends TestCase
 
         $product = Product::factory()->create(['price' => 500]);
 
-        $this->withSession(['cart' => [$product->id => 1]])
-            ->post(route('checkout.store'), $this->validCheckoutPayload())
-            ->assertRedirect();
+        $response = $this->withSession(['cart' => [$product->id => 1]])
+            ->post(route('checkout.store'), $this->validCheckoutPayload());
 
         $order = Order::firstOrFail();
 
-        $this->get(route('checkout.paystack.pay', $order))
-            ->assertRedirect(route('checkout.success', $order));
+        $response->assertRedirect(route('checkout.success', $order));
 
         $this->get(route('checkout.success', $order))
             ->assertOk()
@@ -128,7 +123,7 @@ class CheckoutTest extends TestCase
 
         $this->withSession(['cart' => [$product->id => 1]])
             ->post(route('checkout.store'), $this->validCheckoutPayload())
-            ->assertRedirect();
+            ->assertRedirect('https://paystack.test/pay/ok');
 
         Mail::assertSent(OrderConfirmation::class);
         $this->assertDatabaseCount('orders', 1);

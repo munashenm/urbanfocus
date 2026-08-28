@@ -215,7 +215,7 @@ class CheckoutController extends Controller
         $this->notifyOrderPlaced($order);
 
         if ($validated['payment_method'] === 'paystack') {
-            return redirect()->route('checkout.paystack.pay', $order);
+            return $this->paystackPay($order);
         }
 
         $this->cart->clear();
@@ -362,28 +362,35 @@ class CheckoutController extends Controller
 
     protected function notifyOrderPlaced(Order $order): void
     {
-        $order->loadMissing('items');
+        $orderId = $order->id;
 
-        try {
-            Mail::to($order->customer_email)->send(new OrderConfirmation($order));
-        } catch (\Throwable $e) {
-            Log::error('Order confirmation email failed', [
-                'order' => $order->order_number,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        dispatch(function () use ($orderId) {
+            $order = Order::query()->with('items')->find($orderId);
+            if (! $order) {
+                return;
+            }
 
-        $adminEmail = config('app.email');
-        if (is_string($adminEmail) && $adminEmail !== '') {
             try {
-                Mail::to($adminEmail)->send(new NewOrderNotification($order));
+                Mail::to($order->customer_email)->send(new OrderConfirmation($order));
             } catch (\Throwable $e) {
-                Log::error('Admin new-order email failed', [
+                Log::error('Order confirmation email failed', [
                     'order' => $order->order_number,
                     'error' => $e->getMessage(),
                 ]);
             }
-        }
+
+            $adminEmail = config('app.email');
+            if (is_string($adminEmail) && $adminEmail !== '') {
+                try {
+                    Mail::to($adminEmail)->send(new NewOrderNotification($order));
+                } catch (\Throwable $e) {
+                    Log::error('Admin new-order email failed', [
+                        'order' => $order->order_number,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        })->afterResponse();
     }
 
     /** @return array{0: float, 1: float} [taxAmount, total] */

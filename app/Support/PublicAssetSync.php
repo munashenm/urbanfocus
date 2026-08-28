@@ -47,6 +47,11 @@ class PublicAssetSync
         if (is_file($sourceRoot.$specialistCanary) && ! is_file($publicPath.$specialistCanary)) {
             self::copyDirectory($sourceRoot.'/images/specialist', $publicPath.'/images/specialist');
         }
+
+        $jsCanary = '/js/checkout.js';
+        if (is_file($sourceRoot.$jsCanary) && (! is_file($publicPath.$jsCanary) || filemtime($sourceRoot.$jsCanary) > filemtime($publicPath.$jsCanary))) {
+            self::copyDirectory($sourceRoot.'/js', $publicPath.'/js');
+        }
     }
 
     public static function syncAll(string $sourceRoot, string $publicPath): void

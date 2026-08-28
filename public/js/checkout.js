@@ -129,18 +129,43 @@
     function resetSubmitButton() {
         if (!submitBtn) return;
         submitBtn.disabled = false;
+        submitBtn.removeAttribute('aria-busy');
         submitBtn.textContent = submitBtn.getAttribute('data-label') || 'Continue to secure payment';
     }
 
     if (submitBtn) {
-        submitBtn.closest('form')?.addEventListener('submit', function () {
-            submitBtn.disabled = true;
+        const form = submitBtn.closest('form');
+        form?.addEventListener('submit', function (event) {
+            if (form.dataset.checkoutSubmitting === '1') {
+                event.preventDefault();
+                return;
+            }
+
+            form.dataset.checkoutSubmitting = '1';
+            submitBtn.setAttribute('aria-busy', 'true');
             submitBtn.textContent = 'Taking you to payment…';
+
+            // Chrome cancels the POST if the clicked submit button is disabled
+            // in the same turn as the submit event. Disable on the next tick.
+            setTimeout(function () {
+                submitBtn.disabled = true;
+            }, 0);
+
+            setTimeout(function () {
+                if (document.visibilityState === 'visible' && form.dataset.checkoutSubmitting === '1') {
+                    form.dataset.checkoutSubmitting = '';
+                    resetSubmitButton();
+                }
+            }, 25000);
         });
     }
 
     window.addEventListener('pageshow', function (event) {
-        if (event.persisted) {
+        const form = submitBtn ? submitBtn.closest('form') : null;
+        if (event.persisted || (form && form.dataset.checkoutSubmitting === '1' && document.visibilityState === 'visible')) {
+            if (form) {
+                form.dataset.checkoutSubmitting = '';
+            }
             resetSubmitButton();
         }
     });
