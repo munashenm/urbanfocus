@@ -173,6 +173,7 @@ foreach ($items as $item) {
 if (! $dryRun && $updated > 0) {
     try {
         Illuminate\Support\Facades\Cache::forget('home.product_rows_v1');
+        Illuminate\Support\Facades\Cache::forget('home.product_rows_v2');
     } catch (Throwable) {
     }
 }

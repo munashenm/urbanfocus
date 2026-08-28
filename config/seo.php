@@ -3,7 +3,7 @@
 return [
     'defaults' => [
         'title_suffix' => '| Urban Focus',
-        'description' => 'Urban Focus — South African IT distributor. Buy laptops, networking, CCTV, servers and software with nationwide delivery, VAT invoices and professional support.',
+        'description' => 'Urban Focus — South African IT distributor. Buy laptops, networking, CCTV, Nitrokey FIDO2 security keys and specialist IT with nationwide delivery, VAT invoices and Paystack checkout.',
         'keywords' => 'IT supplier South Africa, networking equipment South Africa, buy laptops South Africa, Ubiquiti supplier, Hikvision supplier, business IT supplier',
         'locale' => 'en_ZA',
         'country' => 'ZA',

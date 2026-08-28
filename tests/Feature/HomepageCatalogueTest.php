@@ -154,11 +154,14 @@ class HomepageCatalogueTest extends TestCase
         $html = $this->get(route('home'))->assertOk()->getContent();
 
         $this->assertSame(8, $this->productCardsInSection($html, 'Top Selling in South Africa'));
+        $this->assertSame(8, $this->productCardsInSection($html, 'Specialist Technology'));
         $this->assertSame(8, $this->productCardsInSection($html, 'Top Sellers'));
         $this->assertSame(8, $this->productCardsInSection($html, 'Business Laptops'));
         $this->assertSame(8, $this->productCardsInSection($html, 'Networking Solutions'));
         $this->assertSame(8, $this->productCardsInSection($html, 'CCTV & Security'));
         $this->assertSame(1, substr_count($html, 'id="heroCarousel"'), 'Homepage header should not repeat inside product rows.');
+        $this->assertStringContainsString('Shop Specialist Tech', $html);
+        $this->assertStringContainsString('Hardware Security Keys', $html);
     }
 
     protected function seedBalancedHomepageCatalogue(): void
@@ -174,6 +177,7 @@ class HomepageCatalogueTest extends TestCase
             ['Lenovo', 'lenovo'],
             ['Hikvision', 'hikvision'],
             ['Dahua', 'dahua'],
+            ['Nitrokey', 'nitrokey'],
         ] as [$name, $slug]) {
             Brand::query()->updateOrCreate(
                 ['slug' => $slug],
@@ -186,6 +190,7 @@ class HomepageCatalogueTest extends TestCase
         $laptops = Category::query()->where('slug', 'laptops')->where('parent_id', $computing->id)->firstOrFail();
         $storage = Category::query()->where('slug', 'storage-devices')->where('parent_id', $computing->id)->firstOrFail();
         $security = Category::query()->where('slug', 'security-surveillance')->whereNull('parent_id')->firstOrFail();
+        $specialist = Category::query()->where('slug', 'specialist-technology')->whereNull('parent_id')->firstOrFail();
 
         foreach (range(1, 12) as $i) {
             Product::factory()->create([
@@ -212,6 +217,13 @@ class HomepageCatalogueTest extends TestCase
                 'sku' => "STOR-{$i}",
                 'category_id' => $storage->id,
             ]);
+            Product::factory()->create([
+                'name' => "Nitrokey Passkey FIDO2 {$i}",
+                'brand' => 'Nitrokey',
+                'sku' => "UF-NK-{$i}",
+                'category_id' => $specialist->id,
+                'is_featured' => $i <= 4,
+            ]);
         }
     }
 
@@ -227,6 +239,7 @@ class HomepageCatalogueTest extends TestCase
 
         $nextHeadings = [
             'Top Selling in South Africa',
+            'Specialist Technology',
             'Top Sellers',
             'Business Laptops',
             'Networking Solutions',

@@ -77,6 +77,7 @@
                             </div>
                             <div class="border-top mt-3 pt-3 d-flex flex-wrap gap-2">
                                 <a href="{{ route('shop.index') }}" class="btn btn-sm btn-primary">All Products</a>
+                                <a href="{{ route('shop.index', ['category' => 'specialist-technology']) }}" class="btn btn-sm btn-outline-dark">Specialist Technology</a>
                                 <a href="{{ route('b2b.quote') }}" class="btn btn-sm btn-outline-primary">Request Quote</a>
                                 <a href="{{ route('b2b.rfq') }}" class="btn btn-sm btn-outline-secondary">Upload RFQ</a>
                             </div>

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Urban Focus — IT Supplier South Africa | Networking, Laptops & Security')
-@section('meta_description', 'Buy laptops, networking, CCTV, servers and IT equipment in South Africa. Urban Focus supplies Ubiquiti, Hikvision, Dell, TP-Link and more with nationwide delivery and VAT invoices.')
+@section('meta_description', 'Buy laptops, networking, CCTV, Nitrokey FIDO2 security keys and specialist IT in South Africa. Urban Focus supplies with nationwide delivery, VAT invoices and Paystack checkout.')
 @section('meta_keywords', 'buy laptops South Africa, networking equipment South Africa, Ubiquiti supplier South Africa, Hikvision supplier South Africa, business IT supplier, computer accessories South Africa')
 @section('og_image', asset('images/logo-stacked.png'))
 
@@ -145,10 +145,20 @@
 @if($popularProducts->count())
     @include('partials.home-product-section', [
         'title' => 'Top Selling in South Africa',
-        'subtitle' => 'Networking, business laptops, CCTV and storage — the categories SA businesses buy most.',
+        'subtitle' => 'Networking, business laptops, CCTV and specialist IT — the categories SA businesses buy most.',
         'url' => route('shop.index'),
         'linkLabel' => 'Shop All Products',
         'products' => $popularProducts,
+    ])
+@endif
+
+@if(($specialistProducts ?? collect())->count())
+    @include('partials.home-product-section', [
+        'title' => 'Specialist Technology',
+        'subtitle' => 'Nitrokey FIDO2 keys, PiKVM, private cloud and industrial IoT — in stock for South African buyers.',
+        'url' => route('shop.index', ['category' => 'specialist-technology']),
+        'linkLabel' => 'Shop Specialist Tech',
+        'products' => $specialistProducts,
     ])
 @endif
 

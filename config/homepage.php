@@ -11,6 +11,14 @@ return [
             'theme' => 'navy',
         ],
         [
+            'eyebrow' => 'Specialist Technology',
+            'title' => 'Hardware Security Keys & Specialist IT',
+            'subtitle' => 'Nitrokey FIDO2 keys, PiKVM, private cloud and industrial IoT — supplied in South Africa with VAT invoices and nationwide courier.',
+            'cta_primary' => ['label' => 'Shop Specialist Tech', 'route' => 'shop.index', 'params' => ['category' => 'specialist-technology']],
+            'cta_secondary' => ['label' => 'Request a Quote', 'route' => 'b2b.quote'],
+            'theme' => 'blue',
+        ],
+        [
             'eyebrow' => 'Networking & Connectivity',
             'title' => 'Professional Networking Solutions',
             'subtitle' => 'Ubiquiti, MikroTik, Cambium, TP-Link and enterprise switches — for ISPs, installers and businesses.',
@@ -30,6 +38,12 @@ return [
 
     'solution_blocks' => [
         [
+            'title' => 'Specialist Technology',
+            'subtitle' => 'FIDO2 keys, PiKVM, private cloud & IoT',
+            'category_path' => 'specialist-technology',
+            'icon' => 'specialist',
+        ],
+        [
             'title' => 'Networking Solutions',
             'subtitle' => 'Switches, access points, routers & fibre',
             'category_path' => 'networking-connectivity',
@@ -46,12 +60,6 @@ return [
             'subtitle' => 'Cameras, NVRs & access control',
             'category_path' => 'security-surveillance',
             'icon' => 'security',
-        ],
-        [
-            'title' => 'Software Licensing',
-            'subtitle' => 'Microsoft, antivirus & subscriptions',
-            'category_path' => 'computing-office/software',
-            'icon' => 'software',
         ],
     ],
 
@@ -97,6 +105,10 @@ return [
         'LG',
         'Yealink',
         'Starlink',
+        'Nitrokey',
+        'PiKVM',
+        'ZimaBoard',
+        'Turris',
     ],
 
     'top_seller_categories' => [
@@ -107,6 +119,8 @@ return [
         'computing-office/laptops',
         'computing-office/desktops',
         'computing-office/monitors',
+        'specialist-technology',
+        'specialist-solutions',
         'solar-power',
     ],
 
@@ -120,10 +134,10 @@ return [
     | not whatever was imported most recently (HDMI sockets, helmet cameras).
     */
     'popular_category_paths' => [
+        'specialist-technology',
         'networking-connectivity',
         'computing-office/laptops',
         'security-surveillance',
-        'computing-office/storage-devices',
     ],
 
     /*

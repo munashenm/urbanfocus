@@ -22,8 +22,8 @@ class HomeController extends Controller
     {
         $limit = (int) config('homepage.row_limit', 8);
 
-        [$popularProducts, $topSellers, $laptopProducts, $networkingProducts, $securityProducts, $featuredProducts] = $this->remember(
-            'home.product_rows_v1',
+        [$popularProducts, $topSellers, $laptopProducts, $networkingProducts, $securityProducts, $specialistProducts, $featuredProducts] = $this->remember(
+            'home.product_rows_v2',
             fn () => $this->homepageProductRows($limit)
         );
 
@@ -72,7 +72,7 @@ class HomeController extends Controller
 
         return view('home', compact(
             'featuredProducts', 'popularProducts', 'topSellers', 'networkingProducts',
-            'laptopProducts', 'securityProducts', 'categories', 'brands', 'banners',
+            'laptopProducts', 'securityProducts', 'specialistProducts', 'categories', 'brands', 'banners',
             'articles', 'featuredArticle', 'heroSlides', 'solutionBlocks', 'categoryIcons', 'sectionBrands'
         ));
     }
@@ -108,12 +108,15 @@ class HomeController extends Controller
         );
         $used = array_merge($used, $security->pluck('id')->all());
 
+        $specialist = $this->categoryProducts('specialist-technology', $limit, [], $used);
+        $used = array_merge($used, $specialist->pluck('id')->all());
+
         $topSellers = $this->topSellerProducts($limit, $used);
         $used = array_merge($used, $topSellers->pluck('id')->all());
 
         $featured = $this->curatedFeaturedProducts($limit, $used);
 
-        return [$popular, $topSellers, $laptops, $networking, $security, $featured];
+        return [$popular, $topSellers, $laptops, $networking, $security, $specialist, $featured];
     }
 
     /**
@@ -353,10 +356,11 @@ class HomeController extends Controller
     {
         $query->orderByRaw(
             "CASE
-                WHEN LOWER(name) LIKE '%switch%' OR LOWER(name) LIKE '%access point%' OR LOWER(name) LIKE '%unifi%' OR LOWER(name) LIKE '%router%' THEN 0
-                WHEN LOWER(name) LIKE '%laptop%' OR LOWER(name) LIKE '%latitude%' OR LOWER(name) LIKE '%thinkpad%' OR LOWER(name) LIKE '%elitebook%' OR LOWER(name) LIKE '%notebook%' THEN 1
-                WHEN (LOWER(name) LIKE '%camera%' OR LOWER(name) LIKE '% nvr%' OR LOWER(name) LIKE '%hikvision%' OR LOWER(name) LIKE '%dahua%') AND LOWER(name) NOT LIKE '%helmet%' THEN 2
-                WHEN LOWER(name) LIKE '%nas%' OR LOWER(name) LIKE '%storage%' OR LOWER(name) LIKE '%ssd%' THEN 3
+                WHEN LOWER(name) LIKE '%nitrokey%' OR LOWER(name) LIKE '%fido%' OR LOWER(name) LIKE '%pikvm%' THEN 0
+                WHEN LOWER(name) LIKE '%switch%' OR LOWER(name) LIKE '%access point%' OR LOWER(name) LIKE '%unifi%' OR LOWER(name) LIKE '%router%' THEN 1
+                WHEN LOWER(name) LIKE '%laptop%' OR LOWER(name) LIKE '%latitude%' OR LOWER(name) LIKE '%thinkpad%' OR LOWER(name) LIKE '%elitebook%' OR LOWER(name) LIKE '%notebook%' THEN 2
+                WHEN (LOWER(name) LIKE '%camera%' OR LOWER(name) LIKE '% nvr%' OR LOWER(name) LIKE '%hikvision%' OR LOWER(name) LIKE '%dahua%') AND LOWER(name) NOT LIKE '%helmet%' THEN 3
+                WHEN LOWER(name) LIKE '%nas%' OR LOWER(name) LIKE '%storage%' OR LOWER(name) LIKE '%ssd%' THEN 4
                 ELSE 8
             END"
         );

@@ -176,6 +176,7 @@ class TargetRangeCatalogService
         if (! $dryRun && ($created > 0 || $imaged > 0 || $updated > 0)) {
             $this->deduper->clearCache();
             Cache::forget('home.product_rows_v1');
+            Cache::forget('home.product_rows_v2');
         }
 
         return compact('created', 'skipped', 'updated', 'imaged', 'errors', 'samples');
