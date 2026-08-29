@@ -44,7 +44,11 @@ class PublicAssetSync
         }
 
         $specialistCanary = '/images/specialist/security-key.jpg';
-        if (is_file($sourceRoot.$specialistCanary) && ! is_file($publicPath.$specialistCanary)) {
+        $specialistPhotoCanary = '/images/specialist/products/uf-nk-passkey.webp';
+        if (
+            (is_file($sourceRoot.$specialistCanary) && ! is_file($publicPath.$specialistCanary))
+            || (is_file($sourceRoot.$specialistPhotoCanary) && ! is_file($publicPath.$specialistPhotoCanary))
+        ) {
             self::copyDirectory($sourceRoot.'/images/specialist', $publicPath.'/images/specialist');
         }
 

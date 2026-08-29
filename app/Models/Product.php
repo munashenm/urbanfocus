@@ -793,7 +793,7 @@ class Product extends Model
             $specs['Dimensions'] = $this->dimensions;
         }
 
-        unset($specs['Urban Focus range'], $specs['Sales focus'], $specs['Supply'], $specs['Availability key']);
+        unset($specs['Urban Focus range'], $specs['Sales focus'], $specs['Supply'], $specs['Availability key'], $specs['Listing photo']);
 
         for ($i = 1; $i <= 6; $i++) {
             unset($specs["FAQ {$i} question"], $specs["FAQ {$i} answer"]);

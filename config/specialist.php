@@ -89,4 +89,51 @@ return [
         ['name' => 'OPNsense', 'website' => 'https://opnsense.org'],
         ['name' => 'Urban Focus', 'website' => 'https://www.urbanfocus.co.za'],
     ],
+
+    /*
+    | Official manufacturer product photos. Synced into public/images/specialist/products/.
+    | SKU wins, then image_key, then the old family icon.
+    */
+    'photos' => [
+        'by_sku' => [
+            'UF-NK-PASSKEY' => 'https://shop.nitrokey.com/web/image/product.template/418/image_1920',
+            'UF-NK-3C-NFC' => 'https://shop.nitrokey.com/web/image/product.template/148/image_1920',
+            'UF-NK-3A-NFC' => 'https://shop.nitrokey.com/web/image/product.template/147/image_1920',
+            'UF-NK-3C' => 'https://shop.nitrokey.com/web/image/product.template/930/image_1920',
+            'UF-NK-3A' => 'https://shop.nitrokey.com/web/image/product.template/934/image_1920',
+            'UF-NK-3A-MINI' => 'https://shop.nitrokey.com/web/image/product.template/149/image_1920',
+            'UF-NK-HSM2' => 'https://shop.nitrokey.com/web/image/product.template/7/image_1920',
+            'UF-NK-STORAGE2' => 'https://shop.nitrokey.com/web/image/product.template/56/image_1920',
+            'UF-NK-PRO2' => 'https://shop.nitrokey.com/web/image/product.template/3/image_1920',
+            'UF-NK-START' => 'https://shop.nitrokey.com/web/image/product.template/6/image_1920',
+            'UF-MFA-STARTER-5' => 'https://shop.nitrokey.com/web/image/product.template/148/image_1920',
+            'UF-MFA-BUSINESS-10' => 'https://shop.nitrokey.com/web/image/product.template/148/image_1920',
+            'UF-MFA-ENTERPRISE-25' => 'https://shop.nitrokey.com/web/image/product.template/148/image_1920',
+            'UF-MFA-M365-SETUP' => 'https://shop.nitrokey.com/web/image/product.template/148/image_1920',
+            'UF-MFA-GOOGLE-SETUP' => 'https://shop.nitrokey.com/web/image/product.template/148/image_1920',
+            'UF-PKI-SECURITY-KIT' => 'https://shop.nitrokey.com/web/image/product.template/7/image_1920',
+            'UF-HSM-SERVER-KIT' => 'https://shop.nitrokey.com/web/image/product.template/7/image_1920',
+            'UF-PIKVM-V4-PLUS' => 'https://cdn11.bigcommerce.com/s-am5zt8xfow/images/stencil/original/products/3146/10009/Plus-1__34215.1745254633.jpg?c=2',
+            'UF-PIKVM-V4-MINI' => 'https://cdn11.bigcommerce.com/s-am5zt8xfow/images/stencil/original/products/3146/10009/Plus-1__34215.1745254633.jpg?c=2',
+            'UF-PIKVM-RSM-KIT' => 'https://cdn11.bigcommerce.com/s-am5zt8xfow/images/stencil/original/products/3146/10009/Plus-1__34215.1745254633.jpg?c=2',
+            'UF-PIKVM-BRANCH-KIT' => 'https://cdn11.bigcommerce.com/s-am5zt8xfow/images/stencil/original/products/3146/10009/Plus-1__34215.1745254633.jpg?c=2',
+            'UF-PIKVM-CCTV-KIT' => 'https://cdn11.bigcommerce.com/s-am5zt8xfow/images/stencil/original/products/3146/10009/Plus-1__34215.1745254633.jpg?c=2',
+            'UF-PIKVM-DC-KIT' => 'https://cdn11.bigcommerce.com/s-am5zt8xfow/images/stencil/original/products/3146/10009/Plus-1__34215.1745254633.jpg?c=2',
+            'UF-PIKVM-SCHOOL-KIT' => 'https://cdn11.bigcommerce.com/s-am5zt8xfow/images/stencil/original/products/3146/10009/Plus-1__34215.1745254633.jpg?c=2',
+            'UF-ZB-2' => 'https://www.zimaspace.com/image/products/zimaboard.png',
+            'UF-ZB-BLADE' => 'https://www.zimaspace.com/image/products/zimablade.png',
+            'UF-ZB-CUBE' => 'https://www.zimaspace.com/image/products/zimacube.png',
+            'UF-FP-GEN6' => 'https://fdn2.gsmarena.com/vv/pics/fairphone/fairfone-6-1.jpg',
+        ],
+        'by_image_key' => [
+            'security-key' => 'https://shop.nitrokey.com/web/image/product.template/148/image_1920',
+            'hsm' => 'https://shop.nitrokey.com/web/image/product.template/7/image_1920',
+            'usb-storage' => 'https://shop.nitrokey.com/web/image/product.template/56/image_1920',
+            'pikvm' => 'https://cdn11.bigcommerce.com/s-am5zt8xfow/images/stencil/original/products/3146/10009/Plus-1__34215.1745254633.jpg?c=2',
+            'mini-server' => 'https://www.zimaspace.com/image/products/zimaboard.png',
+            'nas' => 'https://www.zimaspace.com/image/products/zimacube.png',
+            'firewall' => 'https://www.zimaspace.com/image/products/zimaboard.png',
+            'smartphone' => 'https://fdn2.gsmarena.com/vv/pics/fairphone/fairfone-6-1.jpg',
+        ],
+    ],
 ];

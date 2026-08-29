@@ -18,6 +18,11 @@ class SpecialistCatalogService
 
     public const CATALOG_RANGE_SPEC_VALUE = 'Specialist technology';
 
+    public const LISTING_PHOTO_SPEC_KEY = 'Listing photo';
+
+    /** @var array<string, string> */
+    protected array $downloadedPhotoUrls = [];
+
     /** @var Collection<int, object>|null */
     protected ?Collection $index = null;
 
@@ -98,15 +103,18 @@ class SpecialistCatalogService
                 $existing = $this->findExisting($item);
 
                 if ($existing) {
-                    if (! $existing->images()->exists()) {
-                        if (! $dryRun && $this->attachListingImage($existing, $item)) {
+                    $exactSku = $this->isExactCatalogSku($existing, $item);
+                    $missingImage = ! $existing->images()->exists();
+                    $refreshImage = $exactSku && $this->shouldRefreshImage($existing, $item);
+
+                    if ($missingImage || $refreshImage) {
+                        if (! $dryRun && $this->attachListingImage($existing, $item, replace: $refreshImage)) {
                             $imaged++;
                         } elseif ($dryRun) {
                             $imaged++;
                         }
                     }
 
-                    $exactSku = $this->isExactCatalogSku($existing, $item);
                     $updatePrice = $exactSku && $this->shouldUpdatePrice($existing, $item);
                     $updateCopy = $exactSku && $this->shouldRefreshCopy($existing, $item);
 
@@ -130,6 +138,19 @@ class SpecialistCatalogService
                                 'name' => $item['name'],
                                 'price' => $newPrice,
                                 'reason' => implode('; ', $reasons),
+                            ];
+                        }
+
+                        continue;
+                    }
+
+                    if ($missingImage || $refreshImage) {
+                        if (count($samples) < 25) {
+                            $samples[] = [
+                                'action' => $dryRun ? 'would_refresh_photo' : 'photo_refreshed',
+                                'sku' => $item['sku'],
+                                'name' => $item['name'],
+                                'reason' => 'Manufacturer product photo attached',
                             ];
                         }
 
@@ -323,15 +344,19 @@ class SpecialistCatalogService
     /**
      * @param  array<string, mixed>  $item
      */
-    public function attachListingImage(Product $product, array $item): bool
+    public function attachListingImage(Product $product, array $item, bool $replace = false): bool
     {
-        if ($product->images()->exists()) {
+        if ($product->images()->exists() && ! $replace) {
             return false;
         }
 
         $source = $this->listingImagePath($item);
         if ($source === null || ! is_readable($source)) {
             return false;
+        }
+
+        if ($replace) {
+            $this->clearListingImages($product);
         }
 
         $contents = (string) file_get_contents($source);
@@ -350,7 +375,53 @@ class SpecialistCatalogService
             'is_primary' => true,
         ]);
 
+        $this->rememberListingPhoto($product, $this->listingPhotoToken($source));
+
         return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    public function shouldRefreshImage(Product $product, array $item): bool
+    {
+        if (! $this->isCatalogOwnedProduct($product, $item)) {
+            return false;
+        }
+
+        $source = $this->listingImagePath($item);
+        if ($source === null) {
+            return false;
+        }
+
+        $specs = is_array($product->specifications) ? $product->specifications : [];
+        $current = trim((string) ($specs[self::LISTING_PHOTO_SPEC_KEY] ?? ''));
+
+        return $current !== $this->listingPhotoToken($source);
+    }
+
+    protected function listingPhotoToken(string $path): string
+    {
+        $size = is_file($path) ? (int) filesize($path) : 0;
+
+        return basename($path).':'.$size;
+    }
+
+    protected function rememberListingPhoto(Product $product, string $token): void
+    {
+        $specs = is_array($product->specifications) ? $product->specifications : [];
+        $specs[self::LISTING_PHOTO_SPEC_KEY] = $token;
+
+        Product::withoutEvents(fn () => $product->update(['specifications' => $specs]));
+        $product->setAttribute('specifications', $specs);
+    }
+
+    protected function clearListingImages(Product $product): void
+    {
+        foreach ($product->images()->get() as $image) {
+            $this->images->delete((string) $image->path);
+            $image->delete();
+        }
     }
 
     /**
@@ -358,14 +429,16 @@ class SpecialistCatalogService
      */
     protected function listingImagePath(array $item): ?string
     {
-        $file = $this->listingImageFile($item);
+        $this->ensureCatalogPhoto($item);
 
-        foreach ([
-            base_path('public/images/specialist/'.$file),
-            public_path('images/specialist/'.$file),
-        ] as $path) {
-            if (is_file($path) && is_readable($path)) {
-                return $path;
+        foreach ($this->listingImageCandidates($item) as $file) {
+            foreach ([
+                base_path('public/images/specialist/'.$file),
+                public_path('images/specialist/'.$file),
+            ] as $path) {
+                if (is_file($path) && is_readable($path) && filesize($path) > 512) {
+                    return $path;
+                }
             }
         }
 
@@ -374,16 +447,205 @@ class SpecialistCatalogService
 
     /**
      * @param  array<string, mixed>  $item
+     * @return list<string>
+     */
+    protected function listingImageCandidates(array $item): array
+    {
+        $sku = Str::slug((string) ($item['sku'] ?? ''));
+        $key = Str::slug((string) ($item['image_key'] ?? $this->copy->family($item) ?: 'solution'));
+        $candidates = [];
+
+        foreach (array_filter([$sku, $key !== '' ? $key : null]) as $stem) {
+            foreach (['jpg', 'jpeg', 'png', 'webp'] as $ext) {
+                $candidates[] = 'products/'.$stem.'.'.$ext;
+            }
+        }
+
+        $candidates[] = ($key !== '' ? $key : 'solution').'.jpg';
+
+        return array_values(array_unique($candidates));
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
      */
     protected function listingImageFile(array $item): string
     {
-        $key = Str::slug((string) ($item['image_key'] ?? $this->copy->family($item)));
+        return $this->listingImageCandidates($item)[0] ?? 'solution.jpg';
+    }
 
-        return ($key !== '' ? $key : 'solution').'.jpg';
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    protected function listingPhotoUrl(array $item): ?string
+    {
+        $sku = strtoupper((string) ($item['sku'] ?? ''));
+        $key = (string) ($item['image_key'] ?? '');
+        $bySku = config('specialist.photos.by_sku', []);
+        $byKey = config('specialist.photos.by_image_key', []);
+
+        if ($sku !== '' && is_string($bySku[$sku] ?? null) && $bySku[$sku] !== '') {
+            return $bySku[$sku];
+        }
+
+        if ($key !== '' && is_string($byKey[$key] ?? null) && $byKey[$key] !== '') {
+            return $byKey[$key];
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    protected function ensureCatalogPhoto(array $item): void
+    {
+        $url = $this->listingPhotoUrl($item);
+        if ($url === null) {
+            return;
+        }
+
+        $sku = Str::slug((string) ($item['sku'] ?? ''));
+        $key = Str::slug((string) ($item['image_key'] ?? ''));
+        $bySku = config('specialist.photos.by_sku', []);
+        $skuKey = strtoupper((string) ($item['sku'] ?? ''));
+
+        if ($sku !== '' && isset($bySku[$skuKey])) {
+            $this->downloadCatalogPhoto($url, 'products/'.$sku);
+        } elseif ($key !== '') {
+            $this->downloadCatalogPhoto($url, 'products/'.$key);
+        }
+    }
+
+    protected function downloadCatalogPhoto(string $url, string $stem): ?string
+    {
+        $existing = $this->existingPhotoForStem($stem);
+        if ($existing !== null) {
+            $this->downloadedPhotoUrls[$url] = $existing;
+
+            return $existing;
+        }
+
+        if (isset($this->downloadedPhotoUrls[$url]) && is_file($this->downloadedPhotoUrls[$url])) {
+            $source = $this->downloadedPhotoUrls[$url];
+            $extension = strtolower(pathinfo($source, PATHINFO_EXTENSION) ?: 'jpg');
+            $copied = $this->writeCatalogPhoto($stem, $extension, (string) file_get_contents($source));
+
+            return $copied ?? $source;
+        }
+
+        if (app()->environment('testing')) {
+            return null;
+        }
+
+        try {
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 18,
+                    'follow_location' => 1,
+                    'header' => "Accept: image/jpeg,image/png,image/webp,*/*\r\n",
+                    'user_agent' => 'Mozilla/5.0 (compatible; UrbanFocusCatalog/1.0; +https://www.urbanfocus.co.za)',
+                ],
+                'ssl' => [
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                ],
+            ]);
+
+            $contents = @file_get_contents($url, false, $context);
+            if ($contents === false || $contents === '' || ! $this->looksLikeImage($contents)) {
+                return null;
+            }
+
+            $extension = $this->extensionFromBinary($contents, $url);
+            $path = $this->writeCatalogPhoto($stem, $extension, $contents);
+            if ($path !== null) {
+                $this->downloadedPhotoUrls[$url] = $path;
+            }
+
+            return $path;
+        } catch (\Throwable $e) {
+            Log::warning('Specialist catalog photo download failed', [
+                'url' => $url,
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    protected function existingPhotoForStem(string $stem): ?string
+    {
+        foreach (['jpg', 'jpeg', 'png', 'webp'] as $ext) {
+            foreach ([
+                base_path('public/images/specialist/'.$stem.'.'.$ext),
+                public_path('images/specialist/'.$stem.'.'.$ext),
+            ] as $path) {
+                if (is_file($path) && filesize($path) > 512) {
+                    return $path;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected function writeCatalogPhoto(string $stem, string $extension, string $contents): ?string
+    {
+        $relative = ltrim($stem, '/').'.'.$extension;
+        $destinations = [
+            base_path('public/images/specialist/'.$relative),
+            public_path('images/specialist/'.$relative),
+        ];
+
+        $written = null;
+        foreach (array_unique($destinations) as $path) {
+            $directory = dirname($path);
+            if (! is_dir($directory) && ! @mkdir($directory, 0755, true) && ! is_dir($directory)) {
+                continue;
+            }
+
+            if (@file_put_contents($path, $contents) === false) {
+                continue;
+            }
+
+            $written = $path;
+        }
+
+        return $written;
+    }
+
+    protected function looksLikeImage(string $contents): bool
+    {
+        if (function_exists('getimagesizefromstring') && @getimagesizefromstring($contents) !== false) {
+            return true;
+        }
+
+        return str_starts_with($contents, "\xFF\xD8\xFF")
+            || str_starts_with($contents, "\x89PNG")
+            || str_starts_with($contents, 'GIF')
+            || str_starts_with($contents, 'RIFF');
+    }
+
+    protected function extensionFromBinary(string $contents, string $url): string
+    {
+        if (str_starts_with($contents, "\x89PNG")) {
+            return 'png';
+        }
+        if (str_starts_with($contents, 'RIFF')) {
+            return 'webp';
+        }
+
+        $path = parse_url($url, PHP_URL_PATH) ?: '';
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        return in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? $extension : 'jpg';
     }
 
     protected function publishListingImages(): void
     {
+        $this->prefetchCatalogPhotos();
+
         $source = base_path('public/images/specialist');
         $target = public_path('images/specialist');
 
@@ -395,11 +657,49 @@ class SpecialistCatalogService
             return;
         }
 
-        foreach (glob($source.'/*.jpg') ?: [] as $file) {
-            $dest = $target.'/'.basename($file);
-            if (! is_file($dest) || filemtime($file) > filemtime($dest)) {
-                @copy($file, $dest);
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file) {
+            if (! $file->isFile()) {
+                continue;
             }
+
+            $relative = substr($file->getPathname(), strlen($source) + 1);
+            $dest = $target.DIRECTORY_SEPARATOR.$relative;
+            $directory = dirname($dest);
+            if (! is_dir($directory) && ! @mkdir($directory, 0755, true) && ! is_dir($directory)) {
+                continue;
+            }
+
+            if (! is_file($dest) || filemtime($file->getPathname()) > filemtime($dest)) {
+                @copy($file->getPathname(), $dest);
+            }
+        }
+    }
+
+    protected function prefetchCatalogPhotos(): void
+    {
+        if (app()->environment('testing')) {
+            return;
+        }
+
+        $bySku = config('specialist.photos.by_sku', []);
+        $byKey = config('specialist.photos.by_image_key', []);
+
+        foreach ($bySku as $sku => $url) {
+            if (! is_string($url) || $url === '') {
+                continue;
+            }
+            $this->downloadCatalogPhoto($url, 'products/'.Str::slug((string) $sku));
+        }
+
+        foreach ($byKey as $key => $url) {
+            if (! is_string($url) || $url === '') {
+                continue;
+            }
+            $this->downloadCatalogPhoto($url, 'products/'.Str::slug((string) $key));
         }
     }
 
@@ -494,13 +794,19 @@ class SpecialistCatalogService
     protected function applyListingContent(Product $product, array $item, bool $updatePrice = true): void
     {
         $availability = (string) ($item['availability'] ?? 'eu_stock');
+        $specs = $this->copy->specifications($item);
+        $existingSpecs = is_array($product->specifications) ? $product->specifications : [];
+        if (! empty($existingSpecs[self::LISTING_PHOTO_SPEC_KEY])) {
+            $specs[self::LISTING_PHOTO_SPEC_KEY] = $existingSpecs[self::LISTING_PHOTO_SPEC_KEY];
+        }
+
         $payload = [
             'short_description' => $this->copy->shortDescription($item),
             'description' => $this->copy->descriptionHtml($item),
             'meta_title' => $this->copy->metaTitle($item),
             'meta_description' => $this->copy->metaDescription($item),
             'meta_keywords' => $this->copy->metaKeywords($item),
-            'specifications' => $this->copy->specifications($item),
+            'specifications' => $specs,
             'warranty_months' => $this->copy->warrantyMonths($item),
             'google_product_category' => $this->copy->googleProductCategory($item),
             'delivery_days' => (int) (config("specialist.availability.{$availability}.days") ?: 10),

@@ -62,6 +62,7 @@ class SpecialistCatalogTest extends TestCase
         $this->assertLessThanOrEqual(Product::META_KEYWORDS_MAX_LENGTH, mb_strlen((string) $key->meta_keywords));
         $this->assertStringContainsString('<h3>Advantages</h3>', (string) $key->description);
         $this->assertStringContainsString('<h3>Key specifications</h3>', (string) $key->description);
+        $this->assertNotEmpty($key->specifications[SpecialistCatalogService::LISTING_PHOTO_SPEC_KEY] ?? null);
     }
 
     public function test_quote_and_special_order_availability_labels(): void
@@ -117,6 +118,25 @@ class SpecialistCatalogTest extends TestCase
         $this->assertNotNull($product);
         $this->assertTrue($product->images()->exists());
         $this->assertFileExists($emptyPublic.'/images/specialist/security-key.jpg');
+    }
+
+    public function test_replaces_stale_listing_photo_on_resync(): void
+    {
+        app(SpecialistCatalogService::class)->sync();
+
+        $product = Product::where('sku', 'UF-NK-PASSKEY')->firstOrFail();
+        $originalPath = (string) $product->images()->first()?->path;
+        $specs = is_array($product->specifications) ? $product->specifications : [];
+        $specs[SpecialistCatalogService::LISTING_PHOTO_SPEC_KEY] = 'stale-icon';
+        $product->update(['specifications' => $specs]);
+
+        $result = app(SpecialistCatalogService::class)->sync();
+
+        $this->assertGreaterThan(0, $result['imaged']);
+        $fresh = $product->fresh();
+        $this->assertNotSame('stale-icon', $fresh->specifications[SpecialistCatalogService::LISTING_PHOTO_SPEC_KEY] ?? null);
+        $this->assertTrue($fresh->images()->exists());
+        $this->assertNotSame($originalPath, (string) $fresh->images()->first()?->path);
     }
 
     public function test_dry_run_does_not_write_products(): void

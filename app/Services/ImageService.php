@@ -40,6 +40,13 @@ class ImageService
         }
 
         $extension = strtolower($extension);
+        if (str_starts_with($contents, "\x89PNG")) {
+            $extension = 'png';
+        } elseif (str_starts_with($contents, 'RIFF')) {
+            $extension = 'webp';
+        } elseif (str_starts_with($contents, "\xFF\xD8\xFF")) {
+            $extension = 'jpg';
+        }
         if (! in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
             $extension = 'jpg';
         }
