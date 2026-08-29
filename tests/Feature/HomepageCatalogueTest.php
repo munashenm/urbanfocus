@@ -117,6 +117,7 @@ class HomepageCatalogueTest extends TestCase
 
         $this->get(route('home'))
             ->assertOk()
+            ->assertSee('Popular Brands', false)
             ->assertSee('brand-logo-card--sophos', false)
             ->assertSee('brand-logo-card--lenovo', false)
             ->assertSee('brand-logo-card--cambium-networks', false)
@@ -128,6 +129,8 @@ class HomepageCatalogueTest extends TestCase
         $this->assertNotFalse($css);
         $this->assertStringContainsString('min-width: 120px', $css);
         $this->assertStringContainsString('min-height: 56px', $css);
+        $this->assertStringContainsString('.brand-showcase .brand-carousel', $css);
+        $this->assertStringContainsString('minmax(148px, 1fr)', $css);
         $this->assertStringContainsString('.brand-logo-card--sophos img', $css);
         $this->assertStringContainsString('.brand-logo-card--lenovo img', $css);
         $this->assertStringContainsString('.brand-logo-card--cambium-networks img', $css);
@@ -144,6 +147,52 @@ class HomepageCatalogueTest extends TestCase
         $this->assertStringNotContainsString('M0 0h192', $sophos);
         $this->assertStringNotContainsString('Layer_1', $cambium);
         $this->assertLessThan(4000, strlen($cambium));
+    }
+
+    public function test_homepage_popular_brands_use_logos_instead_of_specialist_names(): void
+    {
+        Cache::flush();
+
+        Brand::create([
+            'name' => 'Proxmox',
+            'slug' => 'proxmox',
+            'logo' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+        Brand::create([
+            'name' => 'PiKVM',
+            'slug' => 'pikvm',
+            'logo' => null,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        Brand::create([
+            'name' => 'Ubiquiti',
+            'slug' => 'ubiquiti',
+            'logo' => 'images/brands/ubiquiti.svg',
+            'is_active' => true,
+            'sort_order' => 99,
+        ]);
+        Brand::create([
+            'name' => 'Hikvision',
+            'slug' => 'hikvision',
+            'logo' => 'images/brands/hikvision.svg',
+            'is_active' => true,
+            'sort_order' => 98,
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Popular Brands', false)
+            ->assertSee('Shop All Brands', false)
+            ->assertSee(route('brands.index', [], false), false)
+            ->assertSee('brand-logo-card--ubiquiti', false)
+            ->assertSee('brand-logo-card--hikvision', false)
+            ->assertSee('images/brands/ubiquiti.svg', false)
+            ->assertSee('images/brands/hikvision.svg', false)
+            ->assertDontSee('brand-logo-card--proxmox', false)
+            ->assertDontSee('brand-logo-card--pikvm', false);
     }
 
     public function test_homepage_product_rows_each_show_eight_products(): void

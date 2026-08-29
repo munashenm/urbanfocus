@@ -172,6 +172,30 @@ return [
     ],
 
     /*
+    | Homepage popular-brand logo strip (slug order preserved).
+    | Only brands with a logo file are shown — no text-only placeholders.
+    */
+    'featured_brand_slugs' => [
+        'ubiquiti',
+        'mikrotik',
+        'hikvision',
+        'dahua',
+        'tp-link',
+        'dell',
+        'hp',
+        'lenovo',
+        'microsoft',
+        'cambium-networks',
+        'sophos',
+        'huawei',
+        'yealink',
+        'starlink',
+        'samsung',
+        'logitech',
+        'lg',
+    ],
+
+    /*
     | Brand logos shown above homepage product rows (slug order preserved).
     | Networking uses product cards only — no logo strip.
     */

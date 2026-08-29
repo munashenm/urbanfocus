@@ -229,6 +229,8 @@ class SpecialistCatalogService
             $this->deduper->clearCache();
             Cache::forget('home.product_rows_v1');
             Cache::forget('home.product_rows_v2');
+            Cache::forget('home.brands');
+            Cache::forget('home.brands_v3');
             Cache::forget('feeds.google-merchant.xml');
             Cache::forget('sitemap.xml');
             Cache::forget('sitemap.main.v4');

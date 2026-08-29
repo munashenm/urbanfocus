@@ -56,6 +56,16 @@ class PublicAssetSync
         if (is_file($sourceRoot.$jsCanary) && (! is_file($publicPath.$jsCanary) || filemtime($sourceRoot.$jsCanary) > filemtime($publicPath.$jsCanary))) {
             self::copyDirectory($sourceRoot.'/js', $publicPath.'/js');
         }
+
+        $cssCanary = '/css/app.css';
+        if (is_file($sourceRoot.$cssCanary) && (! is_file($publicPath.$cssCanary) || filemtime($sourceRoot.$cssCanary) > filemtime($publicPath.$cssCanary))) {
+            self::copyDirectory($sourceRoot.'/css', $publicPath.'/css');
+        }
+
+        $brandCanary = '/images/brands/ubiquiti.svg';
+        if (is_file($sourceRoot.$brandCanary) && ! is_file($publicPath.$brandCanary)) {
+            self::copyDirectory($sourceRoot.'/images/brands', $publicPath.'/images/brands');
+        }
     }
 
     public static function syncAll(string $sourceRoot, string $publicPath): void

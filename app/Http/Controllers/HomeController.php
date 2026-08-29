@@ -33,15 +33,7 @@ class HomeController extends Controller
             $featuredProducts = collect();
         }
 
-        $brands = $this->remember('home.brands', function () {
-            if (Schema::hasTable('brands')) {
-                return Brand::where('is_active', true)->orderBy('sort_order')->take(20)->get();
-            }
-
-            return Product::where('is_active', true)->whereNotNull('brand')->distinct()->pluck('brand')
-                ->take(12)
-                ->map(fn ($name) => (object) ['name' => $name, 'slug' => Str::slug($name), 'logo' => null]);
-        });
+        $brands = $this->remember('home.brands_v3', fn () => $this->homepageFeaturedBrands());
 
         $banners = Schema::hasTable('banners')
             ? Banner::active('home')->take(4)->get()
@@ -134,6 +126,75 @@ class HomeController extends Controller
         return $featured->count() >= 4 ? $featured : collect();
     }
 
+    /**
+     * Popular storefront brands with logos, in the order from homepage config.
+     *
+     * @return Collection<int, Brand>
+     */
+    protected function homepageFeaturedBrands(): Collection
+    {
+        $defaults = collect(config('partners.default_brands', []))->keyBy('slug');
+        $slugs = config('homepage.featured_brand_slugs', []);
+        if ($slugs === []) {
+            $slugs = $defaults->keys()->all();
+        }
+
+        $existing = collect();
+        if (Schema::hasTable('brands')) {
+            $existing = Brand::query()
+                ->where('is_active', true)
+                ->whereIn('slug', $slugs)
+                ->get()
+                ->keyBy('slug');
+        }
+
+        return collect($slugs)
+            ->map(function (string $slug) use ($existing, $defaults) {
+                $fallback = $defaults->get($slug);
+                $brand = $existing->get($slug);
+
+                if (! $brand && is_array($fallback)) {
+                    $brand = new Brand([
+                        'name' => $fallback['name'],
+                        'slug' => $slug,
+                        'logo' => $fallback['logo'] ?? null,
+                        'is_active' => true,
+                    ]);
+                }
+
+                if (! $brand instanceof Brand) {
+                    return null;
+                }
+
+                $this->applyBrandLogo($brand, is_array($fallback) ? $fallback : null);
+
+                return $brand->logo ? $brand : null;
+            })
+            ->filter()
+            ->values();
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $fallback
+     */
+    protected function applyBrandLogo(Brand $brand, ?array $fallback = null): void
+    {
+        if ($brand->logo) {
+            return;
+        }
+
+        if (is_array($fallback) && ! empty($fallback['logo'])) {
+            $brand->logo = $fallback['logo'];
+
+            return;
+        }
+
+        $path = 'images/brands/'.$brand->slug.'.svg';
+        if (is_file(public_path($path)) || is_file(base_path('public/'.$path))) {
+            $brand->logo = $path;
+        }
+    }
+
     /** @return array<string, Collection<int, Brand>> */
     protected function sectionBrands(): array
     {
@@ -150,9 +211,19 @@ class HomeController extends Controller
             ->get()
             ->keyBy('slug');
 
+        $defaults = collect(config('partners.default_brands', []))->keyBy('slug');
+
         foreach ($map as $section => $slugs) {
             $result[$section] = collect($slugs)
-                ->map(fn (string $slug) => $bySlug->get($slug))
+                ->map(function (string $slug) use ($bySlug, $defaults) {
+                    $brand = $bySlug->get($slug);
+                    if (! $brand instanceof Brand) {
+                        return null;
+                    }
+                    $this->applyBrandLogo($brand, $defaults->get($slug));
+
+                    return $brand;
+                })
                 ->filter()
                 ->values();
         }

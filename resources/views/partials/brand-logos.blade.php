@@ -1,28 +1,35 @@
 @php
-    $defaults = collect(config('partners.default_brands', []))->keyBy('name');
+    $defaults = collect(config('partners.default_brands', []));
+    $defaultsByName = $defaults->keyBy('name');
+    $defaultsBySlug = $defaults->keyBy('slug');
     $brandItems = collect();
 
     if (isset($brands) && $brands->count()) {
-        $brandItems = $brands->map(function ($brand) use ($defaults) {
+        $brandItems = $brands->map(function ($brand) use ($defaultsByName, $defaultsBySlug) {
+            $slug = $brand->slug ?? \Illuminate\Support\Str::slug($brand->name);
             $logo = $brand->logo ?? null;
 
-            if ($logo && ! str_starts_with($logo, 'images/')) {
+            if ($logo && ! str_starts_with($logo, 'images/') && ! str_starts_with($logo, 'http')) {
                 $logo = str_starts_with($logo, 'storage/') ? $logo : 'storage/'.$logo;
             }
 
-            if (! $logo && $defaults->has($brand->name)) {
-                $logo = $defaults->get($brand->name)['logo'];
+            if (! $logo && $defaultsBySlug->has($slug)) {
+                $logo = $defaultsBySlug->get($slug)['logo'];
+            }
+
+            if (! $logo && $defaultsByName->has($brand->name)) {
+                $logo = $defaultsByName->get($brand->name)['logo'];
             }
 
             return [
                 'name' => $brand->name,
-                'slug' => $brand->slug ?? \Illuminate\Support\Str::slug($brand->name),
-                'url' => ! empty($brand->slug)
-                    ? route('brands.show', $brand->slug)
+                'slug' => $slug,
+                'url' => ($brand instanceof \App\Models\Brand && $brand->exists && $slug !== '')
+                    ? route('brands.show', $slug)
                     : route('shop.index', ['brand' => $brand->name]),
                 'logo' => $logo,
             ];
-        });
+        })->filter(fn (array $brand) => ! empty($brand['logo']));
     }
 
     if ($brandItems->isEmpty()) {
@@ -40,7 +47,7 @@
     @foreach($brandItems as $brand)
         <a href="{{ $brand['url'] }}" class="brand-logo-card brand-logo-card--{{ $brand['slug'] ?? \Illuminate\Support\Str::slug($brand['name']) }}" title="{{ $brand['name'] }}">
             @if(!empty($brand['logo']))
-                <img src="{{ asset($brand['logo']) }}" alt="{{ $brand['name'] }}" loading="lazy" width="140" height="42">
+                <img src="{{ public_asset_url($brand['logo']) }}" alt="{{ $brand['name'] }}" loading="lazy" width="140" height="42">
             @else
                 <span class="brand-logo-fallback">{{ $brand['name'] }}</span>
             @endif

@@ -85,9 +85,9 @@
 <section class="py-5 brand-showcase">
     <div class="container">
         @include('partials.section-header', [
-            'title' => 'Featured Brands',
-            'subtitle' => 'Authorised supply of leading networking, computing and security brands.',
-            'url' => route('shop.index'),
+            'title' => 'Popular Brands',
+            'subtitle' => 'Shop Ubiquiti, MikroTik, Hikvision, Dell and more — authorised supply in South Africa.',
+            'url' => route('brands.index'),
             'linkLabel' => 'Shop All Brands',
         ])
         @include('partials.brand-logos', ['brands' => $brands])
