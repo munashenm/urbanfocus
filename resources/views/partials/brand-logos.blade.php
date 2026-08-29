@@ -43,15 +43,17 @@
 @endphp
 
 @if($brandItems->count())
-<div class="brand-carousel d-flex flex-wrap justify-content-center gap-3">
+<div class="row g-3 brand-logo-grid">
     @foreach($brandItems as $brand)
-        <a href="{{ $brand['url'] }}" class="brand-logo-card brand-logo-card--{{ $brand['slug'] ?? \Illuminate\Support\Str::slug($brand['name']) }}" title="{{ $brand['name'] }}">
-            @if(!empty($brand['logo']))
-                <img src="{{ public_asset_url($brand['logo']) }}" alt="{{ $brand['name'] }}" loading="lazy" width="140" height="42">
-            @else
-                <span class="brand-logo-fallback">{{ $brand['name'] }}</span>
-            @endif
-        </a>
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <a href="{{ $brand['url'] }}" class="brand-logo-card brand-logo-card--{{ $brand['slug'] ?? \Illuminate\Support\Str::slug($brand['name']) }}" title="{{ $brand['name'] }}">
+                @if(!empty($brand['logo']))
+                    <img src="{{ public_asset_url($brand['logo']) }}" alt="{{ $brand['name'] }}" loading="lazy" width="140" height="42">
+                @else
+                    <span class="brand-logo-fallback">{{ $brand['name'] }}</span>
+                @endif
+            </a>
+        </div>
     @endforeach
 </div>
 @endif

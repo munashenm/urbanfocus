@@ -118,6 +118,8 @@ class HomepageCatalogueTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Popular Brands', false)
+            ->assertSee('brand-logo-grid', false)
+            ->assertSee('col-lg-2', false)
             ->assertSee('brand-logo-card--sophos', false)
             ->assertSee('brand-logo-card--lenovo', false)
             ->assertSee('brand-logo-card--cambium-networks', false)
@@ -129,8 +131,8 @@ class HomepageCatalogueTest extends TestCase
         $this->assertNotFalse($css);
         $this->assertStringContainsString('min-width: 120px', $css);
         $this->assertStringContainsString('min-height: 56px', $css);
-        $this->assertStringContainsString('.brand-showcase .brand-carousel', $css);
-        $this->assertStringContainsString('minmax(148px, 1fr)', $css);
+        $this->assertStringContainsString('.brand-logo-grid .brand-logo-card', $css);
+        $this->assertStringContainsString('min-height: 88px', $css);
         $this->assertStringContainsString('.brand-logo-card--sophos img', $css);
         $this->assertStringContainsString('.brand-logo-card--lenovo img', $css);
         $this->assertStringContainsString('.brand-logo-card--cambium-networks img', $css);
@@ -187,6 +189,7 @@ class HomepageCatalogueTest extends TestCase
             ->assertSee('Popular Brands', false)
             ->assertSee('Shop All Brands', false)
             ->assertSee(route('brands.index', [], false), false)
+            ->assertSee('brand-logo-grid', false)
             ->assertSee('brand-logo-card--ubiquiti', false)
             ->assertSee('brand-logo-card--hikvision', false)
             ->assertSee('images/brands/ubiquiti.svg', false)
