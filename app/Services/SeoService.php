@@ -104,6 +104,59 @@ class SeoService
         ];
     }
 
+    /**
+     * CollectionPage JSON-LD for category and shop listing pages.
+     *
+     * Must be emitted with `{!! json_encode(...) !!}` — Blade `{{ }}` HTML-escapes
+     * quotes to `&quot;`, which makes the block unparsable in Search Console.
+     *
+     * @return array<string, mixed>
+     */
+    public function collectionPageSchema(
+        string $name,
+        string $url,
+        ?string $description = null,
+        ?LengthAwarePaginator $products = null,
+    ): array {
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'CollectionPage',
+            'name' => $name,
+            'url' => $url,
+        ];
+
+        if (is_string($description) && trim($description) !== '') {
+            $schema['description'] = $description;
+        }
+
+        if ($products instanceof LengthAwarePaginator && $products->count() > 0) {
+            $position = (int) ($products->firstItem() ?? 1);
+            $elements = [];
+
+            foreach ($products as $product) {
+                if (! $product instanceof Product) {
+                    continue;
+                }
+
+                $elements[] = [
+                    '@type' => 'ListItem',
+                    'position' => $position++,
+                    'url' => route('products.show', $product),
+                ];
+            }
+
+            if ($elements !== []) {
+                $schema['mainEntity'] = [
+                    '@type' => 'ItemList',
+                    'numberOfItems' => count($elements),
+                    'itemListElement' => $elements,
+                ];
+            }
+        }
+
+        return $schema;
+    }
+
     public function organizationSchema(): array
     {
         $sameAs = array_values(array_filter([

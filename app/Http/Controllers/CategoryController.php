@@ -164,6 +164,12 @@ class CategoryController extends Controller
             'currentSort' => $sort,
             'paginationMeta' => $this->seo->paginationMeta($products),
             'breadcrumbSchema' => $this->seo->breadcrumbSchema($breadcrumbs),
+            'collectionPageSchema' => $this->seo->collectionPageSchema(
+                $category->name,
+                $category->url(),
+                $category->description ?: 'Browse '.$category->name.' at Urban Focus',
+                $products,
+            ),
         ]);
     }
 }

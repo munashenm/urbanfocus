@@ -79,15 +79,9 @@
 @endsection
 
 @push('schema')
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": {{ json_encode($category->name) }},
-    "description": {{ json_encode($category->description ?: 'Browse '.$category->name.' at Urban Focus') }},
-    "url": "{{ $canonicalUrl }}"
-}
-</script>
+@if(!empty($collectionPageSchema))
+<script type="application/ld+json">{!! json_encode($collectionPageSchema, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_PRETTY_PRINT) !!}</script>
+@endif
 @if(!empty($breadcrumbSchema))
 <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>
 @endif

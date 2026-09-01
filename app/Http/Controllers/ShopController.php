@@ -96,6 +96,12 @@ class ShopController extends Controller
                 ['name' => 'Home', 'url' => route('home')],
                 ['name' => 'Shop', 'url' => route('shop.index')],
             ]),
+            'collectionPageSchema' => $this->seo->collectionPageSchema(
+                'Shop IT Products',
+                route('shop.index'),
+                'Browse laptops, desktops, networking, storage and software from Urban Focus.',
+                $products,
+            ),
         ]);
     }
 }
