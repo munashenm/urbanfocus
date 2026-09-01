@@ -216,6 +216,41 @@ class HomepageCatalogueTest extends TestCase
         $this->assertStringContainsString('Hardware Security Keys', $html);
     }
 
+    public function test_homepage_does_not_show_eu_stock_or_special_order_europe_products(): void
+    {
+        Cache::flush();
+        $this->seedBalancedHomepageCatalogue();
+
+        $specialist = Category::query()->where('slug', 'specialist-technology')->whereNull('parent_id')->firstOrFail();
+        Product::factory()->create([
+            'name' => 'Nitrokey Passkey EU Warehouse',
+            'brand' => 'Nitrokey',
+            'sku' => 'UF-NK-EU-HOME',
+            'category_id' => $specialist->id,
+            'is_featured' => true,
+            'specifications' => [
+                'Availability key' => 'eu_stock',
+            ],
+        ]);
+        Product::factory()->create([
+            'name' => 'Fairphone Gen 6 Europe Special Order',
+            'brand' => 'Fairphone',
+            'sku' => 'UF-FP-EU-HOME',
+            'category_id' => $specialist->id,
+            'is_featured' => true,
+            'specifications' => [
+                'Availability key' => 'special_order_eu',
+            ],
+        ]);
+
+        $html = $this->get(route('home'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('EU STOCK', $html);
+        $this->assertStringNotContainsString('SPECIAL ORDER – EUROPE', $html);
+        $this->assertStringNotContainsString('Nitrokey Passkey EU Warehouse', $html);
+        $this->assertStringNotContainsString('Fairphone Gen 6 Europe Special Order', $html);
+    }
+
     protected function seedBalancedHomepageCatalogue(): void
     {
         app(CategoryMapperService::class)->ensureCanonicalTree();

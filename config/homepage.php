@@ -172,6 +172,14 @@ return [
     ],
 
     /*
+    | Specialist lead-time flags to keep off homepage product rows.
+    */
+    'exclude_availability_keys' => [
+        'eu_stock',
+        'special_order_eu',
+    ],
+
+    /*
     | Homepage popular-brand logo strip (slug order preserved).
     | Only brands with a logo file are shown — no text-only placeholders.
     */

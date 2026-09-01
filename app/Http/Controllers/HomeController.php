@@ -23,7 +23,7 @@ class HomeController extends Controller
         $limit = (int) config('homepage.row_limit', 8);
 
         [$popularProducts, $topSellers, $laptopProducts, $networkingProducts, $securityProducts, $specialistProducts, $featuredProducts] = $this->remember(
-            'home.product_rows_v2',
+            'home.product_rows_v4',
             fn () => $this->homepageProductRows($limit)
         );
 
@@ -120,8 +120,9 @@ class HomeController extends Controller
         $featured = Product::with('images')
             ->forStorefront()
             ->where('is_featured', true);
+        $this->applyHomepageExclusions($featured);
         $this->applyExcludedIds($featured, $excludeIds);
-        $featured = $featured->latest()->take($limit)->get();
+        $featured = $this->takeHomepageProducts($featured->latest(), $limit);
 
         return $featured->count() >= 4 ? $featured : collect();
     }
@@ -257,20 +258,22 @@ class HomeController extends Controller
             $brandNames = $this->brandNamesForSlugs($preferredBrandSlugs);
 
             if ($brandNames !== []) {
-                $selected = (clone $base)
-                    ->whereIn(DB::raw('LOWER(TRIM(brand))'), $brandNames)
-                    ->latest()
-                    ->take($limit)
-                    ->get();
+                $selected = $this->takeHomepageProducts(
+                    (clone $base)
+                        ->whereIn(DB::raw('LOWER(TRIM(brand))'), $brandNames)
+                        ->latest(),
+                    $limit
+                );
             }
         }
 
         if ($selected->count() < $limit) {
-            $rest = (clone $base)
-                ->when($selected->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $selected->pluck('id')->all()))
-                ->latest()
-                ->take($limit - $selected->count())
-                ->get();
+            $rest = $this->takeHomepageProducts(
+                (clone $base)
+                    ->when($selected->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $selected->pluck('id')->all()))
+                    ->latest(),
+                $limit - $selected->count()
+            );
 
             $selected = $selected->concat($rest);
         }
@@ -312,10 +315,10 @@ class HomeController extends Controller
             END"
         );
 
-        $results = $query
-            ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
-            ->take($limit)
-            ->get();
+        $results = $this->takeHomepageProducts(
+            $query->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest()),
+            $limit
+        );
 
         if ($results->count() < $limit) {
             $fallback = $this->networkingShowcaseFallback($limit, $brandNames, $config, $excludeIds);
@@ -357,10 +360,10 @@ class HomeController extends Controller
             END"
         );
 
-        return $query
-            ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
-            ->take($limit)
-            ->get();
+        return $this->takeHomepageProducts(
+            $query->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest()),
+            $limit
+        );
     }
 
     /**
@@ -378,6 +381,10 @@ class HomeController extends Controller
             }
 
             if ($seen->has($product->id)) {
+                continue;
+            }
+
+            if (in_array($product->availabilityKey(), config('homepage.exclude_availability_keys', []), true)) {
                 continue;
             }
 
@@ -413,6 +420,59 @@ class HomeController extends Controller
     protected function applyHomepageExclusions($query): void
     {
         $this->applyExcludedNameTerms($query, config('homepage.exclude_name_terms', []));
+        $this->applyExcludedAvailabilityKeys($query, config('homepage.exclude_availability_keys', []));
+    }
+
+    /** @param list<string> $keys */
+    protected function applyExcludedAvailabilityKeys($query, array $keys): void
+    {
+        foreach ($keys as $key) {
+            $key = trim($key);
+            if ($key === '' || ! preg_match('/^[a-z0-9_]+$/', $key)) {
+                continue;
+            }
+
+            $query->where(function ($q) use ($key) {
+                $q->whereNull('specifications')
+                    ->orWhere(function ($inner) use ($key) {
+                        $qPattern = '%"Availability key":"'.$key.'"%';
+                        $spaced = '%"Availability key": "'.$key.'"%';
+                        $inner->where('specifications', 'not like', $qPattern)
+                            ->where('specifications', 'not like', $spaced);
+                    });
+            });
+        }
+    }
+
+    /**
+     * Over-fetch then drop EU-stock (and similar) listings so homepage rows stay filled.
+     *
+     * @return Collection<int, Product>
+     */
+    protected function takeHomepageProducts($query, int $limit): Collection
+    {
+        if ($limit <= 0) {
+            return collect();
+        }
+
+        return $this->rejectExcludedAvailability($query->take($limit * 4)->get())->take($limit)->values();
+    }
+
+    /**
+     * @param  Collection<int, Product>  $products
+     * @return Collection<int, Product>
+     */
+    protected function rejectExcludedAvailability(Collection $products): Collection
+    {
+        $keys = config('homepage.exclude_availability_keys', []);
+
+        if ($keys === []) {
+            return $products;
+        }
+
+        return $products
+            ->reject(fn (Product $product) => in_array($product->availabilityKey(), $keys, true))
+            ->values();
     }
 
     /** @param list<int> $ids */
@@ -478,10 +538,10 @@ class HomeController extends Controller
             $this->applyPopularTypeOrder($fallback);
             $fallback->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest());
 
-            $collected = $collected->concat($fallback->take($limit)->get());
+            $collected = $collected->concat($this->takeHomepageProducts($fallback, $limit));
         }
 
-        return app(CatalogDeduper::class)->uniqueCollection($collected)->take($limit);
+        return app(CatalogDeduper::class)->uniqueCollection($this->rejectExcludedAvailability($collected))->take($limit);
     }
 
     protected function homepageCategories(int $limit)
@@ -539,10 +599,10 @@ class HomeController extends Controller
             $query->whereIn('category_id', $categoryIds);
         }
 
-        return $query
-            ->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest())
-            ->take($limit)
-            ->get();
+        return $this->takeHomepageProducts(
+            $query->when(Schema::hasColumn('products', 'views'), fn ($q) => $q->orderByDesc('views'), fn ($q) => $q->latest()),
+            $limit
+        );
     }
 
     /** @param list<string> $slugs */
