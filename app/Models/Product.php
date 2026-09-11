@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\CatalogDeduper;
+use App\Services\InternalPricingCopySanitizer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -166,6 +167,10 @@ class Product extends Model
     public function seoDescription(): string
     {
         $value = trim((string) ($this->attributes['meta_description'] ?? ''));
+
+        if ($value !== '') {
+            $value = app(InternalPricingCopySanitizer::class)->sanitizePlain($value);
+        }
 
         if ($value !== '') {
             return seo_meta_description($value, [
@@ -425,7 +430,19 @@ class Product extends Model
             }
         }
 
-        return $faqs;
+        return $faqs !== []
+            ? app(InternalPricingCopySanitizer::class)->sanitizeFaqs($faqs)
+            : [];
+    }
+
+    public function storefrontShortDescription(): string
+    {
+        return app(InternalPricingCopySanitizer::class)->sanitizePlain((string) $this->short_description);
+    }
+
+    public function storefrontDescriptionHtml(): string
+    {
+        return app(InternalPricingCopySanitizer::class)->sanitizeHtml((string) $this->description);
     }
 
     public function googleFeedAvailability(): string
@@ -443,8 +460,15 @@ class Product extends Model
 
     public function googleFeedDescription(): string
     {
-        $text = strip_tags($this->short_description ?: $this->description ?: $this->name);
-        $text = preg_replace('/\s+/', ' ', trim($text));
+        $sanitizer = app(InternalPricingCopySanitizer::class);
+        $text = $sanitizer->sanitizePlain((string) $this->short_description);
+        if ($text === '') {
+            $text = $sanitizer->sanitizePlain(strip_tags((string) $this->description));
+        }
+        if ($text === '') {
+            $text = (string) $this->name;
+        }
+        $text = preg_replace('/\s+/', ' ', trim($text)) ?? '';
 
         return Str::limit($text, config('google-merchant.description_max_length', 5000), '');
     }

@@ -200,7 +200,7 @@
     ],
     "featured": false,
     "sales_angle": "High-volume B2B",
-    "short_description": "High-volume B2B ThinkPad T14 Gen 6. Street-priced against FirstShop Wi-Fi configs."
+    "short_description": "High-volume B2B ThinkPad T14 Gen 6."
   },
   {
     "list_id": 12,
@@ -385,7 +385,7 @@
     "exclude_name_terms": [],
     "featured": true,
     "sales_angle": "Major opportunity",
-    "short_description": "Industrial 5G dual-SIM router. Priced between FirstShop (R9,999) and Amazon (R10,920) to cover card fees."
+    "short_description": "Industrial 5G dual-SIM router."
   },
   {
     "list_id": 22,
@@ -669,7 +669,7 @@
     ],
     "featured": false,
     "sales_angle": "Business networks",
-    "short_description": "24-port Pro Max PoE switch. Street ~R16,500\u201316,950."
+    "short_description": "24-port Pro Max PoE switch."
   },
   {
     "list_id": 37,
@@ -815,8 +815,8 @@
     ],
     "exclude_name_terms": [],
     "featured": false,
-    "sales_angle": "Price competitive",
-    "short_description": "Price-competitive 2.5GbE PoE smart switch."
+    "sales_angle": "SME PoE",
+    "short_description": "2.5GbE PoE smart switch."
   },
   {
     "list_id": 45,
@@ -852,7 +852,7 @@
     ],
     "exclude_name_terms": [],
     "featured": true,
-    "sales_angle": "High-margin",
+    "sales_angle": "ANPR / parking",
     "short_description": "4MP DeepinView ANPR bullet for access and parking."
   },
   {
@@ -1134,7 +1134,7 @@
     "exclude_name_terms": [],
     "featured": true,
     "sales_angle": "Server rooms",
-    "short_description": "3000VA online rack UPS. FirstShop ~R40,999; priced to cover card fees."
+    "short_description": "3000VA online rack UPS."
   },
   {
     "list_id": 62,

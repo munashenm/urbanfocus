@@ -31,6 +31,11 @@ return [
         ],
     ],
 
+    'why_buy' => [
+        'heading' => 'Why buy from Urban Focus',
+        'body' => 'Urban Focus supplies genuine enterprise networking equipment with VAT-compliant invoicing, nationwide delivery and procurement support for businesses, ISPs, installers and public-sector organisations.',
+    ],
+
     'google_reviews' => [
         'enabled' => env('GOOGLE_REVIEWS_ENABLED', false),
         'place_id' => env('GOOGLE_PLACE_ID', ''),

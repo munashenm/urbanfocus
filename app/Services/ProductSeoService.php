@@ -190,6 +190,7 @@ class ProductSeoService
     public function buildMetaDescription(Product $product): string
     {
         $source = trim(strip_tags((string) ($product->short_description ?: $product->description)));
+        $source = app(InternalPricingCopySanitizer::class)->sanitizePlain($source);
 
         if ($source === '') {
             $specs = $this->extractSpecSnippet($product);

@@ -7,17 +7,18 @@ use Illuminate\Support\Str;
 
 class SpecialistListingCopy
 {
+    public function __construct(protected InternalPricingCopySanitizer $copySanitizer) {}
+
     /**
      * @param  array<string, mixed>  $item
      */
     public function shortDescription(array $item): string
     {
         $custom = trim((string) ($item['short_description'] ?? ''));
-        if ($custom !== '') {
-            return Str::limit($custom, 320, '');
-        }
+        $raw = $custom !== '' ? $custom : $this->intro($item);
+        $clean = $this->copySanitizer->sanitizePlain($raw, $this->intro($item));
 
-        return Str::limit($this->intro($item), 320, '');
+        return Str::limit($clean, 320, '');
     }
 
     /**
@@ -113,7 +114,7 @@ class SpecialistListingCopy
 
         $name = e((string) ($item['name'] ?? 'This product'));
 
-        return implode("\n", array_filter([
+        $html = implode("\n", array_filter([
             $this->p($this->intro($item)),
             '<h3>Advantages</h3>',
             $this->p($this->advantages($item)),
@@ -127,6 +128,8 @@ class SpecialistListingCopy
             $this->p($this->recommendations($item)),
             $faqs !== '' ? '<h3>Frequently asked questions</h3>'.$faqs : null,
         ]));
+
+        return $this->copySanitizer->sanitizeHtml($html);
     }
 
     /**

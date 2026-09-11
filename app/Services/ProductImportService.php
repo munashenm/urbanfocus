@@ -430,6 +430,8 @@ class ProductImportService
             'woocommerce_id' => $wooId ?: ($existing?->woocommerce_id ?? ($sku ?: $slug)),
         ];
 
+        $attributes = $this->sanitizeCustomerFacingCopy($attributes);
+
         if ($existing) {
             if ($existing->trashed()) {
                 $existing->restore();
@@ -649,6 +651,30 @@ class ProductImportService
             }
         } else {
             $data['meta_keywords'] = Str::limit((string) $data['meta_keywords'], Product::META_KEYWORDS_MAX_LENGTH, '');
+        }
+
+        return $this->sanitizeCustomerFacingCopy($data);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function sanitizeCustomerFacingCopy(array $data): array
+    {
+        $sanitizer = app(InternalPricingCopySanitizer::class);
+
+        if (isset($data['short_description'])) {
+            $data['short_description'] = $sanitizer->sanitizePlain((string) $data['short_description']);
+        }
+        if (isset($data['description'])) {
+            $data['description'] = $sanitizer->sanitizeHtml((string) $data['description']);
+        }
+        if (isset($data['meta_description'])) {
+            $data['meta_description'] = $sanitizer->sanitizePlain((string) $data['meta_description']) ?: null;
+        }
+        if (isset($data['meta_title'])) {
+            $data['meta_title'] = $sanitizer->sanitizePlain((string) $data['meta_title']) ?: $data['meta_title'];
         }
 
         return $data;

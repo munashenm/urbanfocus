@@ -82,8 +82,8 @@
                 </div>
             </div>
 
-            @if($product->short_description)
-                <p>{{ $product->short_description }}</p>
+            @if($product->storefrontShortDescription())
+                <p>{{ $product->storefrontShortDescription() }}</p>
             @endif
 
             <div class="d-flex flex-wrap gap-2 my-4">
@@ -127,12 +127,16 @@
 
     <div class="row mt-5 g-4">
         <div class="col-lg-7">
-            @if($product->description)
+            @if($product->storefrontDescriptionHtml())
                 <div class="checkout-card mb-4">
                     <h2 class="h5 fw-bold mb-3">Description</h2>
-                    <div class="product-description">{!! clean_html($product->description) !!}</div>
+                    <div class="product-description">{!! clean_html($product->storefrontDescriptionHtml()) !!}</div>
                 </div>
             @endif
+            <div class="checkout-card mb-4">
+                <h2 class="h5 fw-bold mb-3">{{ config('trust.why_buy.heading') }}</h2>
+                <p class="mb-0">{{ config('trust.why_buy.body') }}</p>
+            </div>
         </div>
         <div class="col-lg-5">
             @if(count($specs = $product->specificationsList()))

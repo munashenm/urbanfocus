@@ -271,6 +271,10 @@ class TargetRangeCatalogTest extends TestCase
         $this->assertStringContainsString('5G', $html);
         $this->assertStringNotContainsString('Paystack', $html);
         $this->assertStringNotContainsString('under-quote', $html);
+        $this->assertStringNotContainsString('card fee', $html);
+        $this->assertStringNotContainsString('FirstShop', $html);
+        $this->assertStringNotContainsString('markup', $html);
+        $this->assertStringNotContainsString('undercut', $html);
         $this->assertNotEmpty($router->meta_title);
         $this->assertNotEmpty($router->meta_description);
         $this->assertLessThanOrEqual(70, mb_strlen((string) $router->meta_title));

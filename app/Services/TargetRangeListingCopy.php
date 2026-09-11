@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 
 class TargetRangeListingCopy
 {
+    public function __construct(protected InternalPricingCopySanitizer $copySanitizer) {}
+
     /**
      * @param  array<string, mixed>  $item
      */
@@ -20,11 +22,13 @@ class TargetRangeListingCopy
             }
         }
 
-        if ($bits === []) {
-            return Str::limit(trim((string) ($item['short_description'] ?? $item['name'] ?? '')), 220, '');
-        }
+        $raw = $bits === []
+            ? trim((string) ($item['short_description'] ?? $item['name'] ?? ''))
+            : implode(', ', array_slice($bits, 0, 6)).'.';
 
-        return Str::limit(implode(', ', array_slice($bits, 0, 6)).'.', 220, '');
+        $clean = $this->copySanitizer->sanitizePlain($raw, trim((string) ($item['name'] ?? '')));
+
+        return Str::limit($clean, 220, '');
     }
 
     /**
@@ -96,7 +100,7 @@ class TargetRangeListingCopy
             $keys .= '<li><strong>'.e($label).':</strong> '.e($value).'</li>';
         }
 
-        return implode("\n", [
+        $html = implode("\n", [
             $this->p($sheet['intro']),
             '<h3>Advantages</h3>',
             $this->p($sheet['advantages']),
@@ -107,6 +111,8 @@ class TargetRangeListingCopy
             '<h3>Recommendations</h3>',
             $this->p($sheet['recommendations']),
         ]);
+
+        return $this->copySanitizer->sanitizeHtml($html);
     }
 
     /**
