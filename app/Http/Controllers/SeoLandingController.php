@@ -16,6 +16,25 @@ class SeoLandingController extends Controller
         protected CategoryMapperService $categoryMapper,
     ) {}
 
+    public function index(): View
+    {
+        $pages = collect(config('seo_landings', []))
+            ->map(fn (array $page, string $slug) => [
+                'slug' => $slug,
+                'h1' => $page['h1'] ?? $page['title'] ?? $slug,
+                'intro' => $page['intro'] ?? ($page['description'] ?? ''),
+            ])
+            ->values();
+
+        return view('seo-landings.index', [
+            'pages' => $pages,
+            'breadcrumbSchema' => $this->seo->breadcrumbSchema([
+                ['name' => 'Home', 'url' => route('home')],
+                ['name' => 'Solutions', 'url' => route('solutions.index')],
+            ]),
+        ]);
+    }
+
     public function show(string $slug): View
     {
         $page = config("seo_landings.{$slug}");

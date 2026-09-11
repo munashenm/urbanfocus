@@ -42,7 +42,7 @@ class Brand extends Model
             return $configured;
         }
 
-        return $this->name.' Products | Urban Focus';
+        return $this->name.' Supplier South Africa | Urban Focus';
     }
 
     public function seoDescription(): string

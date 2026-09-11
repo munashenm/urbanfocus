@@ -86,12 +86,24 @@ class ShopController extends Controller
         $categories = Category::where('is_active', true)->whereNull('parent_id')->visibleInCatalog()->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])->orderBy('sort_order')->get();
         $brands = Product::where('is_active', true)->whereNotNull('brand')->distinct()->orderBy('brand')->pluck('brand');
 
+        $isParameterised = $request->hasAny(['q', 'category', 'brand', 'deals', 'price_min', 'price_max'])
+            || ! $this->browse->isDefaultSort($request)
+            || $products->currentPage() > 1;
+
+        $paginationMeta = $isParameterised
+            ? [
+                'canonical' => seo_canonical_url(route('shop.index')),
+                'prev' => $products->previousPageUrl(),
+                'next' => $products->nextPageUrl(),
+            ]
+            : $this->seo->paginationMeta($products, route('shop.index'));
+
         return view('shop.index', [
             'products' => $products,
             'categories' => $categories,
             'brands' => $brands,
             'currentSort' => $sort,
-            'paginationMeta' => $this->seo->paginationMeta($products),
+            'paginationMeta' => $paginationMeta,
             'breadcrumbSchema' => $this->seo->breadcrumbSchema([
                 ['name' => 'Home', 'url' => route('home')],
                 ['name' => 'Shop', 'url' => route('shop.index')],

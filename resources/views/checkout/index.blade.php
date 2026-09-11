@@ -218,5 +218,6 @@
 @endsection
 
 @push('scripts')
+<script>window.ufCheckoutValue = { currency: 'ZAR', value: {{ (float) $subtotal }} };</script>
 <script src="{{ public_asset_url('js/checkout.js') }}" defer></script>
 @endpush

@@ -169,22 +169,26 @@ class ProductSeoService
 
         if ($this->isGenericProductName($name)) {
             $specs = $this->extractSpecSnippet($product);
-            $parts = array_filter([$brand, $name, $specs, $model]);
+            $name = trim(implode(' ', array_filter([$brand, $name, $specs, $model])));
+        } else {
+            if ($brand !== '' && ! Str::contains(Str::lower($name), Str::lower($brand))) {
+                $name = $brand.' '.$name;
+            }
 
-            return Str::limit(trim(implode(' ', $parts)), 65, '');
+            if ($model !== '' && ! Str::contains($name, $model)) {
+                $name .= ' '.$model;
+            }
         }
 
-        $title = $name;
+        $title = trim($name);
+        $suffix = ' | South Africa | Urban Focus';
+        $max = 70;
 
-        if ($brand !== '' && ! Str::contains(Str::lower($title), Str::lower($brand))) {
-            $title = $brand.' '.$title;
+        if (mb_strlen($title.$suffix) <= $max) {
+            return $title.$suffix;
         }
 
-        if ($model !== '' && ! Str::contains($title, $model)) {
-            $title .= ' '.$model;
-        }
-
-        return Str::limit(trim($title), 65, '');
+        return Str::limit($title, max(20, $max - mb_strlen($suffix)), '').$suffix;
     }
 
     public function buildMetaDescription(Product $product): string

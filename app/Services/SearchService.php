@@ -108,13 +108,17 @@ class SearchService
         $prefix = $lower.'%';
         $contains = '%'.$lower.'%';
         $skuExpr = $this->normalizedCodeSql('sku');
+        $mpnExpr = $this->normalizedCodeSql('model_number');
 
         $query->orderByRaw(
             "CASE
                 WHEN LOWER(COALESCE(sku,'')) = ? THEN 0
                 WHEN {$skuExpr} != '' AND {$skuExpr} = ? THEN 0
+                WHEN LOWER(COALESCE(model_number,'')) = ? THEN 0
+                WHEN {$mpnExpr} != '' AND {$mpnExpr} = ? THEN 0
                 WHEN LOWER(COALESCE(sku,'')) LIKE ? THEN 1
                 WHEN {$skuExpr} != '' AND {$skuExpr} LIKE ? THEN 1
+                WHEN LOWER(COALESCE(model_number,'')) LIKE ? THEN 1
                 WHEN LOWER(name) LIKE ? THEN 2
                 WHEN LOWER(name) LIKE ? THEN 3
                 WHEN LOWER(COALESCE(brand,'')) LIKE ? THEN 4
@@ -123,8 +127,11 @@ class SearchService
             [
                 $lower,
                 $normalized,
+                $lower,
+                $normalized,
                 $prefix,
                 $normalized !== '' ? $normalized.'%' : $prefix,
+                $prefix,
                 $prefix,
                 $contains,
                 $prefix,

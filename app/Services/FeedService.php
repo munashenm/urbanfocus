@@ -26,7 +26,7 @@ class FeedService
 
             $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"></rss>');
             $channel = $xml->addChild('channel');
-            $channel->addChild('title', $this->xmlEscape('Urban Focus Blog'));
+            $channel->addChild('title', $this->xmlEscape('Urban Focus Knowledge Centre'));
             $channel->addChild('link', config('app.url'));
             $channel->addChild('description', $this->xmlEscape('IT buying guides, comparisons and tech news for South African businesses.'));
             $channel->addChild('language', 'en-ZA');
@@ -233,9 +233,13 @@ class FeedService
 
         if ($product->hasValidGtin()) {
             $this->writeGoogleElement($writer, 'gtin', $product->normalizedGtin());
-        } elseif ($mpn = $product->googleFeedMpn()) {
+        }
+
+        if ($mpn = $product->googleFeedMpn()) {
             $this->writeGoogleElement($writer, 'mpn', $mpn);
-        } else {
+        }
+
+        if (! $product->hasValidGtin() && ! $product->googleFeedMpn()) {
             $this->writeGoogleElement($writer, 'identifier_exists', 'no');
         }
 
@@ -660,7 +664,9 @@ class FeedService
 
         if ($product->hasValidGtin()) {
             $this->addGoogleChild($item, 'gtin', $product->normalizedGtin(), $ns);
-        } elseif ($mpn = $product->googleFeedMpn()) {
+        }
+
+        if ($mpn = $product->googleFeedMpn()) {
             $this->addGoogleChild($item, 'mpn', $mpn, $ns);
         }
     }

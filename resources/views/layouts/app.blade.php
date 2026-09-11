@@ -22,11 +22,11 @@
     @if(config('seo.verification.bing'))
         <meta name="msvalidate.01" content="{{ config('seo.verification.bing') }}">
     @endif
-    <link rel="canonical" href="@yield('canonical', url()->current())">
-    <meta property="og:site_name" content="Urban Focus">
+    <link rel="canonical" href="{{ seo_canonical_url(trim($__env->yieldContent('canonical')) ?: null) }}">
+    <meta property="og:site_name" content="{{ config('app.name') }}">
     <meta property="og:title" content="@yield('og_title', trim($__env->yieldContent('title')))">
     <meta property="og:description" content="@yield('og_description', trim($__env->yieldContent('meta_description')))">
-    <meta property="og:url" content="@yield('canonical', url()->current())">
+    <meta property="og:url" content="{{ seo_canonical_url(trim($__env->yieldContent('canonical')) ?: null) }}">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:locale" content="{{ config('seo.defaults.locale', 'en_ZA') }}">
     @hasSection('og_image')
@@ -57,6 +57,7 @@
     <link href="{{ public_asset_url('css/app.css') }}" rel="stylesheet">
     @stack('head')
     @stack('schema')
+    <script type="application/ld+json">{!! json_encode(app(\App\Services\SeoService::class)->organizationSchema(), JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
 </head>
 <body class="d-flex flex-column min-vh-100">
     @include('partials.analytics')
@@ -79,6 +80,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="{{ asset('js/search.js') }}" defer></script>
+    <script src="{{ asset('js/analytics-events.js') }}" defer></script>
     @stack('scripts')
 </body>
 </html>

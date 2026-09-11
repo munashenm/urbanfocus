@@ -2,7 +2,7 @@
 
 @section('title', 'Shop IT Products | Urban Focus')
 @section('meta_description', seo_meta_description('Browse laptops, desktops, networking, storage and software from Urban Focus.', ['type' => 'category', 'name' => 'IT products']))
-@if(request()->hasAny(['q', 'category', 'brand', 'deals', 'price_min', 'price_max']) || (request('sort') && ! app(\App\Services\CatalogBrowseService::class)->isDefaultSort(request())))
+@if(request()->hasAny(['q', 'category', 'brand', 'deals', 'price_min', 'price_max']) || (int) request('page') > 1 || (request('sort') && ! app(\App\Services\CatalogBrowseService::class)->isDefaultSort(request())))
 @section('meta_robots', 'noindex, follow')
 @endif
 

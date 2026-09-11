@@ -65,7 +65,7 @@ class Article extends Model
 
     public function seoTitle(): string
     {
-        return $this->meta_title ?: ($this->title.' | Urban Focus Blog');
+        return $this->meta_title ?: ($this->title.' | Urban Focus Knowledge Centre');
     }
 
     public function seoDescription(): string

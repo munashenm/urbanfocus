@@ -75,7 +75,7 @@
         <div class="row g-0">
             <div class="col-6 col-md-3 trust-item"><strong>Fast Delivery</strong><span class="small text-muted">Nationwide</span></div>
             <div class="col-6 col-md-3 trust-item"><strong>Secure Checkout</strong><span class="small text-muted">Paystack &amp; EFT</span></div>
-            <div class="col-6 col-md-3 trust-item"><strong>Authorised Supply</strong><span class="small text-muted">Genuine products</span></div>
+            <div class="col-6 col-md-3 trust-item"><strong>Genuine Products</strong><span class="small text-muted">VAT-compliant invoicing</span></div>
             <div class="col-6 col-md-3 trust-item"><strong>Warranty Support</strong><span class="small text-muted">After-sales care</span></div>
         </div>
     </div>
@@ -86,7 +86,7 @@
     <div class="container">
         @include('partials.section-header', [
             'title' => 'Popular Brands',
-            'subtitle' => 'Shop Ubiquiti, MikroTik, Hikvision, Dell and more — authorised supply in South Africa.',
+            'subtitle' => 'Shop Ubiquiti, MikroTik, Hikvision, Dell and more — supplier of leading IT brands in South Africa.',
             'url' => route('brands.index'),
             'linkLabel' => 'Shop All Brands',
         ])
@@ -226,10 +226,10 @@
 <section class="py-5">
     <div class="container">
         @include('partials.section-header', [
-            'title' => 'IT Insights & Guides',
+            'title' => 'Knowledge Centre',
             'subtitle' => 'Buying guides, product news and industry updates.',
             'url' => route('blog.index'),
-            'linkLabel' => 'View Blog',
+            'linkLabel' => 'View Knowledge Centre',
         ])
         @if($featuredArticle ?? null)
             <div class="mb-4">
@@ -267,58 +267,7 @@
 @endsection
 
 @push('schema')
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Urban Focus",
-    "url": "{{ config('app.url') }}",
-    "potentialAction": {
-        "@type": "SearchAction",
-        "target": "{{ route('shop.index') }}?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-    }
-}
-</script>
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Urban Focus",
-    "url": "{{ config('app.url') }}",
-    "logo": "{{ asset('images/logo-stacked.png') }}",
-    "email": "sales@urbanfocus.co.za",
-    "telephone": "+27875501813",
-    "address": { "@type": "PostalAddress", "streetAddress": "{{ config('business.address.line1') }}", "addressLocality": "{{ config('business.address.city') }}", "addressRegion": "{{ config('business.address.province') }}", "addressCountry": "ZA" },
-    "sameAs": [
-        @if(config('social.facebook'))"{{ config('social.facebook') }}",@endif
-        @if(config('social.instagram'))"{{ config('social.instagram') }}",@endif
-        @if(config('social.x'))"{{ config('social.x') }}",@endif
-        @if(config('social.tiktok'))"{{ config('social.tiktok') }}"@endif
-    ]
-}
-</script>
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Urban Focus",
-    "url": "{{ config('app.url') }}",
-    "logo": "{{ asset('images/logo-stacked.png') }}",
-    "image": "{{ asset('images/logo-stacked.png') }}",
-    "email": "sales@urbanfocus.co.za",
-    "telephone": "+27875501813",
-    "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "{{ config('business.address.line1') }}",
-        "addressLocality": "{{ config('business.address.city') }}",
-        "addressRegion": "{{ config('business.address.province') }}",
-        "addressCountry": "ZA"
-    },
-    "areaServed": "ZA",
-    "priceRange": "$$"
-}
-</script>
+<script type="application/ld+json">{!! json_encode(app(\App\Services\SeoService::class)->websiteSchema(), JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>
 @php $faqSchema = app(\App\Services\SeoService::class)->faqSchema(); @endphp
 @if($faqSchema !== [])
 <script type="application/ld+json">{!! json_encode($faqSchema, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) !!}</script>

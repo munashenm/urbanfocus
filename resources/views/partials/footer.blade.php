@@ -5,7 +5,7 @@
                 <a href="{{ route('home') }}" class="site-logo site-logo--footer d-inline-block mb-3">
                     <img src="{{ asset('images/logo-footer.png') }}" alt="Urban Focus" width="253" height="24" class="footer-logo" loading="lazy">
                 </a>
-                <p class="text-white-50 mb-3">Professional South African IT distributor — networking, enterprise hardware, CCTV, fibre solutions and software licensing for business procurement.</p>
+                <p class="text-white-50 mb-3">South African IT supplier — networking, enterprise hardware, CCTV, fibre solutions and software licensing for business procurement.</p>
                 @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-2'])
                 <div class="mt-4">
                     <h6 class="text-white mb-2">Deals &amp; Updates</h6>
@@ -22,12 +22,15 @@
                 <h6 class="text-white mb-3">Quick Links</h6>
                 <ul class="list-unstyled footer-links">
                     <li><a href="{{ route('home') }}">Home</a></li>
-                    <li><a href="{{ route('shop.index') }}">Products</a></li>
+                    <li><a href="{{ route('shop.index') }}">Shop</a></li>
                     <li><a href="{{ route('brands.index') }}">Brands</a></li>
+                    <li><a href="{{ route('solutions.index') }}">Solutions</a></li>
+                    <li><a href="{{ route('blog.index') }}">Knowledge Centre</a></li>
                     <li><a href="{{ route('about') }}">About Us</a></li>
                     <li><a href="{{ route('contact') }}">Contact Us</a></li>
                     <li><a href="{{ route('b2b.quote') }}">Request a Quote</a></li>
                     <li><a href="{{ route('b2b.rfq') }}">Submit RFQ</a></li>
+                    <li><a href="{{ route('b2b.procurement') }}">Corporate Procurement</a></li>
                 </ul>
             </div>
 
@@ -36,7 +39,7 @@
                 <ul class="list-unstyled footer-links">
                     <li><a href="{{ route('solutions.show', 'corporate-it-supplier-south-africa') }}">Corporate IT Supplier</a></li>
                     <li><a href="{{ route('solutions.show', 'ubiquiti-supplier-south-africa') }}">Ubiquiti Supplier</a></li>
-                    <li><a href="{{ route('solutions.show', 'mikrotik-distributor-south-africa') }}">MikroTik Distributor</a></li>
+                    <li><a href="{{ route('solutions.show', 'mikrotik-distributor-south-africa') }}">MikroTik Supplier</a></li>
                     <li><a href="{{ route('solutions.show', 'business-laptops-south-africa') }}">Business Laptops</a></li>
                     <li><a href="{{ route('solutions.show', 'cctv-equipment-supplier') }}">CCTV Equipment</a></li>
                     <li><a href="{{ route('solutions.show', 'bulk-it-procurement') }}">Bulk IT Procurement</a></li>
@@ -71,7 +74,7 @@
     <div class="footer-bottom py-3">
         <div class="container">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                <span class="small footer-text">&copy; {{ date('Y') }} Urban Focus. All rights reserved. · Authorised IT distributor · Prices include VAT where applicable.</span>
+                <span class="small footer-text">&copy; {{ date('Y') }} Urban Focus. All rights reserved. · IT supplier South Africa · Prices include VAT where applicable.</span>
                 <img src="{{ asset('images/partners/visa-mastercard.png') }}" alt="Visa and Mastercard accepted" class="footer-payment-logos" width="120" height="32" loading="lazy">
                 <div class="small footer-bottom-links">
                     <a href="{{ route('privacy') }}" class="text-decoration-none me-3">Privacy</a>

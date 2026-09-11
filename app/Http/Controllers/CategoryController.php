@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\CategorySlugRedirect;
 use App\Models\Product;
@@ -133,6 +134,10 @@ class CategoryController extends Controller
             ->orderBy('brand')
             ->pluck('brand');
 
+        $relatedBrandModels = $brands->isNotEmpty()
+            ? Brand::query()->where('is_active', true)->whereIn('name', $brands)->orderBy('name')->get()
+            : collect();
+
         $subcategories = $category->children;
 
         $siblingCategories = collect();
@@ -154,15 +159,27 @@ class CategoryController extends Controller
             $breadcrumbs[] = ['name' => $crumb['name'], 'url' => $crumb['category']->url()];
         }
 
+        $hasFilters = $request->hasAny(['brand', 'price_min', 'price_max'])
+            || ! $this->browse->isDefaultSort($request);
+
+        $paginationMeta = $hasFilters
+            ? [
+                'canonical' => seo_canonical_url($category->url()),
+                'prev' => $products->previousPageUrl(),
+                'next' => $products->nextPageUrl(),
+            ]
+            : $this->seo->paginationMeta($products, $category->url());
+
         return view('categories.show', [
             'category' => $category,
             'products' => $products,
             'brands' => $brands,
+            'relatedBrandModels' => $relatedBrandModels,
             'subcategories' => $subcategories,
             'siblingCategories' => $siblingCategories,
             'canonicalUrl' => $category->url(),
             'currentSort' => $sort,
-            'paginationMeta' => $this->seo->paginationMeta($products),
+            'paginationMeta' => $paginationMeta,
             'breadcrumbSchema' => $this->seo->breadcrumbSchema($breadcrumbs),
             'collectionPageSchema' => $this->seo->collectionPageSchema(
                 $category->name,

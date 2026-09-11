@@ -48,6 +48,16 @@ class InternalPricingCopySanitizerTest extends TestCase
         $this->assertFalse($this->sanitizer->containsLeak($text));
     }
 
+    public function test_strips_staff_and_do_not_show_customer_notes(): void
+    {
+        $text = 'Dual-radio Wi-Fi 7 AP. Internal note: do not show customer our cost price.';
+
+        $this->assertSame(
+            'Dual-radio Wi-Fi 7 AP.',
+            $this->sanitizer->sanitizePlain($text)
+        );
+    }
+
     public function test_does_not_treat_packet_buffer_as_a_pricing_leak(): void
     {
         $text = 'The switch includes a large packet buffer for bursty traffic.';

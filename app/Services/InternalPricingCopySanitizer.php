@@ -54,6 +54,16 @@ class InternalPricingCopySanitizer
         '/\bcompetitor\s+prices?\b/iu',
         '/\bdo\s+not\s+undercut\b/iu',
         '/\bamazon\s*\(\s*r/iu',
+        '/\bsupplier\s+costs?\b/iu',
+        '/\bcard\s+fee\s+buffers?\b/iu',
+        '/\bpricing\s+buffers?\b/iu',
+        '/\bprofit\s+margins?\b/iu',
+        '/\bcatalog\s+markups?\b/iu',
+        '/\binternal\s+(notes?|pricing|staff|instructions?)\b/iu',
+        '/\bstaff\s+notes?\b/iu',
+        '/\bdo\s+not\s+show\s+(the\s+)?customers?\b/iu',
+        '/\bAI[- ]generated\s+(prompt|instruction)s?\b/iu',
+        '/\bprivate\s+pricing\b/iu',
     ];
 
     /**
@@ -244,6 +254,77 @@ class InternalPricingCopySanitizer
         $haystack = implode("\n", $parts);
 
         return $this->containsLeak($haystack) || $this->containsInternalHeading($haystack);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function leakMatches(string $text): array
+    {
+        $haystack = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $found = [];
+
+        foreach (array_merge(self::LEAK_PATTERNS, self::INTERNAL_HEADING_PATTERNS) as $pattern) {
+            if (preg_match($pattern, $haystack, $match) === 1) {
+                $found[] = $match[0];
+            }
+        }
+
+        return array_values(array_unique($found));
+    }
+
+    /**
+     * Report-only scan. Does not write to the database.
+     *
+     * @return list<array{id:int,title:string,sku:?string,slug:?string,url:string,phrase:string,excerpt:string}>
+     */
+    public function auditCatalog(?int $limit = null): array
+    {
+        $findings = [];
+
+        $query = Product::query()->orderBy('id');
+        if ($limit !== null && $limit > 0) {
+            $query->limit($limit);
+        }
+
+        $query->lazyById(100)->each(function (Product $product) use (&$findings) {
+            $parts = [
+                (string) $product->short_description,
+                (string) $product->description,
+                (string) ($product->getAttributes()['meta_title'] ?? ''),
+                (string) ($product->getAttributes()['meta_description'] ?? ''),
+                (string) ($product->getAttributes()['meta_keywords'] ?? ''),
+            ];
+            if (is_array($product->specifications)) {
+                foreach ($product->specifications as $value) {
+                    if (is_string($value) || is_numeric($value)) {
+                        $parts[] = (string) $value;
+                    }
+                }
+            }
+
+            $haystack = implode("\n", $parts);
+            $matches = $this->leakMatches($haystack);
+            if ($matches === []) {
+                return;
+            }
+
+            $plain = trim(preg_replace('/\s+/u', ' ', strip_tags($haystack)) ?? '');
+
+            foreach ($matches as $phrase) {
+                $findings[] = [
+                    'id' => (int) $product->id,
+                    'title' => (string) $product->name,
+                    'sku' => $product->sku,
+                    'slug' => $product->slug,
+                    'url' => route('products.show', $product),
+                    'phrase' => $phrase,
+                    'excerpt' => \Illuminate\Support\Str::limit($plain, 180, ''),
+                ];
+            }
+        });
+
+        return $findings;
     }
 
     /**

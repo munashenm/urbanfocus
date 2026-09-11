@@ -7,7 +7,7 @@
 <div class="page-hero">
     <div class="container">
         <h1 class="h2 fw-bold mb-2">About Urban Focus</h1>
-        <p class="mb-0 opacity-75">Professional South African IT distributor for business procurement, networking and enterprise hardware.</p>
+        <p class="mb-0 opacity-75">South African IT supplier for business procurement, networking and enterprise hardware.</p>
     </div>
 </div>
 
@@ -15,13 +15,13 @@
     <div class="row g-5">
         <div class="col-lg-8">
             <h2 class="h4 fw-bold text-navy">Who we are</h2>
-            <p>Urban Focus is a South African IT distributor supplying networking equipment, business laptops, servers, CCTV, fibre solutions, VoIP systems and software licensing to corporates, integrators, ISPs, schools and resellers nationwide.</p>
+            <p>Urban Focus is a South African IT supplier of networking equipment, business laptops, servers, CCTV, fibre solutions, VoIP systems and software licensing to corporates, integrators, ISPs, schools and resellers nationwide.</p>
             <p>We focus on business and enterprise infrastructure — not general consumer electronics. Every order includes VAT-compliant tax invoicing, professional support and courier delivery across South Africa.</p>
 
             <h2 class="h4 fw-bold text-navy mt-4">Why choose us</h2>
             <div class="row g-3 mt-2">
                 @foreach([
-                    ['title' => 'Authorised Brand Supply', 'text' => 'Genuine Ubiquiti, MikroTik, Dell, HP, Hikvision and leading IT brands from trusted distribution channels.'],
+                    ['title' => 'Genuine brand supply', 'text' => 'Genuine Ubiquiti, MikroTik, Dell, HP, Hikvision and leading IT brands sourced through trusted distribution channels.'],
                     ['title' => 'B2B & Bulk Procurement', 'text' => 'RFQ support, project quotes and repeat fleet orders for finance and IT teams.'],
                     ['title' => 'VAT Tax Invoices', 'text' => 'Compliant invoicing for registered businesses and procurement departments.'],
                     ['title' => 'Nationwide Delivery', 'text' => 'Courier delivery across South Africa with free shipping on qualifying orders.'],

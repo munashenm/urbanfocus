@@ -11,7 +11,7 @@
         <nav aria-label="breadcrumb" class="mb-2">
             <ol class="breadcrumb breadcrumb-light mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('home') }}" class="text-white-50">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('blog.index') }}" class="text-white-50">Blog</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('blog.index') }}" class="text-white-50">Knowledge Centre</a></li>
                 <li class="breadcrumb-item active text-white" aria-current="page">{{ $archiveTitle }}</li>
             </ol>
         </nav>
@@ -44,7 +44,7 @@
 @push('schema')
 <script type="application/ld+json">{!! json_encode(app(\App\Services\SeoService::class)->breadcrumbSchema([
     ['name' => 'Home', 'url' => route('home')],
-    ['name' => 'Blog', 'url' => route('blog.index')],
+    ['name' => 'Knowledge Centre', 'url' => route('blog.index')],
     ['name' => $archiveTitle, 'url' => url()->current()],
 ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 @endpush

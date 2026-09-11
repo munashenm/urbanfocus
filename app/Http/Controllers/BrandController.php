@@ -47,7 +47,7 @@ class BrandController extends Controller
 
         $products = $query->paginate(24)->withQueryString();
 
-        $pagination = $this->seo->paginationMeta($products);
+        $pagination = $this->seo->paginationMeta($products, route('brands.show', $brand));
 
         $featuredProducts = Product::with('images')
             ->where('is_active', true)
@@ -77,6 +77,7 @@ class BrandController extends Controller
 
         $faqs = $brandSeo['faqs'] ?? [];
         $faqSchema = $faqs !== [] ? $this->seo->faqSchema($faqs) : [];
+        $relatedSolutions = $this->seo->solutionsForBrand($brand);
 
         $categories = Category::where('is_active', true)
             ->whereNull('parent_id')
@@ -96,6 +97,7 @@ class BrandController extends Controller
             'currentSort',
             'faqs',
             'faqSchema',
+            'relatedSolutions',
         ));
     }
 }

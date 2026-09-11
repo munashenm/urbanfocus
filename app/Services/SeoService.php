@@ -11,13 +11,14 @@ use App\Models\Tag;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
 class SeoService
 {
     public function sitemapXml(): string
     {
-        return $this->rememberSitemap('sitemap.main.v4', function () {
+        return $this->rememberSitemap('sitemap.main.v5', function () {
             $urls = $this->baseUrls();
 
             Category::where('is_active', true)->visibleInCatalog()->with('parent')->get()->each(function (Category $category) use (&$urls) {
@@ -170,7 +171,7 @@ class SeoService
             '@context' => 'https://schema.org',
             '@type' => 'Organization',
             'name' => config('app.name'),
-            'url' => config('app.url'),
+            'url' => rtrim((string) config('app.url'), '/'),
             'logo' => asset('images/logo-stacked.png'),
             'email' => config('business.email'),
             'telephone' => '+'.ltrim((string) config('business.phone_tel'), '+'),
@@ -182,6 +183,21 @@ class SeoService
         }
 
         return $schema;
+    }
+
+    public function websiteSchema(): array
+    {
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'WebSite',
+            'name' => config('app.name'),
+            'url' => rtrim((string) config('app.url'), '/'),
+            'potentialAction' => [
+                '@type' => 'SearchAction',
+                'target' => route('shop.index').'?q={search_term_string}',
+                'query-input' => 'required name=search_term_string',
+            ],
+        ];
     }
 
     public function localBusinessSchema(): array
@@ -230,26 +246,85 @@ class SeoService
     }
 
     /** @return array{canonical: string, prev: ?string, next: ?string} */
-    public function paginationMeta(LengthAwarePaginator $paginator): array
+    /**
+     * Canonical + rel prev/next for listing pages.
+     *
+     * Filter/sort/search query strings are omitted from the canonical so they
+     * do not create duplicate indexable URLs. Pass $canonicalBase as the clean
+     * category/brand/shop URL.
+     */
+    public function paginationMeta(LengthAwarePaginator $paginator, ?string $canonicalBase = null): array
     {
-        $query = request()->except('page');
-        $base = request()->url();
-        $queryString = $query !== [] ? '?'.http_build_query($query) : '';
-
-        $canonical = $paginator->currentPage() <= 1
-            ? $base.$queryString
-            : $base.$queryString.($queryString !== '' ? '&' : '?').'page='.$paginator->currentPage();
+        $base = $canonicalBase ?: request()->url();
+        $page = $paginator->currentPage();
+        $canonical = $page <= 1
+            ? $base
+            : $base.(str_contains($base, '?') ? '&' : '?').'page='.$page;
 
         return [
-            'canonical' => $canonical,
+            'canonical' => seo_canonical_url($canonical),
             'prev' => $paginator->previousPageUrl(),
             'next' => $paginator->nextPageUrl(),
         ];
     }
 
+    public function solutionUrlForBrand(?Brand $brand): ?string
+    {
+        if (! $brand) {
+            return null;
+        }
+
+        foreach (config('seo_landings', []) as $slug => $page) {
+            if (! is_array($page)) {
+                continue;
+            }
+
+            $slugs = array_filter(array_merge(
+                [$page['brand_slug'] ?? null],
+                $page['brand_slugs'] ?? []
+            ));
+
+            if (in_array($brand->slug, $slugs, true)) {
+                return route('solutions.show', $slug);
+            }
+        }
+
+        return null;
+    }
+
+    /** @return list<array{slug: string, h1: string}> */
+    public function solutionsForBrand(?Brand $brand): array
+    {
+        if (! $brand) {
+            return [];
+        }
+
+        $matches = [];
+
+        foreach (config('seo_landings', []) as $slug => $page) {
+            if (! is_array($page)) {
+                continue;
+            }
+
+            $slugs = array_filter(array_merge(
+                [$page['brand_slug'] ?? null],
+                $page['brand_slugs'] ?? []
+            ));
+
+            if (in_array($brand->slug, $slugs, true)) {
+                $matches[] = [
+                    'slug' => $slug,
+                    'h1' => $page['h1'] ?? $page['title'] ?? $slug,
+                ];
+            }
+        }
+
+        return $matches;
+    }
+
     public function clearCache(): void
     {
-        foreach (['sitemap.xml', 'sitemap-images.xml', 'sitemap.main.v2', 'sitemap.main.v3', 'sitemap.main.v4', 'sitemap.images.v2', 'sitemap.images.v3'] as $key) {
+        foreach (['sitemap.xml', 'sitemap-images.xml', 'sitemap.main.v2', 'sitemap.main.v3', 'sitemap.main.v4', 'sitemap.main.v5', 'sitemap.images.v2', 'sitemap.images.v3'] as $key) {
             Cache::forget($key);
         }
 
@@ -311,8 +386,28 @@ class SeoService
             ['loc' => route('contact'), 'changefreq' => 'monthly', 'priority' => '0.6'],
         ];
 
-        foreach (['about', 'brands.index', 'shipping', 'returns', 'faq', 'warranty', 'popia', 'careers', 'privacy', 'terms', 'b2b.quote', 'b2b.rfq', 'b2b.procurement', 'b2b.source', 'blog.index', 'orders.track'] as $page) {
-            $urls[] = ['loc' => route($page), 'changefreq' => 'monthly', 'priority' => '0.5'];
+        foreach (['about', 'brands.index', 'shipping', 'returns', 'faq', 'warranty', 'popia', 'careers', 'privacy', 'terms', 'b2b.quote', 'b2b.rfq', 'b2b.procurement', 'b2b.source', 'blog.index'] as $page) {
+            if (Route::has($page)) {
+                $urls[] = ['loc' => route($page), 'changefreq' => 'monthly', 'priority' => '0.5'];
+            }
+        }
+
+        if (Route::has('solutions.index')) {
+            $urls[] = ['loc' => route('solutions.index'), 'changefreq' => 'weekly', 'priority' => '0.7'];
+        }
+
+        if (Route::has('case-studies.index')) {
+            $urls[] = ['loc' => route('case-studies.index'), 'changefreq' => 'monthly', 'priority' => '0.4'];
+            foreach (config('case_studies.items', []) as $study) {
+                if (! is_array($study) || empty($study['slug']) || empty($study['published'])) {
+                    continue;
+                }
+                $urls[] = [
+                    'loc' => route('case-studies.show', $study['slug']),
+                    'changefreq' => 'monthly',
+                    'priority' => '0.45',
+                ];
+            }
         }
 
         if (Schema::hasTable('brands')) {

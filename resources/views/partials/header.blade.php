@@ -2,8 +2,8 @@
     <div class="container d-flex justify-content-between align-items-center py-2 small">
         <div class="d-none d-md-block">
             <span class="text-white-50 me-3">Free shipping on orders over R {{ number_format(config('shipping.free_threshold'), 0) }}</span>
-            <a href="tel:0875501813" class="text-white text-decoration-none me-3">087 550 1813</a>
-            <a href="mailto:sales@urbanfocus.co.za" class="text-white text-decoration-none">sales@urbanfocus.co.za</a>
+            <a href="tel:{{ config('business.phone_tel') }}" class="text-white text-decoration-none me-3">{{ config('business.phone') }}</a>
+            <a href="mailto:{{ config('business.email') }}" class="text-white text-decoration-none">{{ config('business.email') }}</a>
         </div>
         <div class="ms-auto">
             @auth
@@ -120,7 +120,8 @@
                         </div>
                     </div>
                 </li>
-                <li class="nav-item d-none d-lg-block"><a class="nav-link {{ request()->routeIs('blog.*') ? 'active' : '' }}" href="{{ route('blog.index') }}">Blog</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('solutions.*') ? 'active' : '' }}" href="{{ route('solutions.index') }}">Solutions</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('blog.*') ? 'active' : '' }}" href="{{ route('blog.index') }}">Knowledge Centre</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">About</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact</a></li>
             </ul>

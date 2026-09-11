@@ -21,7 +21,7 @@
                             </ul>
                         </div>
                     @endif
-                    <form action="{{ route('b2b.store') }}" method="POST" class="row g-3">
+                    <form action="{{ route('b2b.store') }}" method="POST" class="row g-3" data-analytics-submit="request_quote">
                         @csrf
                         <input type="hidden" name="type" value="quote">
                         <div class="col-sm-6">

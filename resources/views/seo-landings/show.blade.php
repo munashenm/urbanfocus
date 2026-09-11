@@ -3,11 +3,14 @@
 @section('title', $page['title'])
 @section('meta_description', $page['description'])
 @section('canonical', route('solutions.show', $slug))
+@section('og_title', $page['title'])
+@section('og_description', $page['description'])
 
 @push('schema')
     <script type="application/ld+json">{!! json_encode(app(\App\Services\SeoService::class)->breadcrumbSchema([
-        ['name' => 'Home', 'url' => route('home')],
-        ['name' => $page['h1'], 'url' => route('solutions.show', $slug)],
+                ['name' => 'Home', 'url' => route('home')],
+                ['name' => 'Solutions', 'url' => route('solutions.index')],
+                ['name' => $page['h1'], 'url' => route('solutions.show', $slug)],
     ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
     @if(!empty($faqSchema))
         <script type="application/ld+json">{!! json_encode($faqSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
@@ -20,7 +23,7 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb breadcrumb-light mb-2">
                 <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('shop.index') }}">Solutions</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('solutions.index') }}">Solutions</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{{ $page['h1'] }}</li>
             </ol>
         </nav>
@@ -58,6 +61,22 @@
                 </ul>
             @endif
 
+            @if(!empty($page['use_cases']))
+                <h2 class="h4 fw-bold mt-4 mb-3">Business use cases</h2>
+                <ul class="text-muted">
+                    @foreach($page['use_cases'] as $useCase)
+                        <li>{{ $useCase }}</li>
+                    @endforeach
+                </ul>
+            @endif
+
+            @if(!empty($page['procurement']))
+                <h2 class="h4 fw-bold mt-4 mb-3">Procurement</h2>
+                <p class="text-muted">{{ $page['procurement'] }}</p>
+            @else
+                <h2 class="h4 fw-bold mt-4 mb-3">Procurement</h2>
+                <p class="text-muted">Urban Focus supports VAT-compliant invoicing, nationwide delivery and formal quotations for bulk, corporate and tender orders.</p>
+            @endif
             @if(!empty($page['links']))
                 <h2 class="h4 fw-bold mt-4 mb-3">Next steps</h2>
                 <div class="d-flex flex-wrap gap-2">
@@ -87,14 +106,7 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body">
-                    <h2 class="h6 fw-bold mb-2">Corporate procurement</h2>
-                    <p class="small text-muted mb-3">VAT invoices, bulk quotes and nationwide courier delivery for South African businesses.</p>
-                    <a href="{{ route('b2b.quote') }}" class="btn btn-primary btn-sm w-100 mb-2">Request a quote</a>
-                    <a href="{{ route('contact') }}" class="btn btn-outline-secondary btn-sm w-100">Contact sales</a>
-                </div>
-            </div>
+            @include('partials.corporate-procurement-cta', ['compact' => true])
         </div>
     </div>
 

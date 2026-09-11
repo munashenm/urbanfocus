@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'index_title' => 'IT Insights & Guides | Urban Focus Blog',
-    'index_description' => 'Buying guides, networking tips, software licensing, cybersecurity and IT procurement insights for South African businesses from Urban Focus.',
+    'index_title' => 'Knowledge Centre | IT Guides for South African Businesses | Urban Focus',
+    'index_description' => 'Buying guides, networking, software licensing, cybersecurity and IT procurement insights for South African businesses from Urban Focus.',
 
     'categories' => [
         'laptops' => [

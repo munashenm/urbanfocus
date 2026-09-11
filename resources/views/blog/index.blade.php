@@ -18,11 +18,11 @@
 @section('content')
 <div class="page-hero">
     <div class="container">
-        <h1 class="h2 fw-bold mb-2">IT Insights &amp; Guides</h1>
+        <h1 class="h2 fw-bold mb-2">Knowledge Centre</h1>
         <p class="mb-3 opacity-75">Buying guides, networking, software licensing, cybersecurity and procurement insights for South African businesses.</p>
         <form action="{{ route('blog.index') }}" method="GET" class="blog-search" role="search">
             <div class="input-group input-group-lg shadow-sm" style="max-width:560px;">
-                <input type="search" name="q" value="{{ $search }}" class="form-control" placeholder="Search articles, guides and news…" aria-label="Search the blog">
+                <input type="search" name="q" value="{{ $search }}" class="form-control" placeholder="Search articles, guides and news…" aria-label="Search the Knowledge Centre">
                 <button class="btn btn-primary" type="submit">Search</button>
             </div>
         </form>
@@ -31,7 +31,7 @@
 
 <div class="container py-5">
     @if($categories !== [])
-        <nav class="blog-category-nav mb-4" aria-label="Blog categories">
+        <nav class="blog-category-nav mb-4" aria-label="Knowledge Centre categories">
             <div class="d-flex flex-wrap gap-2">
                 <a href="{{ route('blog.index') }}" class="btn btn-sm {{ empty($activeCategory) && $search === '' ? 'btn-primary' : 'btn-outline-secondary' }}">All</a>
                 @foreach($categories as $key => $meta)
@@ -118,12 +118,7 @@
 
             @include('blog.partials.newsletter')
 
-            <div class="blog-sidebar-card blog-sidebar-card--accent">
-                <h2 class="h6 fw-bold mb-2">Need a quote?</h2>
-                <p class="small text-muted mb-3">VAT invoices, bulk pricing and RFQ support for businesses across South Africa.</p>
-                <a href="{{ route('b2b.quote') }}" class="btn btn-primary w-100 mb-2 btn-sm">Request a Quote</a>
-                <a href="{{ route('contact') }}" class="btn btn-outline-secondary w-100 btn-sm">Contact Urban Focus</a>
-            </div>
+            @include('partials.corporate-procurement-cta', ['compact' => true])
         </aside>
     </div>
 
@@ -145,6 +140,6 @@
 @push('schema')
 <script type="application/ld+json">{!! json_encode(app(\App\Services\SeoService::class)->breadcrumbSchema([
     ['name' => 'Home', 'url' => route('home')],
-    ['name' => 'Blog', 'url' => route('blog.index')],
+    ['name' => 'Knowledge Centre', 'url' => route('blog.index')],
 ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 @endpush

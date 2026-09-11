@@ -9,7 +9,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="checkout-card">
-                <form action="{{ route('b2b.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('b2b.store') }}" method="POST" enctype="multipart/form-data" data-analytics-submit="{{ $type === 'rfq' ? 'upload_rfq' : 'request_quote' }}">
                     @csrf
                     <input type="hidden" name="type" value="{{ $type }}">
                     @if(!empty($productId))

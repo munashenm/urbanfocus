@@ -12,7 +12,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('blog.index') }}">Blog</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('blog.index') }}">Knowledge Centre</a></li>
             @if($article->categoryLabel())
                 <li class="breadcrumb-item"><a href="{{ route('blog.category', $article->categoryKey()) }}">{{ $article->categoryLabel() }}</a></li>
             @endif
@@ -85,11 +85,7 @@
                 </div>
             @endif
 
-            <div class="blog-sidebar-card mb-4">
-                <h2 class="h6 fw-bold mb-2">Corporate procurement</h2>
-                <p class="small text-muted mb-3">VAT invoices, bulk quotes and RFQ support for businesses across South Africa.</p>
-                <a href="{{ route('b2b.quote') }}" class="btn btn-outline-primary w-100 btn-sm">Request a Quote</a>
-            </div>
+            @include('partials.corporate-procurement-cta', ['compact' => true])
 
             @include('blog.partials.newsletter')
         </aside>
@@ -127,7 +123,7 @@
 @endif
 <script type="application/ld+json">{!! json_encode(app(\App\Services\SeoService::class)->breadcrumbSchema(array_values(array_filter([
     ['name' => 'Home', 'url' => route('home')],
-    ['name' => 'Blog', 'url' => route('blog.index')],
+    ['name' => 'Knowledge Centre', 'url' => route('blog.index')],
     $article->categoryLabel() ? ['name' => $article->categoryLabel(), 'url' => route('blog.category', $article->categoryKey())] : null,
     ['name' => $article->title, 'url' => route('blog.show', $article)],
 ]))), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>

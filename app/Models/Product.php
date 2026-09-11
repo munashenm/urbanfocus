@@ -148,20 +148,15 @@ class Product extends Model
 
     public function seoTitle(): string
     {
-        if (! empty($this->attributes['meta_title'])) {
-            return $this->attributes['meta_title'];
+        $name = trim($this->name);
+        $suffix = ' | South Africa | Urban Focus';
+        $max = 70;
+
+        if (mb_strlen($name.$suffix) <= $max) {
+            return $name.$suffix;
         }
 
-        $parts = array_filter([
-            $this->brand,
-            $this->model_number ?: $this->sku,
-            $this->name,
-        ]);
-
-        $title = implode(' ', $parts).' | South Africa Stock';
-        $title = preg_replace('/\s+/u', ' ', trim($title)) ?? '';
-
-        return Str::limit($title, 70, '');
+        return Str::limit($name, max(20, $max - mb_strlen($suffix)), '').$suffix;
     }
 
     public function seoDescription(): string
@@ -181,16 +176,8 @@ class Product extends Model
             ]);
         }
 
-        $subject = implode(' ', array_filter([
-            $this->brand,
-            $this->model_number ?: $this->sku,
-        ]));
-
-        if ($subject === '') {
-            $subject = $this->name;
-        }
-
-        $description = 'Buy the genuine '.$subject.' in South Africa. Authorized supply with full warranty, nationwide delivery, and corporate VAT invoices available.';
+        $subject = $this->name;
+        $description = 'Buy '.$subject.' from Urban Focus South Africa. VAT-compliant invoicing, nationwide delivery and corporate/bulk procurement support. Request a quote online.';
         $description = preg_replace('/\s+/u', ' ', trim($description)) ?? '';
 
         return Str::limit($description, (int) config('seo.defaults.max_description_length', 160), '');
@@ -519,7 +506,7 @@ class Product extends Model
             $issues[] = 'no_description';
         }
 
-        if ($this->effective_price <= 0) {
+        if ($this->effective_price <= 0 || $this->isQuoteOnly()) {
             $issues[] = 'no_price';
         }
 
@@ -833,7 +820,6 @@ class Product extends Model
             '@type' => 'Product',
             'name' => $this->name,
             'description' => $this->googleFeedDescription(),
-            'sku' => $this->sku,
             'brand' => [
                 '@type' => 'Brand',
                 'name' => $this->brand ?: 'Urban Focus',
@@ -842,7 +828,6 @@ class Product extends Model
                 '@type' => 'Offer',
                 'url' => route('products.show', $this),
                 'priceCurrency' => config('google-merchant.currency', 'ZAR'),
-                'price' => number_format($this->effective_price, 2, '.', ''),
                 'availability' => $this->schemaAvailabilityUrl(),
                 'itemCondition' => 'https://schema.org/NewCondition',
                 'areaServed' => [
@@ -852,9 +837,14 @@ class Product extends Model
                 'seller' => [
                     '@type' => 'Organization',
                     'name' => 'Urban Focus',
+                    'url' => config('app.url'),
                 ],
             ],
         ];
+
+        if (! $this->isQuoteOnly() && $this->effective_price > 0) {
+            $schema['offers']['price'] = number_format((float) $this->effective_price, 2, '.', '');
+        }
 
         if ($this->primary_image_url) {
             $images = array_filter(array_merge(
@@ -866,22 +856,24 @@ class Product extends Model
 
         $schema['url'] = route('products.show', $this);
 
+        if ($this->sku) {
+            $schema['sku'] = $this->sku;
+        }
+
         if ($this->category) {
             $schema['category'] = $this->category->name;
         }
 
         if ($this->hasValidGtin()) {
             $schema['gtin'.$this->gtinSchemaLength()] = $this->normalizedGtin();
-        } elseif ($mpn = $this->googleFeedMpn()) {
+        }
+
+        if ($mpn = $this->googleFeedMpn()) {
             $schema['mpn'] = $mpn;
         }
 
         if ($this->model_number) {
             $schema['model'] = $this->model_number;
-        }
-
-        if ($country = config('google-merchant.country')) {
-            $schema['countryOfAssembly'] = $country === 'ZA' ? 'ZA' : $country;
         }
 
         return $schema;

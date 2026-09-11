@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Contact Us | Urban Focus')
+@section('title', config('page_seo.contact.title', 'Contact Us | Urban Focus'))
+@section('meta_description', config('page_seo.contact.description', config('seo.defaults.description')))
+@section('canonical', route('contact'))
+
+@push('schema')
+<script type="application/ld+json">{!! json_encode(app(\App\Services\SeoService::class)->localBusinessSchema(), JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
+@endpush
 
 @section('content')
 <div class="page-hero">
@@ -43,22 +49,22 @@
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Name *</label>
-                            <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
+                            <label class="form-label" for="contact-name">Name *</label>
+                            <input id="contact-name" type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
                             @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Phone</label>
-                            <input type="text" name="phone" class="form-control" value="{{ old('phone') }}">
+                            <label class="form-label" for="contact-phone">Phone</label>
+                            <input id="contact-phone" type="text" name="phone" class="form-control" value="{{ old('phone') }}">
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Email *</label>
-                            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" required>
+                            <label class="form-label" for="contact-email">Email *</label>
+                            <input id="contact-email" type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" required>
                             @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Message *</label>
-                            <textarea name="message" class="form-control @error('message') is-invalid @enderror" rows="5" required>{{ old('message') }}</textarea>
+                            <label class="form-label" for="contact-message">Message *</label>
+                            <textarea id="contact-message" name="message" class="form-control @error('message') is-invalid @enderror" rows="5" required>{{ old('message') }}</textarea>
                             @error('message')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">

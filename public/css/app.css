@@ -827,8 +827,42 @@ a:hover { color: var(--uf-blue); }
     overflow: hidden;
     flex-shrink: 0;
 }
-.cart-item-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+.breadcrumb {
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+}
+.breadcrumb-item {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+.corporate-procurement-cta {
+    background: #f4f7fb;
+    border: 1px solid rgba(10, 22, 40, 0.08);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+}
+.corporate-procurement-cta--compact {
+    padding: 1rem 1.15rem;
+}
+.corporate-procurement-cta .btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+}
+@media (max-width: 767.98px) {
+    .spec-table thead { display: none; }
+    .spec-table tr,
+    .spec-table th,
+    .spec-table td {
+        display: block;
+        width: 100%;
+    }
+    .spec-table th {
+        border-bottom: 0;
+        padding-bottom: 0;
+    }
+    .product-detail-image img,
+    .h2.fw-bold {
+        overflow-wrap: anywhere;
+    }
 }

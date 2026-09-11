@@ -1,8 +1,10 @@
 @extends('layouts.app')
 
-@section('title', $category->meta_title ?: $category->name.' | Urban Focus')
+@section('title', $category->seoTitle())
 @section('meta_description', $category->seoDescription())
 @section('canonical', $canonicalUrl)
+@section('og_title', $category->seoTitle())
+@section('og_description', $category->seoDescription())
 @if(request()->hasAny(['brand', 'price_min', 'price_max']) || (request('sort') && ! app(\App\Services\CatalogBrowseService::class)->isDefaultSort(request())))
 @section('meta_robots', 'noindex, follow')
 @endif
@@ -74,6 +76,26 @@
                 </div>
             @endif
         </div>
+    </div>
+
+    @if(($relatedBrandModels ?? collect())->count())
+        <section class="mt-5 pt-4 border-top">
+            <h2 class="h5 fw-bold mb-3">Related brands</h2>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach($relatedBrandModels->take(12) as $relatedBrand)
+                    <a href="{{ route('brands.show', $relatedBrand) }}" class="btn btn-outline-secondary btn-sm">{{ $relatedBrand->name }}</a>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    <section class="mt-4">
+        <h2 class="h5 fw-bold mb-2">{{ $category->name }} for South African procurement</h2>
+        <p class="text-muted mb-0">Urban Focus supplies {{ $category->name }} with VAT-compliant invoicing, nationwide delivery and support for bulk or tender orders. Browse the range above or request a formal quotation.</p>
+    </section>
+
+    <div class="mt-4">
+        @include('partials.corporate-procurement-cta')
     </div>
 </div>
 @endsection

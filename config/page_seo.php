@@ -3,7 +3,7 @@
 return [
     'about' => [
         'title' => 'About Urban Focus | Corporate IT Supplier South Africa',
-        'description' => 'Urban Focus is a South African IT distributor supplying networking, laptops, servers, CCTV, software licensing and enterprise hardware with VAT invoices and nationwide delivery.',
+        'description' => 'Urban Focus is a South African IT supplier of networking, laptops, servers, CCTV, software licensing and enterprise hardware with VAT invoices and nationwide delivery.',
     ],
     'contact' => [
         'title' => 'Contact Urban Focus | IT Sales & Support',
@@ -19,7 +19,7 @@ return [
     ],
     'warranty' => [
         'title' => 'Warranty Terms | Urban Focus',
-        'description' => 'Manufacturer warranty support on IT products supplied by Urban Focus. Warranty terms, claim process and authorised distributor backing for South African customers.',
+        'description' => 'Manufacturer warranty support on IT products supplied by Urban Focus. Warranty terms, claim process and after-sales support for South African customers.',
     ],
     'popia' => [
         'title' => 'POPIA Compliance | Urban Focus',

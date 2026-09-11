@@ -32,7 +32,7 @@
     <div class="row g-5">
         <div class="col-lg-6">
             <div class="product-detail-image">
-                <img id="productMainImage" src="{{ $product->display_image_url }}" alt="{{ $product->imageAlt() }}" width="500" height="500" loading="eager">
+                <img id="productMainImage" src="{{ $product->display_image_url }}" alt="{{ $product->imageAlt() }}" width="500" height="500" loading="eager" fetchpriority="high">
             </div>
             @if($product->images->count() > 1)
                 <div class="d-flex gap-2 mt-3 flex-wrap product-thumbs">
@@ -43,8 +43,16 @@
             @endif
         </div>
         <div class="col-lg-6">
-            @if($product->brand)<div class="product-brand mb-1">{{ $product->brand }}</div>@endif
-            <h1 class="h2 fw-bold">{{ $product->name }}</h1>
+            @if($product->brand)
+                <div class="product-brand mb-1">
+                    @if(!empty($brandModel))
+                        <a href="{{ route('brands.show', $brandModel) }}" class="text-decoration-none">{{ $product->brand }}</a>
+                    @else
+                        {{ $product->brand }}
+                    @endif
+                </div>
+            @endif
+            <h1 class="h2 fw-bold text-break">{{ $product->name }}</h1>
             <div class="d-flex flex-wrap gap-3 small text-muted mb-3">
                 @if($product->sku)<span>SKU: <strong>{{ $product->sku }}</strong></span>@endif
                 @if($product->model_number)<span>Model: <strong>{{ $product->model_number }}</strong></span>@endif
@@ -88,39 +96,49 @@
 
             <div class="d-flex flex-wrap gap-2 my-4">
                 @if($product->isQuoteOnly())
-                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-primary btn-lg">{{ $product->availabilityKey() === 'contact_licensing' ? 'Contact us for licensing' : 'Request a Quote' }}</a>
+                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-primary btn-lg" data-analytics-event="request_quote">{{ $product->availabilityKey() === 'contact_licensing' ? 'Contact us for licensing' : 'Request a Quote' }}</a>
                 @elseif($product->isAvailable())
                     <form action="{{ route('cart.add', $product) }}" method="POST" class="d-flex gap-2 align-items-center">
                         @csrf
-                        <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" class="form-control product-qty-input">
+                        <label for="product-qty" class="visually-hidden">Quantity</label>
+                        <input id="product-qty" type="number" name="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" class="form-control product-qty-input">
                         <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
                     </form>
-                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg">Request Bulk Quote</a>
+                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg" data-analytics-event="request_quote">Request Bulk Quote</a>
                 @else
                     <div class="checkout-card w-100">
                         <h2 class="h6 fw-bold mb-2">Notify me when back in stock</h2>
                         <form action="{{ route('products.stock-alert', $product) }}" method="POST" class="row g-2 align-items-end">
                             @csrf
                             <div class="col-md-4">
-                                <label class="form-label small mb-1">Email</label>
-                                <input type="email" name="email" class="form-control form-control-sm" value="{{ old('email', auth()->user()?->email) }}" required>
+                                <label class="form-label small mb-1" for="stock-alert-email">Email</label>
+                                <input id="stock-alert-email" type="email" name="email" class="form-control form-control-sm" value="{{ old('email', auth()->user()?->email) }}" required>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small mb-1">Name <span class="text-muted">(optional)</span></label>
-                                <input type="text" name="name" class="form-control form-control-sm" value="{{ old('name', auth()->user()?->name) }}">
+                                <label class="form-label small mb-1" for="stock-alert-name">Name <span class="text-muted">(optional)</span></label>
+                                <input id="stock-alert-name" type="text" name="name" class="form-control form-control-sm" value="{{ old('name', auth()->user()?->name) }}">
                             </div>
                             <div class="col-md-3">
                                 <button type="submit" class="btn btn-outline-primary w-100">Notify Me</button>
                             </div>
                         </form>
                     </div>
-                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg">Request Bulk Quote</a>
+                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg" data-analytics-event="request_quote">Request Bulk Quote</a>
                 @endif
             </div>
 
             <div class="border-top pt-3 small text-muted">
                 <p class="mb-1">Free shipping on orders over R {{ number_format(config('shipping.free_threshold'), 0) }}</p>
-                <p class="mb-0">Can't find this item? <a href="{{ route('b2b.source') }}">Let us source it for you</a> · Call <a href="tel:0875501813">087 550 1813</a></p>
+                <p class="mb-0">Can't find this item? <a href="{{ route('b2b.source') }}">Let us source it for you</a> · Call <a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phone') }}</a></p>
+                @if(!empty($solutionUrl))
+                    <p class="mb-0 mt-1"><a href="{{ $solutionUrl }}">{{ $product->brand }} supply in South Africa</a>
+                    @if($product->category)
+                        · <a href="{{ $product->category->url() }}">{{ $product->category->name }}</a>
+                    @endif
+                    </p>
+                @elseif($product->category)
+                    <p class="mb-0 mt-1"><a href="{{ $product->category->url() }}">Browse {{ $product->category->name }}</a></p>
+                @endif
             </div>
         </div>
     </div>
@@ -129,13 +147,29 @@
         <div class="col-lg-7">
             @if($product->storefrontDescriptionHtml())
                 <div class="checkout-card mb-4">
-                    <h2 class="h5 fw-bold mb-3">Description</h2>
+                    <h2 class="h5 fw-bold mb-3">Product overview</h2>
                     <div class="product-description">{!! clean_html($product->storefrontDescriptionHtml()) !!}</div>
                 </div>
             @endif
             <div class="checkout-card mb-4">
                 <h2 class="h5 fw-bold mb-3">{{ config('trust.why_buy.heading') }}</h2>
                 <p class="mb-0">{{ config('trust.why_buy.body') }}</p>
+            </div>
+            @include('partials.corporate-procurement-cta', [
+                'compact' => true,
+                'heading' => 'Need 5 or more units?',
+                'body' => 'Request corporate pricing or upload an RFQ for a formal Urban Focus quotation.',
+                'primaryLabel' => 'Upload RFQ',
+                'secondaryLabel' => 'Request Corporate Pricing',
+                'secondaryUrl' => route('b2b.quote', ['product' => $product->id]),
+            ])
+            <div class="checkout-card mt-4">
+                <h2 class="h5 fw-bold mb-3">Delivery and availability</h2>
+                <p class="mb-1"><strong>Availability:</strong> {{ $product->availabilityLabel() }}</p>
+                <p class="mb-1"><strong>Delivery:</strong> {{ $product->deliveryEstimate() }}</p>
+                @if($product->warrantyLabel())
+                    <p class="mb-0"><strong>Warranty:</strong> {{ $product->warrantyLabel() }}</p>
+                @endif
             </div>
         </div>
         <div class="col-lg-5">
@@ -221,6 +255,7 @@
 @push('scripts')
 <script>document.body.classList.add('has-mobile-buy-bar');</script>
 <script src="{{ asset('js/product-gallery.js') }}" defer></script>
+<script>window.ufAnalyticsItem = @json($analyticsItem ?? []); window.ufAnalyticsViewItem = true;</script>
 @endpush
 
 @push('schema')

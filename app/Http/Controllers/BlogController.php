@@ -73,7 +73,7 @@ class BlogController extends Controller
         }
 
         $articles = $articlesQuery->paginate(12)->withQueryString();
-        $pagination = $this->seo->paginationMeta($articles);
+        $pagination = $this->seo->paginationMeta($articles, route('blog.index'));
 
         $popular = $this->popularArticles($featured?->id);
 
@@ -114,7 +114,7 @@ class BlogController extends Controller
             Article::published()->inCategory($category)->latest('published_at')
         )->paginate(12);
 
-        $pagination = $this->seo->paginationMeta($articles);
+        $pagination = $this->seo->paginationMeta($articles, route('blog.category', $category));
 
         return view('blog.archive', [
             'articles' => $articles,
@@ -134,7 +134,7 @@ class BlogController extends Controller
             Article::published()->withTag($tag->slug)->latest('published_at')
         )->paginate(12);
 
-        $pagination = $this->seo->paginationMeta($articles);
+        $pagination = $this->seo->paginationMeta($articles, route('blog.tag', $tag));
 
         return view('blog.archive', [
             'articles' => $articles,
@@ -142,7 +142,7 @@ class BlogController extends Controller
             'archiveType' => 'tag',
             'archiveKey' => $tag->slug,
             'archiveTitle' => 'Tagged: '.$tag->name,
-            'archiveDescription' => "Articles tagged {$tag->name} on the Urban Focus blog.",
+            'archiveDescription' => "Articles tagged {$tag->name} in the Urban Focus Knowledge Centre.",
             'tag' => $tag,
         ]);
     }
@@ -155,7 +155,7 @@ class BlogController extends Controller
             $author->articles()->published()->latest('published_at')
         )->paginate(12);
 
-        $pagination = $this->seo->paginationMeta($articles);
+        $pagination = $this->seo->paginationMeta($articles, route('blog.author', $author));
 
         return view('blog.archive', [
             'articles' => $articles,

@@ -31,7 +31,7 @@
             </div>
         @endif
 
-        <p class="mt-3">We’ll email <strong>{{ $order->customer_email }}</strong> as soon as the confirmation goes out. Need help? Call <a href="tel:0875501813">087 550 1813</a>.</p>
+        <p class="mt-3">We’ll email <strong>{{ $order->customer_email }}</strong> as soon as the confirmation goes out. Need help? Call <a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phone') }}</a>.</p>
         <div class="mt-4 d-flex flex-wrap justify-content-center gap-2">
             <a href="{{ route('shop.index') }}" class="btn {{ ($canRetryPayment ?? false) ? 'btn-outline-primary' : 'btn-primary' }}">Continue Shopping</a>
             @auth
@@ -45,4 +45,21 @@
         </div>
     </div>
 </div>
+@if($order->payment_status === 'paid' || $order->payment_method === 'eft')
+@push('scripts')
+<script>
+window.ufPurchase = @json([
+    'transaction_id' => $order->order_number,
+    'value' => (float) $order->total,
+    'currency' => $order->currency ?: 'ZAR',
+    'items' => $order->items->map(fn ($item) => array_filter([
+        'item_id' => $item->product_sku ?: (string) $item->product_id,
+        'item_name' => $item->product_name,
+        'quantity' => (int) $item->quantity,
+        'price' => (float) $item->unit_price,
+    ]))->values()->all(),
+]);
+</script>
+@endpush
+@endif
 @endsection

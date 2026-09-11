@@ -89,16 +89,16 @@ if (! function_exists('seo_meta_description')) {
         $suffixes = match ($type) {
             'product' => array_filter([
                 $brand ? "Genuine {$brand} supply from Urban Focus with VAT invoices, warranty support and nationwide delivery across South Africa." : null,
-                'Buy online from Urban Focus with secure Paystack checkout, VAT invoices and fast courier delivery to Johannesburg, Cape Town, Durban and nationwide.',
-                'Order from Urban Focus — trusted South African IT distributor with professional support and B2B quote options.',
+                'Buy from Urban Focus with VAT invoices, nationwide courier delivery and corporate or bulk procurement support.',
+                'Order from Urban Focus — South African IT supplier with professional support and B2B quote options.',
             ]),
             'category' => array_filter([
-                $name ? "Shop {$name} at Urban Focus with competitive pricing, VAT invoices and expert IT support across South Africa." : null,
-                'Browse IT products at Urban Focus with secure checkout, nationwide delivery and authorised brand supply.',
+                $name ? "Shop {$name} at Urban Focus with VAT invoices, nationwide delivery and expert IT support across South Africa." : null,
+                'Browse IT products at Urban Focus with secure checkout and nationwide delivery.',
             ]),
             'brand' => array_filter([
-                $name ? "Authorised {$name} distributor in South Africa. Shop genuine products at Urban Focus with VAT invoices and nationwide delivery." : null,
-                'Urban Focus supplies leading IT brands with secure checkout, professional support and delivery across South Africa.',
+                $name ? "Supplier of {$name} products in South Africa. Shop genuine products at Urban Focus with VAT invoices and nationwide delivery." : null,
+                'Urban Focus supplies leading IT brands with professional support and delivery across South Africa.',
             ]),
             'article' => [
                 'Read IT news and buying guides from Urban Focus — South African supplier of networking, laptops, security and software.',
@@ -120,6 +120,48 @@ if (! function_exists('seo_meta_description')) {
         $fallback = $prefix.($suffixes[0] ?? 'Shop IT products online at Urban Focus with nationwide delivery across South Africa.');
 
         return Str::limit($fallback, $max, '');
+    }
+}
+
+if (! function_exists('seo_canonical_url')) {
+    /**
+     * Canonical URL for the current request with tracking parameters removed.
+     */
+    function seo_canonical_url(?string $url = null): string
+    {
+        $url = $url ?: url()->current();
+        $parts = parse_url($url);
+        if (! is_array($parts)) {
+            return $url;
+        }
+
+        $appUrl = (string) config('app.url', 'https://www.urbanfocus.co.za');
+        $appParts = parse_url($appUrl) ?: [];
+        $scheme = $appParts['scheme'] ?? ($parts['scheme'] ?? 'https');
+        $host = $appParts['host'] ?? ($parts['host'] ?? '');
+        if ($host === '') {
+            return $url;
+        }
+        $port = isset($appParts['port']) ? ':'.$appParts['port'] : '';
+        $path = $parts['path'] ?? '/';
+
+        parse_str($parts['query'] ?? '', $query);
+        $strip = array_fill_keys(config('seo.tracking_query_params', [
+            'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+            'gclid', 'fbclid', 'msclkid', 'ttclid', 'mc_cid', 'mc_eid',
+        ]), true);
+        $query = array_filter(
+            $query,
+            fn ($key) => ! isset($strip[strtolower((string) $key)]),
+            ARRAY_FILTER_USE_KEY
+        );
+
+        $canonical = $scheme.'://'.$host.$port.$path;
+        if ($query !== []) {
+            $canonical .= '?'.http_build_query($query);
+        }
+
+        return $canonical;
     }
 }
 

@@ -3,6 +3,14 @@
 @section('title', $brand->seoTitle())
 @section('meta_description', $brand->seoDescription())
 @section('canonical', $pagination['canonical'] ?? route('brands.show', $brand))
+@section('og_title', $brand->seoTitle())
+@section('og_description', $brand->seoDescription())
+@if($brand->logo)
+@section('og_image', asset($brand->logo))
+@endif
+@if(request()->hasAny(['price_min', 'price_max', 'category']) || (request('sort') && ! app(\App\Services\CatalogBrowseService::class)->isDefaultSort(request())))
+@section('meta_robots', 'noindex, follow')
+@endif
 
 @if(!empty($pagination['prev']))
     @push('head')<link rel="prev" href="{{ $pagination['prev'] }}">@endpush
@@ -95,6 +103,24 @@
                 <p class="text-muted">No {{ $brand->name }} products listed yet. <a href="{{ route('b2b.source') }}">Request sourcing</a> or <a href="{{ route('b2b.quote') }}">request a quote</a>.</p>
             @endif
         </div>
+    </div>
+
+    @if(!empty($relatedSolutions))
+        <section class="mt-4">
+            <h2 class="h6 fw-bold text-uppercase text-muted mb-2">Related solutions</h2>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach($relatedSolutions as $solution)
+                    <a href="{{ route('solutions.show', $solution['slug']) }}" class="btn btn-outline-primary btn-sm">{{ $solution['h1'] }}</a>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    <div class="mt-5">
+        @include('partials.corporate-procurement-cta', [
+            'heading' => 'Buying '.$brand->name.' for a business?',
+            'body' => 'Upload an equipment list or RFQ for formal '.$brand->name.' pricing from Urban Focus.',
+        ])
     </div>
 
     @if($faqs !== [])

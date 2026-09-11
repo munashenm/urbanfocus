@@ -2,7 +2,7 @@
 
 return [
     'ubiquiti-supplier-south-africa' => [
-        'title' => 'Ubiquiti Supplier South Africa | UniFi Distributor | Urban Focus',
+        'title' => 'Ubiquiti Supplier South Africa | UniFi Networking | Urban Focus',
         'description' => 'Leading Ubiquiti supplier in South Africa. UniFi access points, switches, gateways and Protect CCTV with VAT invoices, bulk quotes and nationwide delivery from Urban Focus.',
         'h1' => 'Ubiquiti Supplier South Africa',
         'intro' => 'Urban Focus is a trusted Ubiquiti supplier for businesses, ISPs, schools and integrators across Johannesburg, Cape Town, Durban and nationwide. We stock genuine UniFi and airMAX products for wired and wireless network builds.',
@@ -19,9 +19,9 @@ return [
     ],
 
     'mikrotik-distributor-south-africa' => [
-        'title' => 'MikroTik Distributor South Africa | Routers & ISP Gear | Urban Focus',
-        'description' => 'Authorised MikroTik supply for ISPs and businesses in South Africa. RouterBOARD, CRS switches and wireless CPE with VAT invoices from Urban Focus.',
-        'h1' => 'MikroTik Distributor South Africa',
+        'title' => 'MikroTik Supplier South Africa | Routers & ISP Gear | Urban Focus',
+        'description' => 'MikroTik supply for ISPs and businesses in South Africa. RouterBOARD, CRS switches and wireless CPE with VAT invoices from Urban Focus.',
+        'h1' => 'MikroTik Supplier South Africa',
         'intro' => 'Urban Focus supplies MikroTik RouterOS platforms to WISPs, fibre providers, integrators and corporate networks throughout South Africa.',
         'body' => [
             'MikroTik offers unmatched flexibility for routing, firewalling, wireless and switching at competitive pricing — ideal for South African connectivity providers scaling subscriber bases.',

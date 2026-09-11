@@ -3,7 +3,7 @@
 return [
     'defaults' => [
         'title_suffix' => '| Urban Focus',
-        'description' => 'Urban Focus — South African IT distributor. Buy laptops, networking, CCTV, Nitrokey FIDO2 security keys and specialist IT with nationwide delivery, VAT invoices and Paystack checkout.',
+        'description' => 'Urban Focus — South African IT supplier. Buy laptops, networking, CCTV, Nitrokey FIDO2 security keys and specialist IT with nationwide delivery, VAT invoices and corporate procurement support.',
         'keywords' => 'IT supplier South Africa, networking equipment South Africa, buy laptops South Africa, Ubiquiti supplier, Hikvision supplier, business IT supplier',
         'locale' => 'en_ZA',
         'country' => 'ZA',
@@ -18,6 +18,7 @@ return [
 
     'analytics' => [
         'ga4_id' => env('GA4_MEASUREMENT_ID'),
+        'gtm_id' => env('GTM_CONTAINER_ID'),
         'google_ads_id' => env('GOOGLE_ADS_ID'),
         'meta_pixel_id' => env('META_PIXEL_ID'),
         'tiktok_pixel_id' => env('TIKTOK_PIXEL_ID'),
@@ -68,7 +69,37 @@ return [
         '/account',
         '/login',
         '/register',
-        '/storage/',
+        '/password',
+        '/api',
+        '/feeds/facebook',
+        '/*?q=',
+        '/*?*q=',
+        '/*?sort=',
+        '/*?*sort=',
+        '/*?price_min=',
+        '/*?*price_min=',
+        '/*?price_max=',
+        '/*?*price_max=',
+        '/*?utm_source=',
+        '/*?*utm_source=',
+        '/*?gclid=',
+        '/*?*gclid=',
+        '/*?fbclid=',
+        '/*?*fbclid=',
+    ],
+
+    'tracking_query_params' => [
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_term',
+        'utm_content',
+        'gclid',
+        'fbclid',
+        'msclkid',
+        'ttclid',
+        'mc_cid',
+        'mc_eid',
     ],
 
     'faq' => [
@@ -115,7 +146,7 @@ return [
         [
             'group' => 'Products & Support',
             'question' => 'Are your products genuine?',
-            'answer' => 'Urban Focus supplies genuine IT products from authorised distribution channels. We stock leading brands including networking, CCTV, laptops, servers and software licensing for business and installer customers.',
+            'answer' => 'Urban Focus supplies genuine IT products sourced through trusted distribution channels. We stock leading brands including networking, CCTV, laptops, servers and software licensing for business and installer customers.',
         ],
         [
             'group' => 'Products & Support',

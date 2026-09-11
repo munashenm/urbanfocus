@@ -20,7 +20,7 @@ class BlogSeoService
         }
 
         if (empty($article->meta_title)) {
-            $article->meta_title = Str::limit($article->title.' | Urban Focus', 60, '');
+            $article->meta_title = Str::limit($article->title.' | Urban Focus Knowledge Centre', 70, '');
         }
 
         if (empty($article->meta_description)) {

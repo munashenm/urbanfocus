@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\CatalogDeduper;
+use App\Services\SeoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -63,8 +65,31 @@ class ProductController extends Controller
         $breadcrumbSchema = $product->toBreadcrumbSchema();
         $faqSchema = $product->faqSchemaArray();
 
+        $brandModel = $product->brand
+            ? Brand::query()->where('is_active', true)->where('name', $product->brand)->first()
+            : null;
+        $solutionUrl = app(SeoService::class)->solutionUrlForBrand($brandModel);
+
+        $analyticsItem = array_filter([
+            'item_id' => $product->sku ?: (string) $product->id,
+            'item_name' => $product->name,
+            'item_brand' => $product->brand,
+            'item_category' => $product->category?->name,
+            'item_sku' => $product->sku,
+            'price' => $product->isQuoteOnly() ? null : (float) $product->effective_price,
+        ], fn ($value) => $value !== null && $value !== '');
+
         return view('products.show', compact(
-            'product', 'relatedProducts', 'accessories', 'recentlyViewed', 'schema', 'breadcrumbSchema', 'faqSchema'
+            'product',
+            'relatedProducts',
+            'accessories',
+            'recentlyViewed',
+            'schema',
+            'breadcrumbSchema',
+            'faqSchema',
+            'brandModel',
+            'solutionUrl',
+            'analyticsItem',
         ));
     }
 }
