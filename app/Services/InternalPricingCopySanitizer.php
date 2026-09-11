@@ -22,20 +22,30 @@ class InternalPricingCopySanitizer
         '/\bbuffer\s+for\s+(paystack|card|fees?|payment)/iu',
         '/\bincludes?\s+a\s+buffer\b/iu',
         '/prices\s+on\s+this\s+page\s+already\s+include/iu',
-        '/\bcover\s+card\s+fees?\b/iu',
+        '/\bcover\s+(paystack|card|eft|bank|fees?)\b/iu',
         '/\bcard\s+fees?\b/iu',
+        '/\bcard\s*\/\s*eft\b/iu',
+        '/\beft\s+charges?\b/iu',
+        '/\beft\s*\/\s*bank\b/iu',
+        '/\bpricing\s+is\s+set\b/iu',
+        '/\bbank\s+(receiving\s+)?charges?\b/iu',
+        '/\bbuilt\s+into\s+(the\s+)?(listed\s+)?prices?\b/iu',
         '/\bcatalogue?\s+(top-?ups?|markups?)\b/iu',
         '/\btop-?up\s+percent/iu',
         '/\b(not\s+)?undercutt?ing\b/iu',
         '/\bundercut\b/iu',
         '/\bunder-quotes?\b/iu',
         '/\bpricing\s+strategy\b/iu',
+        '/\bpricing\s+is\s+set\s+to\s+win\b/iu',
+        '/\bwin\s+against\s+local\s+distributors\b/iu',
+        '/\bgiving\s+the\s+product\s+away\b/iu',
         '/\bour\s+costs?(?!-)/iu',
         '/\bsupplier\s+prices?\b/iu',
         '/\bstreet[- ]priced\b/iu',
-        '/\bstreet\s*(price|priced|~)/iu',
-        '/\bour\s+(price\s+)?markups?\b/iu',
-        '/\b(gross|profit|high)[- ]margins?\b/iu',
+        '/\bstreet\s*(price|priced|~|comparison)/iu',
+        '/\bour\s+(price\s+)?mark-?ups?\b/iu',
+        '/\bmark-?ups?\b/iu',
+        '/\b(gross|profit|high|healthy|target|sustainable)\s+margins?\b/iu',
         '/\bour\s+margins?\b/iu',
         '/\bfirstshop\b/iu',
         '/\blanded\s+costs?\b/iu',
@@ -51,7 +61,8 @@ class InternalPricingCopySanitizer
         '/\bprice[- ]competitive\b/iu',
         '/\bpriced\s+between\b/iu',
         '/\bpriced\s+to\s+cover\b/iu',
-        '/\bcompetitor\s+prices?\b/iu',
+        '/\bcompetitor\s+(prices?|pricing)\b/iu',
+        '/\bsold\s+below\b/iu',
         '/\bdo\s+not\s+undercut\b/iu',
         '/\bamazon\s*\(\s*r/iu',
         '/\bsupplier\s+costs?\b/iu',
@@ -61,6 +72,7 @@ class InternalPricingCopySanitizer
         '/\bcatalog\s+markups?\b/iu',
         '/\binternal\s+(notes?|pricing|staff|instructions?)\b/iu',
         '/\bstaff\s+notes?\b/iu',
+        '/\bprocurement\s+notes?\b/iu',
         '/\bdo\s+not\s+show\s+(the\s+)?customers?\b/iu',
         '/\bAI[- ]generated\s+(prompt|instruction)s?\b/iu',
         '/\bprivate\s+pricing\b/iu',
@@ -74,6 +86,7 @@ class InternalPricingCopySanitizer
     protected const INTERNAL_HEADING_PATTERNS = [
         '/why\s+buy\s+from\s+(urban\s+focus|us)\b/iu',
         '/\bour\s+pricing\b/iu',
+        '/\bhow\s+we\s+set\s+prices?\b/iu',
         '/\bpricing\s+notes\b/iu',
         '/\bcatalogue?\s+pricing\b/iu',
         '/\bhow\s+we\s+price\b/iu',
@@ -401,6 +414,161 @@ class InternalPricingCopySanitizer
         return $stats;
     }
 
+    /**
+     * JSON backup of listings that currently match leak patterns. Does not alter rows.
+     */
+    public function backupAffectedCopy(?int $limit = null): string
+    {
+        $dir = storage_path('app/backups');
+        if (! is_dir($dir) && ! mkdir($dir, 0755, true) && ! is_dir($dir)) {
+            throw new \RuntimeException('Unable to create '.$dir);
+        }
+
+        $path = $dir.DIRECTORY_SEPARATOR.'product-copy-'.date('Y-m-d-His').'.json';
+        $rows = [];
+
+        $query = Product::query()->orderBy('id');
+        if ($limit !== null && $limit > 0) {
+            $query->limit($limit);
+        }
+
+        $query->lazyById(100)->each(function (Product $product) use (&$rows) {
+            if (! $this->needsScrub($product)) {
+                return;
+            }
+
+            $rows[] = [
+                'id' => $product->id,
+                'sku' => $product->sku,
+                'slug' => $product->slug,
+                'name' => $product->name,
+                'short_description' => $product->short_description,
+                'description' => $product->description,
+                'meta_title' => $product->getAttributes()['meta_title'] ?? null,
+                'meta_description' => $product->getAttributes()['meta_description'] ?? null,
+                'meta_keywords' => $product->getAttributes()['meta_keywords'] ?? null,
+                'specifications' => $product->specifications,
+            ];
+        });
+
+        file_put_contents(
+            $path,
+            json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
+
+        return $path;
+    }
+
+    /**
+     * Write a CSV audit report. Does not alter the database.
+     */
+    public function writeAuditCsv(string $path, ?int $limit = null): int
+    {
+        $findings = $this->auditCatalog($limit);
+        $dir = dirname($path);
+        if (! is_dir($dir) && ! mkdir($dir, 0755, true) && ! is_dir($dir)) {
+            throw new \RuntimeException('Unable to create '.$dir);
+        }
+
+        $handle = fopen($path, 'w');
+        if ($handle === false) {
+            throw new \RuntimeException('Could not write '.$path);
+        }
+
+        fputcsv($handle, ['id', 'title', 'sku', 'slug', 'url', 'phrase', 'excerpt']);
+        foreach ($findings as $row) {
+            fputcsv($handle, [
+                $row['id'],
+                $row['title'],
+                $row['sku'],
+                $row['slug'],
+                $row['url'],
+                $row['phrase'],
+                $row['excerpt'],
+            ]);
+        }
+        fclose($handle);
+
+        return count($findings);
+    }
+
+    /**
+     * Mutate customer-facing attributes on a product before they are persisted.
+     * Internal fields such as cost_price are left untouched.
+     */
+    public function applyToPersistedProduct(Product $product): void
+    {
+        $short = $this->sanitizePlain((string) $product->short_description);
+        if ($short !== (string) $product->short_description) {
+            $product->short_description = $short;
+        }
+
+        $description = $this->sanitizeHtml((string) $product->description);
+        if ($description !== (string) $product->description) {
+            $product->description = $description;
+        }
+
+        foreach (['meta_title', 'meta_description', 'meta_keywords'] as $field) {
+            $current = (string) ($product->getAttributes()[$field] ?? '');
+            $clean = $this->sanitizePlain($current);
+            if ($clean !== $current) {
+                $product->{$field} = $clean !== '' ? $clean : null;
+            }
+        }
+
+        if (is_array($product->specifications)) {
+            $cleanSpecs = $this->sanitizeSpecifications($product->specifications);
+            if ($cleanSpecs !== $product->specifications) {
+                $product->specifications = $cleanSpecs;
+            }
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function inspectSku(string $sku): ?array
+    {
+        $product = Product::query()->where('sku', $sku)->first();
+        if (! $product) {
+            return null;
+        }
+
+        $parts = [
+            (string) $product->short_description,
+            (string) $product->description,
+            (string) ($product->getAttributes()['meta_title'] ?? ''),
+            (string) ($product->getAttributes()['meta_description'] ?? ''),
+            (string) ($product->getAttributes()['meta_keywords'] ?? ''),
+        ];
+        if (is_array($product->specifications)) {
+            foreach ($product->specifications as $value) {
+                if (is_string($value) || is_numeric($value)) {
+                    $parts[] = (string) $value;
+                }
+            }
+        }
+
+        $haystack = implode("\n", $parts);
+        $plain = trim(preg_replace('/\s+/u', ' ', strip_tags($haystack)) ?? '');
+
+        return [
+            'id' => (int) $product->id,
+            'sku' => $product->sku,
+            'slug' => $product->slug,
+            'name' => $product->name,
+            'url' => route('products.show', $product),
+            'needs_scrub' => $this->needsScrub($product),
+            'phrases' => $this->leakMatches($haystack),
+            'excerpt' => \Illuminate\Support\Str::limit($plain, 400, ''),
+            'clean_preview' => \Illuminate\Support\Str::limit(
+                trim(preg_replace('/\s+/u', ' ', strip_tags($this->sanitizeHtml((string) $product->description))) ?? ''),
+                400,
+                ''
+            ),
+        ];
+    }
+
     protected function filterSentences(string $text): string
     {
         $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -410,7 +578,7 @@ class InternalPricingCopySanitizer
             return '';
         }
 
-        $parts = preg_split('/(?<=[.!?])\s+/u', $text) ?: [$text];
+        $parts = preg_split('/(?<=[.!?])\s+|\n+/u', $text) ?: [$text];
         $kept = [];
 
         foreach ($parts as $part) {
@@ -429,6 +597,12 @@ class InternalPricingCopySanitizer
 
     protected function removeInternalSections(DOMElement $root): void
     {
+        foreach (iterator_to_array($root->childNodes) as $child) {
+            if ($child instanceof DOMElement && ! $this->isHeading($child)) {
+                $this->removeInternalSections($child);
+            }
+        }
+
         $removing = false;
 
         foreach (iterator_to_array($root->childNodes) as $child) {
@@ -467,7 +641,7 @@ class InternalPricingCopySanitizer
         }
 
         $tag = strtolower($el->tagName);
-        if (! in_array($tag, ['p', 'li', 'td', 'th', 'span', 'div', 'blockquote'], true)) {
+        if (! in_array($tag, ['p', 'li', 'td', 'th', 'span', 'div', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
             return;
         }
 

@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\ImageService;
+use App\Services\InternalPricingCopySanitizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -388,6 +389,24 @@ class ProductController extends Controller
         }
 
         unset($data['image_urls'], $data['remove_image_ids'], $data['parent_category_id']);
+
+        $sanitizer = app(InternalPricingCopySanitizer::class);
+        if (isset($data['short_description'])) {
+            $data['short_description'] = $sanitizer->sanitizePlain((string) $data['short_description']);
+        }
+        if (isset($data['description'])) {
+            $data['description'] = $sanitizer->sanitizeHtml((string) $data['description']);
+        }
+        foreach (['meta_title', 'meta_description', 'meta_keywords'] as $field) {
+            if (! array_key_exists($field, $data) || $data[$field] === null) {
+                continue;
+            }
+            $clean = $sanitizer->sanitizePlain((string) $data[$field]);
+            $data[$field] = $clean !== '' ? $clean : null;
+        }
+        if (isset($data['specifications']) && is_array($data['specifications'])) {
+            $data['specifications'] = $sanitizer->sanitizeSpecifications($data['specifications']);
+        }
 
         return $data;
     }

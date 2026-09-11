@@ -9,6 +9,7 @@ class AuditInternalPricingCopy extends Command
 {
     protected $signature = 'catalog:audit-internal-copy
                             {--limit= : Maximum products to scan}
+                            {--sku= : Inspect a single SKU first}
                             {--csv= : Write findings to a CSV path}';
 
     protected $description = 'Report customer-facing product copy that looks like internal pricing or staff notes (does not change the database)';
@@ -16,6 +17,22 @@ class AuditInternalPricingCopy extends Command
     public function handle(InternalPricingCopySanitizer $sanitizer): int
     {
         $limit = $this->option('limit') !== null ? (int) $this->option('limit') : null;
+        $sku = trim((string) $this->option('sku'));
+
+        if ($sku !== '') {
+            $inspect = $sanitizer->inspectSku($sku);
+            if ($inspect === null) {
+                $this->error('SKU not found: '.$sku);
+            } else {
+                $this->info($inspect['sku'].' — '.$inspect['name']);
+                $this->line('URL: '.$inspect['url']);
+                $this->line('Needs scrub: '.($inspect['needs_scrub'] ? 'yes' : 'no'));
+                $this->line('Phrases: '.($inspect['phrases'] === [] ? '(none)' : implode(', ', $inspect['phrases'])));
+                $this->line('Excerpt: '.$inspect['excerpt']);
+                $this->newLine();
+            }
+        }
+
         $findings = $sanitizer->auditCatalog($limit);
 
         if ($findings === []) {
@@ -39,27 +56,8 @@ class AuditInternalPricingCopy extends Command
 
         $csv = trim((string) $this->option('csv'));
         if ($csv !== '') {
-            $handle = fopen($csv, 'w');
-            if ($handle === false) {
-                $this->error('Could not write CSV: '.$csv);
-
-                return self::FAILURE;
-            }
-
-            fputcsv($handle, ['id', 'title', 'sku', 'slug', 'url', 'phrase', 'excerpt']);
-            foreach ($findings as $row) {
-                fputcsv($handle, [
-                    $row['id'],
-                    $row['title'],
-                    $row['sku'],
-                    $row['slug'],
-                    $row['url'],
-                    $row['phrase'],
-                    $row['excerpt'],
-                ]);
-            }
-            fclose($handle);
-            $this->info('Wrote '.$csv);
+            $count = $sanitizer->writeAuditCsv($csv, $limit);
+            $this->info('Wrote '.$csv.' ('.$count.' row(s)).');
         }
 
         return self::SUCCESS;

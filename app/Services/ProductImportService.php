@@ -676,6 +676,12 @@ class ProductImportService
         if (isset($data['meta_title'])) {
             $data['meta_title'] = $sanitizer->sanitizePlain((string) $data['meta_title']) ?: $data['meta_title'];
         }
+        if (isset($data['meta_keywords'])) {
+            $data['meta_keywords'] = $sanitizer->sanitizePlain((string) $data['meta_keywords']);
+        }
+        if (isset($data['specifications']) && is_array($data['specifications'])) {
+            $data['specifications'] = $sanitizer->sanitizeSpecifications($data['specifications']);
+        }
 
         return $data;
     }

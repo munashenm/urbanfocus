@@ -71,12 +71,26 @@ class Product extends Model
         ];
     }
 
+    /**
+     * When true, customer-facing copy is sanitised before insert/update.
+     * Tests that need legacy dirty rows may set this to false.
+     */
+    public static bool $sanitizeCustomerCopyOnSave = true;
+
     protected static function booted(): void
     {
         static::creating(function (Product $product) {
             if (empty($product->slug)) {
                 $product->slug = Str::slug($product->name);
             }
+        });
+
+        static::saving(function (Product $product) {
+            if (! static::$sanitizeCustomerCopyOnSave) {
+                return;
+            }
+
+            app(InternalPricingCopySanitizer::class)->applyToPersistedProduct($product);
         });
     }
 

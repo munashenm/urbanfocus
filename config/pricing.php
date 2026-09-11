@@ -24,6 +24,9 @@ return [
     /*
     | Paystack card/EFT (~2.9% + R1) plus bank receiving charges.
     | Applied after product markup so street prices stay viable.
+    |
+    | INTERNAL ONLY. Never copy fee, margin or top-up wording into product
+    | descriptions, SEO fields, Merchant feeds or public APIs.
     */
     'payment_fee_percent' => (float) env('PRICE_PAYMENT_FEE_PERCENT', 3.9),
 

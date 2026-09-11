@@ -5,6 +5,13 @@ namespace App\Services;
 use App\Models\Product;
 use Illuminate\Support\Str;
 
+/**
+ * Customer-facing listing copy for the curated target-range catalogue.
+ *
+ * Never include internal pricing, margins, payment-fee buffers, competitor
+ * undercutting or staff notes in descriptions, SEO fields or FAQs.
+ * Cost math lives in ProductPricingService / config/pricing.php only.
+ */
 class TargetRangeListingCopy
 {
     public function __construct(protected InternalPricingCopySanitizer $copySanitizer) {}

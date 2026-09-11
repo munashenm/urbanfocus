@@ -68,12 +68,12 @@ class ProductController extends Controller
             'currency' => 'ZAR',
             'in_stock' => $product->isAvailable(),
             'stock_quantity' => $product->stock_quantity,
-            'short_description' => $product->short_description,
-            'description' => strip_tags($product->description ?? ''),
+            'short_description' => $product->storefrontShortDescription(),
+            'description' => strip_tags($product->storefrontDescriptionHtml()),
             'image' => $product->primary_image_url,
             'images' => $product->images->map(fn ($img) => storage_public_url($img->path))->values(),
             'meta_title' => $product->getAttributes()['meta_title'] ?? null,
-            'meta_description' => $product->getAttributes()['meta_description'] ?? null,
+            'meta_description' => $product->seoDescription(),
         ];
     }
 }

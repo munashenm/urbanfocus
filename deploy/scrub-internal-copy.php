@@ -3,11 +3,14 @@
 /**
  * Remove internal pricing / margin language from customer-facing product copy.
  *
- * 1. Git pull latest code (or upload this file plus InternalPricingCopySanitizer.php)
+ * 1. Git pull latest code
  * 2. Copy this file to public_html/scrub-internal-copy.php and set SCRUB_KEY
- * 3. Preview: https://www.urbanfocus.co.za/scrub-internal-copy.php?key=YOUR_SECRET&preview=1
- * 4. Apply:   https://www.urbanfocus.co.za/scrub-internal-copy.php?key=YOUR_SECRET
+ * 3. Preview (default): https://www.urbanfocus.co.za/scrub-internal-copy.php?key=YOUR_SECRET
+ *    or ?preview=1
+ * 4. Apply:             https://www.urbanfocus.co.za/scrub-internal-copy.php?key=YOUR_SECRET&apply=1
  * 5. DELETE public_html/scrub-internal-copy.php
+ *
+ * Apply writes a JSON backup of affected rows to storage/app/backups/ first.
  */
 
 declare(strict_types=1);
@@ -59,12 +62,28 @@ $app = require_once $laravelRoot.'/bootstrap/app.php';
 $kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
-$dryRun = isset($_GET['preview']);
+$apply = isset($_GET['apply']) && (string) $_GET['apply'] === '1';
+$dryRun = ! $apply;
 $sanitizer = $app->make(InternalPricingCopySanitizer::class);
 
 echo "Urban Focus — scrub internal pricing copy\n";
 echo 'Laravel: '.$laravelRoot."\n";
-echo $dryRun ? "PREVIEW (no changes written)\n\n" : "APPLYING\n\n";
+echo $dryRun ? "PREVIEW (no changes written). Add &apply=1 to persist.\n\n" : "APPLYING\n\n";
+
+$u7 = $sanitizer->inspectSku('U7-ENTERPRISE');
+echo "=== U7-ENTERPRISE before ===\n";
+if ($u7 === null) {
+    echo "SKU not found.\n\n";
+} else {
+    echo 'Needs scrub: '.($u7['needs_scrub'] ? 'YES' : 'no')."\n";
+    echo 'Phrases: '.($u7['phrases'] === [] ? '(none)' : implode(' | ', $u7['phrases']))."\n";
+    echo 'Excerpt: '.$u7['excerpt']."\n\n";
+}
+
+if (! $dryRun) {
+    $backup = $sanitizer->backupAffectedCopy();
+    echo 'Backup: '.$backup."\n\n";
+}
 
 $stats = $sanitizer->scrubCatalog($dryRun);
 
@@ -84,6 +103,20 @@ if (! $dryRun && $stats['updated'] > 0) {
     } catch (Throwable $e) {
         echo 'Cache clear warning: '.$e->getMessage()."\n";
     }
+}
+
+if (! $dryRun) {
+    $remaining = $sanitizer->auditCatalog();
+    $after = $sanitizer->inspectSku('U7-ENTERPRISE');
+    echo "\n=== U7-ENTERPRISE after ===\n";
+    if ($after === null) {
+        echo "SKU not found.\n";
+    } else {
+        echo 'Needs scrub: '.($after['needs_scrub'] ? 'YES' : 'no')."\n";
+        echo 'Phrases: '.($after['phrases'] === [] ? '(none)' : implode(' | ', $after['phrases']))."\n";
+        echo 'Excerpt: '.$after['excerpt']."\n";
+    }
+    echo "\nPost-scrub catalogue leaks: ".count($remaining)."\n";
 }
 
 echo "\nDELETE public_html/scrub-internal-copy.php now.\n";

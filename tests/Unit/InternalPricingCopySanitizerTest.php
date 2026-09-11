@@ -65,4 +65,44 @@ class InternalPricingCopySanitizerTest extends TestCase
         $this->assertSame($text, $this->sanitizer->sanitizePlain($text));
         $this->assertFalse($this->sanitizer->containsLeak($text));
     }
+
+    public function test_strips_live_u7_enterprise_pricing_strategy_sentence(): void
+    {
+        $html = '<h2>Ubiquiti UniFi Enterprise Wi-Fi 7 Access Point in South Africa</h2>'
+            .'<p>The Ubiquiti UniFi Enterprise Wi-Fi 7 Access Point is an enterprise wireless access point supplied by Urban Focus for South African businesses, integrators and public-sector buyers. Wi-Fi 7 access points are now a standard line item on office, hospitality and education refreshes. The Ubiquiti UniFi Enterprise Wi-Fi 7 Access Point is a Ubiquiti enterprise AP for controller-based networks (UniFi, Omada, Grandstream or Reyee as applicable). Pricing is set to win against local distributors without giving the product away.</p>'
+            .'<h3>Key specifications</h3>'
+            .'<ul><li><strong>Wireless:</strong> Wi-Fi 7</li></ul>'
+            .'<p>Warranty cover and nationwide delivery are available. Request a formal quotation for volume purchasing and procurement.</p>';
+
+        $clean = $this->sanitizer->sanitizeHtml($html);
+
+        $this->assertStringContainsString('enterprise wireless access point supplied by Urban Focus', $clean);
+        $this->assertStringContainsString('office, hospitality and education', $clean);
+        $this->assertStringContainsString('Wi-Fi 7', $clean);
+        $this->assertStringContainsString('UniFi', $clean);
+        $this->assertStringContainsString('Warranty cover and nationwide delivery', $clean);
+        $this->assertStringContainsString('formal quotation', $clean);
+        $this->assertStringContainsString('Key specifications', $clean);
+        $this->assertStringNotContainsString('Pricing is set to win', $clean);
+        $this->assertStringNotContainsString('local distributors', $clean);
+        $this->assertStringNotContainsString('giving the product away', $clean);
+    }
+
+    public function test_strips_fee_margin_and_staff_note_sentences(): void
+    {
+        $text = 'Dual-radio Wi-Fi 7 AP for warehouses and schools. '
+            .'Card/EFT charges and bank receiving charges are built into the prices. '
+            .'A catalogue top-up protects sustainable margin. '
+            .'Staff note: procurement note, do not show customer our cost.';
+
+        $clean = $this->sanitizer->sanitizePlain($text);
+
+        $this->assertStringContainsString('Dual-radio Wi-Fi 7 AP for warehouses and schools.', $clean);
+        $this->assertStringNotContainsString('Card/EFT', $clean);
+        $this->assertStringNotContainsString('bank receiving', $clean);
+        $this->assertStringNotContainsString('catalogue top-up', $clean);
+        $this->assertStringNotContainsString('sustainable margin', $clean);
+        $this->assertStringNotContainsString('Staff note', $clean);
+        $this->assertStringNotContainsString('our cost', $clean);
+    }
 }
