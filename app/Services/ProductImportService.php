@@ -157,6 +157,9 @@ class ProductImportService
         $skippedNoPrice = 0;
         $skippedImageFailed = 0;
         $skippedNonIt = 0;
+        $skippedNoSku = 0;
+        $skippedNoBrand = 0;
+        $skippedNoTitle = 0;
         $errors = [];
         $samples = ['import' => [], 'skipped' => []];
         $rowNumber = 1;
@@ -186,7 +189,10 @@ class ProductImportService
                         $skippedNonIt,
                         $skippedNoImage,
                         $skippedNoPrice,
-                        $skippedImageFailed
+                        $skippedImageFailed,
+                        $skippedNoSku,
+                        $skippedNoBrand,
+                        $skippedNoTitle
                     );
                     $this->pushSample($samples['skipped'], $evaluation['name'], $evaluation['reason'], $sampleLimit);
 
@@ -226,7 +232,10 @@ class ProductImportService
                             $skippedNonIt,
                             $skippedNoImage,
                             $skippedNoPrice,
-                            $skippedImageFailed
+                            $skippedImageFailed,
+                            $skippedNoSku,
+                            $skippedNoBrand,
+                            $skippedNoTitle
                         );
                         $this->pushSample($samples['skipped'], $data['name'] ?? 'Unknown', $reason, $sampleLimit);
 
@@ -259,6 +268,9 @@ class ProductImportService
             'skippedNoPrice',
             'skippedImageFailed',
             'skippedNonIt',
+            'skippedNoSku',
+            'skippedNoBrand',
+            'skippedNoTitle',
             'errors'
         );
 
@@ -324,7 +336,9 @@ class ProductImportService
         $name = trim($data['name'] ?? '');
 
         if ($name === '') {
-            return ['action' => 'error', 'message' => 'Product name is required'];
+            $this->recordImportFlag($data, 'no_title');
+
+            return ['action' => 'skip', 'reason' => 'no_title', 'name' => $data['sku'] ?? 'Untitled'];
         }
 
         if ($this->catalogFilter->isExcludedImportRow($data)) {
@@ -343,13 +357,30 @@ class ProductImportService
         $existing = $this->findExisting($sku, $wooId);
         $imageUrls = $this->parseImageUrls($data['images'] ?? '');
         $hasExistingImages = $existing && $existing->images()->exists();
+        $brand = trim((string) ($data['brand'] ?? ''));
+
+        if (trim((string) $sku) === '' && trim((string) ($existing?->sku ?? '')) === '') {
+            $this->recordImportFlag($data, 'no_sku');
+
+            return ['action' => 'skip', 'reason' => 'no_sku', 'name' => $name];
+        }
+
+        if ($brand === '' && trim((string) ($existing?->brand ?? '')) === '') {
+            $this->recordImportFlag($data, 'no_brand');
+
+            return ['action' => 'skip', 'reason' => 'no_brand', 'name' => $name];
+        }
 
         if ($imageUrls === [] && ! $hasExistingImages) {
+            $this->recordImportFlag($data, 'no_image');
+
             return ['action' => 'skip', 'reason' => 'no_image', 'name' => $name];
         }
 
         $costPrice = $this->resolveCostPrice($data);
         if ($costPrice <= 0) {
+            $this->recordImportFlag($data, 'no_price');
+
             return ['action' => 'skip', 'reason' => 'no_price', 'name' => $name];
         }
 
@@ -543,13 +574,19 @@ class ProductImportService
         int &$skippedNonIt,
         int &$skippedNoImage,
         int &$skippedNoPrice,
-        int &$skippedImageFailed
+        int &$skippedImageFailed,
+        int &$skippedNoSku,
+        int &$skippedNoBrand,
+        int &$skippedNoTitle,
     ): void {
         match ($reason) {
             'non_it' => $skippedNonIt++,
             'no_image', 'no_images' => $skippedNoImage++,
             'no_price' => $skippedNoPrice++,
             'image_failed' => $skippedImageFailed++,
+            'no_sku' => $skippedNoSku++,
+            'no_brand' => $skippedNoBrand++,
+            'no_title' => $skippedNoTitle++,
             default => $skippedNoImage++,
         };
     }
@@ -561,8 +598,40 @@ class ProductImportService
             str_contains($message, 'no product images') => 'no_image',
             str_contains($message, 'image download failed') => 'image_failed',
             str_contains($message, 'no images') => 'no_image',
+            str_contains($message, 'no_sku') => 'no_sku',
+            str_contains($message, 'no_brand') => 'no_brand',
+            str_contains($message, 'no_title') => 'no_title',
             default => 'no_image',
         };
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function recordImportFlag(array $data, string $reason): void
+    {
+        $dir = storage_path('app/reports');
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        $path = $dir.'/import-quality-flags.csv';
+        $needsHeader = ! is_file($path) || filesize($path) === 0;
+        $handle = fopen($path, 'a');
+        if ($handle === false) {
+            return;
+        }
+
+        if ($needsHeader) {
+            fputcsv($handle, ['logged_at', 'sku', 'name', 'brand', 'reason']);
+        }
+
+        fputcsv($handle, [
+            now()->toIso8601String(),
+            (string) ($data['sku'] ?? ''),
+            (string) ($data['name'] ?? ''),
+            (string) ($data['brand'] ?? ''),
+            $reason,
+        ]);
+        fclose($handle);
     }
 
     /** @param list<array<string, mixed>> $bucket */

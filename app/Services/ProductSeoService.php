@@ -215,9 +215,7 @@ class ProductSeoService
 
     public function buildImageAlt(Product $product): string
     {
-        $title = $this->buildSeoTitle($product);
-
-        return Str::limit($title.' — Urban Focus South Africa', 125, '');
+        return Str::limit($product->imageAlt(), 125, '');
     }
 
     protected function isGenericProductName(string $name): bool

@@ -367,7 +367,7 @@ class SpecialistCatalogService
             return false;
         }
 
-        $alt = Str::limit(trim($product->brand.' '.$product->name.' product photo for sale in South Africa'), 255, '');
+        $alt = $product->imageAlt();
 
         ProductImage::create([
             'product_id' => $product->id,

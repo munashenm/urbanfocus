@@ -45,7 +45,8 @@ class SpecialistCatalogTest extends TestCase
         $this->assertSame('NK-PASSKEY', $key->model_number);
         $this->assertNotEmpty($key->google_product_category);
         $this->assertTrue($key->images()->exists());
-        $this->assertStringContainsString('South Africa', (string) $key->images()->first()?->alt_text);
+        $this->assertSame($key->imageAlt(), (string) $key->images()->first()?->alt_text);
+        $this->assertStringNotContainsString('South Africa', (string) $key->images()->first()?->alt_text);
         $this->assertSame(
             SpecialistCatalogService::CATALOG_RANGE_SPEC_VALUE,
             $key->specifications[SpecialistCatalogService::CATALOG_RANGE_SPEC_KEY] ?? null

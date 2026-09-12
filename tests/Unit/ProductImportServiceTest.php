@@ -50,6 +50,8 @@ class ProductImportServiceTest extends TestCase
             'categories' => 'Computer Memory > DDR5',
             'images' => 'https://example.com/ram.jpg',
             'regular_price' => '100',
+            'sku' => 'KIN-DDR5-32',
+            'brand' => 'Kingston',
         ]);
 
         $this->assertSame('create', $result['action']);
@@ -74,6 +76,8 @@ class ProductImportServiceTest extends TestCase
     {
         $result = $this->import->evaluateRow([
             'name' => 'Network Switch',
+            'sku' => 'USW-NOIMG',
+            'brand' => 'Ubiquiti',
             'category_head' => 'Networking-Active',
             'regular_price' => '200',
             'images' => '',
@@ -87,6 +91,8 @@ class ProductImportServiceTest extends TestCase
     {
         $result = $this->import->evaluateRow([
             'name' => 'Network Switch',
+            'sku' => 'USW-NOPRICE',
+            'brand' => 'Ubiquiti',
             'category_head' => 'Networking-Active',
             'images' => 'https://example.com/switch.jpg',
             'regular_price' => '0',
@@ -103,6 +109,8 @@ class ProductImportServiceTest extends TestCase
             'category_head' => 'Networking-Active',
             'images' => 'https://example.com/cable.jpg',
             'cost_price' => '75',
+            'sku' => 'CBL-PATCH-1',
+            'brand' => 'Generic',
         ]);
 
         $this->assertSame('create', $result['action']);
@@ -279,5 +287,48 @@ class ProductImportServiceTest extends TestCase
         $slug = $method->invoke($this->import, 'Manhattan iPad 2 Silicon Slip', '450287', null);
 
         $this->assertSame('manhattan-ipad-2-silicon-slip-450287', $slug);
+    }
+
+    public function test_skips_row_without_sku(): void
+    {
+        $result = $this->import->evaluateRow([
+            'name' => 'Network Switch',
+            'category_head' => 'Networking-Active',
+            'images' => 'https://example.com/switch.jpg',
+            'regular_price' => '200',
+            'brand' => 'Ubiquiti',
+        ]);
+
+        $this->assertSame('skip', $result['action']);
+        $this->assertSame('no_sku', $result['reason']);
+    }
+
+    public function test_skips_row_without_brand(): void
+    {
+        $result = $this->import->evaluateRow([
+            'name' => 'Network Switch',
+            'sku' => 'USW-Lite-8',
+            'category_head' => 'Networking-Active',
+            'images' => 'https://example.com/switch.jpg',
+            'regular_price' => '200',
+        ]);
+
+        $this->assertSame('skip', $result['action']);
+        $this->assertSame('no_brand', $result['reason']);
+    }
+
+    public function test_skips_row_without_title(): void
+    {
+        $result = $this->import->evaluateRow([
+            'name' => '',
+            'sku' => 'USW-Lite-8',
+            'brand' => 'Ubiquiti',
+            'category_head' => 'Networking-Active',
+            'images' => 'https://example.com/switch.jpg',
+            'regular_price' => '200',
+        ]);
+
+        $this->assertSame('skip', $result['action']);
+        $this->assertSame('no_title', $result['reason']);
     }
 }

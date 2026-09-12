@@ -32,6 +32,71 @@
     </div>
 </div>
 
+<div class="card admin-card mb-4">
+    <div class="card-header bg-white fw-semibold d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span>Catalogue Health</span>
+        <div class="d-flex flex-wrap gap-2">
+            @if(!empty($catalogueHealth['reports_ready']))
+                <a href="{{ route('admin.catalog.media-report', ['file' => 'missing-product-images.csv']) }}" class="small">missing-product-images.csv</a>
+                <a href="{{ route('admin.catalog.media-report', ['file' => 'catalogue-data-problems.csv']) }}" class="small">catalogue-data-problems.csv</a>
+            @endif
+            <a href="{{ route('admin.catalog.index') }}" class="small">Run media audit</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-6 col-md-4 col-xl-3">
+                <div class="small text-muted">Total products</div>
+                <div class="fs-5 fw-semibold">{{ number_format($catalogueHealth['total_products'] ?? $stats['products']) }}</div>
+                <div class="small text-muted">{{ number_format($catalogueHealth['total_active'] ?? 0) }} active</div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-3">
+                <a href="{{ route('admin.products.index', ['health_issue' => 'missing_image']) }}" class="text-decoration-none text-reset">
+                    <div class="small text-muted">Missing images</div>
+                    <div class="fs-5 fw-semibold">{{ number_format($catalogueHealth['missing_images'] ?? 0) }}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-xl-3">
+                <a href="{{ route('admin.products.index', ['health_issue' => 'broken_image']) }}" class="text-decoration-none text-reset">
+                    <div class="small text-muted">Broken images</div>
+                    <div class="fs-5 fw-semibold">{{ $catalogueHealth['broken_images'] === null ? '—' : number_format($catalogueHealth['broken_images']) }}</div>
+                    <div class="small text-muted">From last media audit</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-xl-3">
+                <a href="{{ route('admin.products.index', ['health_issue' => 'missing_description']) }}" class="text-decoration-none text-reset">
+                    <div class="small text-muted">Missing descriptions</div>
+                    <div class="fs-5 fw-semibold">{{ number_format($catalogueHealth['missing_descriptions'] ?? 0) }}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-xl-3">
+                <a href="{{ route('admin.products.index', ['health_issue' => 'missing_sku']) }}" class="text-decoration-none text-reset">
+                    <div class="small text-muted">Missing SKU</div>
+                    <div class="fs-5 fw-semibold">{{ number_format($catalogueHealth['missing_skus'] ?? 0) }}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-xl-3">
+                <a href="{{ route('admin.products.index', ['health_issue' => 'missing_price']) }}" class="text-decoration-none text-reset">
+                    <div class="small text-muted">Missing prices</div>
+                    <div class="fs-5 fw-semibold">{{ number_format($catalogueHealth['missing_prices'] ?? 0) }}</div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-xl-3">
+                <a href="{{ route('admin.products.index', ['health_issue' => 'duplicate_sku']) }}" class="text-decoration-none text-reset">
+                    <div class="small text-muted">Duplicate SKU</div>
+                    <div class="fs-5 fw-semibold">{{ number_format($catalogueHealth['duplicate_sku_groups'] ?? 0) }}</div>
+                    <div class="small text-muted">{{ number_format($catalogueHealth['duplicate_sku_rows'] ?? 0) }} rows</div>
+                </a>
+            </div>
+        </div>
+        @if(!empty($catalogueHealth['audited_at']))
+            <p class="small text-muted mb-0 mt-3">Last full media audit: {{ $catalogueHealth['audited_at'] }}. Click a metric to open the affected products.</p>
+        @else
+            <p class="small text-muted mb-0 mt-3">Live SQL counts. Run a full media audit from Catalog to check broken URLs, placeholders and write CSVs.</p>
+        @endif
+    </div>
+</div>
+
 <div class="row g-4 mb-4">
     <div class="col-xl-8">
         <div class="card admin-card admin-chart-card">

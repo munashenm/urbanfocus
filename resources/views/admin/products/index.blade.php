@@ -30,8 +30,14 @@
                 <option value="{{ $key }}" @selected(request('merchant_issue') === $key)>{{ $label }}</option>
             @endforeach
         </select>
+        <select name="health_issue" class="form-select form-select-sm">
+            <option value="">Catalogue health</option>
+            @foreach($healthIssueLabels as $key => $label)
+                <option value="{{ $key }}" @selected(request('health_issue') === $key)>{{ $label }}</option>
+            @endforeach
+        </select>
         <button class="btn btn-sm btn-outline-secondary">Filter</button>
-        @if(request()->hasAny(['q', 'status', 'category_id', 'brand', 'merchant_issue']))
+        @if(request()->hasAny(['q', 'status', 'category_id', 'brand', 'merchant_issue', 'health_issue']))
             <a href="{{ route('admin.products.index') }}" class="btn btn-sm btn-link">Clear</a>
         @endif
     </form>

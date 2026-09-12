@@ -34,7 +34,9 @@ class AdminAccessTest extends TestCase
         $admin = User::factory()->create(['is_admin' => true, 'is_active' => true]);
         $admin->syncRoles(['super-admin']);
 
-        $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();
+        $this->actingAs($admin)->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Catalogue Health', false);
     }
 
     public function test_viewer_cannot_access_user_management(): void

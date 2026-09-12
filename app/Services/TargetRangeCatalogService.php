@@ -405,7 +405,7 @@ class TargetRangeCatalogService
         ProductImage::create([
             'product_id' => $product->id,
             'path' => $path,
-            'alt_text' => $product->name,
+            'alt_text' => $product->imageAlt(),
             'sort_order' => 0,
             'is_primary' => true,
         ]);

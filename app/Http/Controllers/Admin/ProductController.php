@@ -57,12 +57,17 @@ class ProductController extends Controller
             $query->where('is_active', true)->merchantIssue($issue);
         }
 
+        if ($healthIssue = $request->get('health_issue')) {
+            $query->healthIssue($healthIssue);
+        }
+
         $products = $query->paginate(20)->withQueryString();
         $merchantIssueLabels = Product::googleMerchantIssueLabels();
+        $healthIssueLabels = Product::healthIssueLabels();
         $categories = Category::orderBy('name')->get(['id', 'name']);
         $brands = Brand::where('is_active', true)->orderBy('name')->pluck('name');
 
-        return view('admin.products.index', compact('products', 'merchantIssueLabels', 'categories', 'brands'));
+        return view('admin.products.index', compact('products', 'merchantIssueLabels', 'healthIssueLabels', 'categories', 'brands'));
     }
 
     public function create(): View

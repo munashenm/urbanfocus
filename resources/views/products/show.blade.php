@@ -45,7 +45,7 @@
     <div class="row g-5">
         <div class="col-lg-6">
             <div class="product-detail-image">
-                <img id="productMainImage" src="{{ $product->display_image_url }}" alt="{{ $product->imageAlt() }}" width="500" height="500" loading="eager" fetchpriority="high">
+                <img id="productMainImage" src="{{ $product->display_image_url }}" alt="{{ $product->imageAlt() }}" width="500" height="500" loading="eager" fetchpriority="high" decoding="async">
             </div>
             @if($product->images->count() > 1)
                 <div class="d-flex gap-2 mt-3 flex-wrap product-thumbs">

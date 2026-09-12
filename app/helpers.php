@@ -53,11 +53,45 @@ if (! function_exists('storage_public_url')) {
     }
 }
 
+if (! function_exists('is_catalog_placeholder_path')) {
+    /** True when a stored product image path/URL is a placeholder, not a real product photo. */
+    function is_catalog_placeholder_path(?string $path): bool
+    {
+        if ($path === null) {
+            return true;
+        }
+
+        $value = strtolower(trim(str_replace('\\', '/', $path)));
+        if ($value === '') {
+            return true;
+        }
+
+        foreach ([
+            'product-placeholder',
+            'image-coming-soon',
+            'coming-soon',
+            'placeholder.svg',
+            'placeholder.jpg',
+            'placeholder.png',
+            'no-image',
+            'noimage',
+            'default-product',
+            'missing-image',
+        ] as $needle) {
+            if (str_contains($value, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 if (! function_exists('product_image_url')) {
     /** Display URL for product images — always returns a valid image (placeholder fallback). */
     function product_image_url(?string $storagePath = null): string
     {
-        if ($storagePath) {
+        if ($storagePath && ! is_catalog_placeholder_path($storagePath)) {
             return storage_public_url($storagePath) ?? asset('images/product-placeholder.svg');
         }
 

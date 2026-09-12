@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\Quote;
+use App\Services\CatalogMediaHealthService;
 use App\Support\AdminRbac;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -60,6 +61,8 @@ class DashboardController extends Controller
             ->groupBy('payment_status')
             ->pluck('count', 'payment_status');
 
+        $catalogueHealth = app(CatalogMediaHealthService::class)->liveSummary();
+
         return view('admin.dashboard', compact(
             'stats',
             'recentOrders',
@@ -69,6 +72,7 @@ class DashboardController extends Controller
             'topProducts',
             'salesChart',
             'paymentSummary',
+            'catalogueHealth',
         ));
     }
 }

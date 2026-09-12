@@ -182,6 +182,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::resource('brands', AdminBrandController::class)->except(['show']);
         Route::get('inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');
         Route::get('catalog', [AdminCatalogController::class, 'index'])->name('catalog.index');
+        Route::post('catalog/media-audit', [AdminCatalogController::class, 'runMediaAudit'])->middleware('permission:products.edit')->name('catalog.media-audit');
+        Route::get('catalog/media-report/{file}', [AdminCatalogController::class, 'downloadMediaReport'])
+            ->where('file', '[A-Za-z0-9._-]+')
+            ->name('catalog.media-report');
         Route::post('catalog/import', [AdminCatalogController::class, 'import'])->middleware('permission:products.create')->name('catalog.import');
         Route::post('catalog/import/preview', [AdminCatalogController::class, 'importPreview'])->middleware('permission:products.create')->name('catalog.import-preview');
         Route::post('catalog/sync-target-range/preview', [AdminCatalogController::class, 'syncTargetRangePreview'])->middleware('permission:products.create')->name('catalog.sync-target-range-preview');

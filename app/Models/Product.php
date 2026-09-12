@@ -151,8 +151,11 @@ class Product extends Model
     public function getPrimaryImageUrlAttribute(): ?string
     {
         $image = $this->images->firstWhere('is_primary', true) ?? $this->images->first();
+        if (! $image || is_catalog_placeholder_path($image->path)) {
+            return null;
+        }
 
-        return $image ? storage_public_url($image->path) : null;
+        return storage_public_url($image->path);
     }
 
     public function getDisplayImageUrlAttribute(): string
@@ -221,17 +224,29 @@ class Product extends Model
         return implode(', ', array_unique($keywords));
     }
 
-    public function imageAlt(): string
+    public static function naturalImageAlt(?string $brand, ?string $name): string
     {
-        $image = $this->images->firstWhere('is_primary', true) ?? $this->images->first();
+        $name = trim((string) $name);
+        $brand = trim((string) $brand);
 
-        if ($image && trim((string) $image->alt_text) !== '') {
-            return trim($image->alt_text);
+        if ($brand === '') {
+            return $name !== '' ? $name : 'Urban Focus product';
         }
 
-        $parts = array_filter([$this->brand, $this->name, 'South Africa']);
+        if ($name === '') {
+            return $brand;
+        }
 
-        return implode(' — ', $parts);
+        if (str_starts_with(mb_strtolower($name), mb_strtolower($brand))) {
+            return $name;
+        }
+
+        return $brand.' '.$name;
+    }
+
+    public function imageAlt(): string
+    {
+        return static::naturalImageAlt($this->brand, $this->name);
     }
 
     public function isAvailable(): bool
@@ -493,6 +508,7 @@ class Product extends Model
         return $this->images
             ->when($primary, fn ($images) => $images->where('id', '!=', $primary->id))
             ->take(10)
+            ->reject(fn ($image) => is_catalog_placeholder_path($image->path))
             ->map(fn ($image) => storage_public_url($image->path))
             ->filter()
             ->values()
@@ -742,7 +758,14 @@ class Product extends Model
     public function scopeMerchantIssue($query, string $issue)
     {
         return match ($issue) {
-            'no_image' => $query->whereDoesntHave('images'),
+            'no_image' => $query->whereDoesntHave('images', function ($q) {
+                $q->whereNotNull('path')
+                    ->where('path', '!=', '')
+                    ->where('path', 'not like', '%placeholder%')
+                    ->where('path', 'not like', '%coming-soon%')
+                    ->where('path', 'not like', '%no-image%')
+                    ->where('path', 'not like', '%noimage%');
+            }),
             'no_description' => $query->whereRaw(
                 "CHAR_LENGTH(TRIM(COALESCE(short_description, ''))) + CHAR_LENGTH(TRIM(COALESCE(description, ''))) < 10"
             ),
@@ -759,6 +782,65 @@ class Product extends Model
                 })->where(function ($q2) {
                     $q2->whereNull('barcode')->orWhere('barcode', '');
                 });
+            }),
+            default => $query,
+        };
+    }
+
+    /** @return array<string, string> */
+    public static function healthIssueLabels(): array
+    {
+        return [
+            'missing_image' => 'Missing image',
+            'broken_image' => 'Broken image',
+            'placeholder_image' => 'Placeholder image',
+            'missing_description' => 'Missing description',
+            'missing_sku' => 'Missing SKU',
+            'missing_price' => 'Missing price',
+            'missing_brand' => 'Missing brand',
+            'missing_title' => 'Missing title',
+            'duplicate_sku' => 'Duplicate SKU',
+        ];
+    }
+
+    public function scopeHealthIssue($query, string $issue)
+    {
+        $query->where('is_active', true);
+
+        return match ($issue) {
+            'missing_image' => $query->merchantIssue('no_image'),
+            'broken_image' => $query->whereIn('id', app(\App\Services\CatalogMediaHealthService::class)->lastIssueProductIds('broken_image') ?: [0]),
+            'placeholder_image' => $query->whereIn('id', app(\App\Services\CatalogMediaHealthService::class)->lastIssueProductIds('placeholder_image') ?: [0]),
+            'missing_description' => $query->merchantIssue('no_description'),
+            'missing_sku' => $query->where(function ($q) {
+                $q->whereNull('sku')->orWhere('sku', '');
+            }),
+            'missing_price' => $query->merchantIssue('no_price'),
+            'missing_brand' => $query->merchantIssue('no_brand'),
+            'missing_title' => $query->where(function ($q) {
+                $q->whereNull('name')->orWhere('name', '');
+            }),
+            'duplicate_sku' => $query->where(function ($q) {
+                $keys = Product::query()
+                    ->where('is_active', true)
+                    ->whereNotNull('sku')
+                    ->where('sku', '!=', '')
+                    ->selectRaw('LOWER(TRIM(sku)) as sku_key')
+                    ->groupByRaw('LOWER(TRIM(sku))')
+                    ->havingRaw('COUNT(*) > 1')
+                    ->pluck('sku_key');
+
+                if ($keys->isEmpty()) {
+                    $q->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                foreach ($keys as $index => $key) {
+                    $index === 0
+                        ? $q->whereRaw('LOWER(TRIM(sku)) = ?', [$key])
+                        : $q->orWhereRaw('LOWER(TRIM(sku)) = ?', [$key]);
+                }
             }),
             default => $query,
         };

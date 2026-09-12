@@ -34,7 +34,7 @@
             <ul class="small text-muted mb-3">
                 <li><strong>Pinnacle:</strong> StockCode, ProdName, ProdImg, ProdPriceExclVAT, ProdQty, category_tree, BarcodeEAN</li>
                 <li><strong>Esquire:</strong> ProductName, ProductCode, CategoryHead, Category, Image, Price (Data Export CSV)</li>
-                <li>Required: name, image URL(s), cost/price — skipped if missing</li>
+                <li>Required: name, SKU, brand, image URL(s), cost/price — skipped if missing, and logged to <code>storage/app/reports/import-quality-flags.csv</code></li>
                 <li>Cost under R{{ number_format($importPricing['low_cost_threshold'], 0) }}: markup only; R{{ number_format($importPricing['low_cost_threshold'], 0) }}+: rounded to R{{ $importPricing['round_to'] }}</li>
                 <li>Matches existing products by SKU or WooCommerce ID</li>
             </ul>
@@ -47,7 +47,10 @@
                     update: <strong>{{ $preview['would_update'] ?? 0 }}</strong>,
                     skip non-IT: {{ $preview['skippedNonIt'] ?? 0 }},
                     skip no image: {{ $preview['skippedNoImage'] ?? 0 }},
-                    skip no price: {{ $preview['skippedNoPrice'] ?? 0 }}
+                    skip no price: {{ $preview['skippedNoPrice'] ?? 0 }},
+                    skip no title: {{ $preview['skippedNoTitle'] ?? 0 }},
+                    skip no SKU: {{ $preview['skippedNoSku'] ?? 0 }},
+                    skip no brand: {{ $preview['skippedNoBrand'] ?? 0 }}
                     @if(!empty($preview['samples']['import']))
                         <p class="mb-1 mt-2 fw-semibold">Sample imports (cost → retail):</p>
                         <ul class="mb-0 ps-3">
@@ -338,6 +341,38 @@
                 </div>
                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete All Products</button>
             </form>
+        </div></div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h5 fw-bold">Catalogue media audit</h2>
+            @php $mediaHealth = $mediaHealth ?? []; @endphp
+            <p class="small text-muted mb-3">Scans every active product for missing/broken images and incomplete data. Recovery only uses exact Brand + SKU matches already in this database or import catalogues. No Google Images and no manufacturer scraping.</p>
+            @if(!empty($mediaHealth['audited_at']))
+                <p class="small mb-2">Last audit: <strong>{{ $mediaHealth['audited_at'] }}</strong> — missing images {{ $mediaHealth['missing_images'] }}, broken {{ $mediaHealth['broken_images'] ?? '—' }}, recovered {{ $mediaHealth['recovered_images'] ?? 0 }}.</p>
+            @endif
+            <form action="{{ route('admin.catalog.media-audit') }}" method="POST" class="mb-2">
+                @csrf
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="check_remote" value="1" id="checkRemote">
+                    <label class="form-check-label small" for="checkRemote">HTTP-check remote image URLs (slower)</label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="recover" value="1" id="recoverImages">
+                    <label class="form-check-label small" for="recoverImages">Recover high-confidence SKU images after the audit</label>
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary">Run catalogue media audit</button>
+            </form>
+            <div class="small">
+                <a href="{{ route('admin.catalog.media-report', ['file' => 'missing-product-images.csv']) }}">missing-product-images.csv</a>
+                ·
+                <a href="{{ route('admin.catalog.media-report', ['file' => 'catalogue-data-problems.csv']) }}">catalogue-data-problems.csv</a>
+                ·
+                <a href="{{ route('admin.catalog.media-report', ['file' => 'manufacturer-image-candidates.csv']) }}">manufacturer candidates</a>
+                ·
+                <a href="{{ route('admin.catalog.media-report', ['file' => 'catalogue-media-audit.csv']) }}">full audit CSV</a>
+            </div>
         </div></div>
     </div>
 

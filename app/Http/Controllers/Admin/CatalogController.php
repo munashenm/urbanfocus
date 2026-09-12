@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Services\CatalogMediaHealthService;
 use App\Services\CategoryConsolidationService;
 use App\Services\CategoryMergeService;
 use App\Services\GoogleMerchantService;
@@ -97,6 +98,7 @@ class CatalogController extends Controller
             $merchantIssueLabels = Product::googleMerchantIssueLabels();
             $targetRangeCount = $this->targetRangeCount();
             $specialistCount = $this->specialistCount();
+            $mediaHealth = app(CatalogMediaHealthService::class)->liveSummary();
 
             $feeds = [
                 ['name' => 'Google Merchant Center', 'url' => url('/feeds/google.xml'), 'format' => 'XML'],
@@ -112,7 +114,7 @@ class CatalogController extends Controller
                 ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
             ];
 
-            return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing', 'targetRangeCount', 'specialistCount'));
+            return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing', 'targetRangeCount', 'specialistCount', 'mediaHealth'));
         } catch (\Throwable $e) {
             report($e);
 
@@ -181,6 +183,44 @@ class CatalogController extends Controller
         return back()->with('import_preview', $preview);
     }
 
+    public function runMediaAudit(Request $request, CatalogMediaHealthService $health): RedirectResponse
+    {
+        @set_time_limit(0);
+        @ini_set('memory_limit', '1024M');
+
+        try {
+            $report = $health->run(
+                checkRemote: $request->boolean('check_remote'),
+                recover: $request->boolean('recover'),
+            );
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Catalogue media audit failed: '.$e->getMessage());
+        }
+
+        $counts = $report['counts'];
+        $message = 'Scanned '.$counts['total_scanned'].' active products. Valid images: '.$counts['valid_images']
+            .'. Missing: '.$counts['missing_images']
+            .'. Broken: '.$counts['broken_images']
+            .'. Recovered: '.$counts['recovered_images']
+            .'. Still needing manual images: '.$counts['still_requiring_manual_images'].'.';
+
+        return back()->with('success', $message);
+    }
+
+    public function downloadMediaReport(string $file, CatalogMediaHealthService $health): RedirectResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $path = $health->reportAbsolutePath($file);
+        if ($path === null) {
+            return back()->with('error', 'Report not found. Run the catalogue media audit first.');
+        }
+
+        return response()->download($path, $file, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     /** @param array<string, mixed> $result */
     protected function formatImportMessage(array $result): string
     {
@@ -204,6 +244,18 @@ class CatalogController extends Controller
 
         if (($result['skippedNonIt'] ?? 0) > 0) {
             $message .= " Skipped {$result['skippedNonIt']} non-IT rows.";
+        }
+
+        if (($result['skippedNoTitle'] ?? 0) > 0) {
+            $message .= " Skipped {$result['skippedNoTitle']} without titles.";
+        }
+
+        if (($result['skippedNoSku'] ?? 0) > 0) {
+            $message .= " Skipped {$result['skippedNoSku']} without SKUs.";
+        }
+
+        if (($result['skippedNoBrand'] ?? 0) > 0) {
+            $message .= " Skipped {$result['skippedNoBrand']} without brands.";
         }
 
         if (! empty($result['errors'])) {
