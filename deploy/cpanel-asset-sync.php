@@ -28,7 +28,7 @@ function cpanel_sync_public_assets(string $laravelRoot, string $publicHtml): int
         $copied += cpanel_copy_public_tree($sourceDir, $targetDir);
     }
 
-    foreach (['favicon.svg', 'favicon.png', 'robots.txt'] as $file) {
+    foreach (['favicon.svg', 'favicon.png', '.htaccess'] as $file) {
         $source = $sourcePublic.'/'.$file;
         if (! is_file($source)) {
             continue;
@@ -39,6 +39,11 @@ function cpanel_sync_public_assets(string $laravelRoot, string $publicHtml): int
             echo "Copied: {$file}\n";
             $copied++;
         }
+    }
+
+    $staleRobots = $publicHtml.'/robots.txt';
+    if (is_file($staleRobots) && @unlink($staleRobots)) {
+        echo "Removed leftover static robots.txt so Laravel can serve crawler rules.\n";
     }
 
     $adminCss = $publicHtml.'/css/admin.css';

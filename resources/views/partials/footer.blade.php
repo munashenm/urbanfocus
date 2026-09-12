@@ -5,7 +5,7 @@
                 <a href="{{ route('home') }}" class="site-logo site-logo--footer d-inline-block mb-3">
                     <img src="{{ asset('images/logo-footer.png') }}" alt="Urban Focus" width="253" height="24" class="footer-logo" loading="lazy">
                 </a>
-                <p class="text-white-50 mb-3">South African IT supplier — networking, enterprise hardware, CCTV, fibre solutions and software licensing for business procurement.</p>
+                <p class="text-white-50 mb-3">Urban Focus is a South African IT hardware, electronics and technology supplier — networking, enterprise hardware, CCTV, fibre solutions and software licensing for business procurement. Website: <a href="https://www.urbanfocus.co.za/" class="text-white-50">www.urbanfocus.co.za</a></p>
                 @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-2'])
                 <div class="mt-4">
                     <h6 class="text-white mb-2">Deals &amp; Updates</h6>

@@ -2,6 +2,7 @@
 
 @section('title', 'Our Brands | Urban Focus')
 @section('meta_description', seo_meta_description('Browse IT brands supplied by Urban Focus — networking, laptops, security and software.', ['type' => 'brand', 'name' => 'IT brands']))
+@section('canonical', route('brands.index'))
 
 @section('content')
 <div class="page-hero">
@@ -12,6 +13,12 @@
 </div>
 
 <div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
+            <li class="breadcrumb-item active">Brands</li>
+        </ol>
+    </nav>
     @if($brands->count())
         <div class="row g-4">
             @foreach($brands as $brand)

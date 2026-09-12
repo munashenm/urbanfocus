@@ -61,14 +61,17 @@ class ProductController extends Controller
             ->sortBy(fn (Product $item) => array_search($item->id, $recentIds, true))
             ->values();
 
-        $schema = $product->toSchemaArray();
-        $breadcrumbSchema = $product->toBreadcrumbSchema();
-        $faqSchema = $product->faqSchemaArray();
-
         $brandModel = $product->brand
             ? Brand::query()->where('is_active', true)->where('name', $product->brand)->first()
             : null;
         $solutionUrl = app(SeoService::class)->solutionUrlForBrand($brandModel);
+
+        $schema = $product->toSchemaArray();
+        if ($brandModel) {
+            $schema['brand']['url'] = route('brands.show', $brandModel);
+        }
+        $breadcrumbSchema = $product->toBreadcrumbSchema();
+        $faqSchema = $product->faqSchemaArray();
 
         $analyticsItem = array_filter([
             'item_id' => $product->sku ?: (string) $product->id,

@@ -2,8 +2,8 @@
 
 return [
     'about' => [
-        'title' => 'About Urban Focus | Corporate IT Supplier South Africa',
-        'description' => 'Urban Focus is a South African IT supplier of networking, laptops, servers, CCTV, software licensing and enterprise hardware with VAT invoices and nationwide delivery.',
+        'title' => 'About Urban Focus | South African IT Hardware & Technology Supplier',
+        'description' => 'Urban Focus is a South African IT hardware, electronics and technology supplier of networking, laptops, servers, CCTV and specialist IT for businesses nationwide. Website: https://www.urbanfocus.co.za/',
     ],
     'contact' => [
         'title' => 'Contact Urban Focus | IT Sales & Support',

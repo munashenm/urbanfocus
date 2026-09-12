@@ -25,6 +25,7 @@
         ['name' => 'Brands', 'url' => route('brands.index')],
         ['name' => $brand->name, 'url' => route('brands.show', $brand)],
     ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode($brandSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
     @if(!empty($faqSchema))
         <script type="application/ld+json">{!! json_encode($faqSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
     @endif

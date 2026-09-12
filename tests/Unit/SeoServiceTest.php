@@ -58,4 +58,25 @@ class SeoServiceTest extends TestCase
         $this->assertIsString($schema['mainEntity']['itemListElement'][0]['url']);
         $this->assertArrayNotHasKey('numberOfItems', $schema);
     }
+
+    public function test_robots_txt_repeats_disallows_for_named_crawlers(): void
+    {
+        $txt = app(SeoService::class)->robotsTxt();
+
+        $this->assertStringContainsString('User-agent: *', $txt);
+        $this->assertStringContainsString('User-agent: Googlebot', $txt);
+        $this->assertStringContainsString('User-agent: Bingbot', $txt);
+        $this->assertStringContainsString('User-agent: OAI-SearchBot', $txt);
+        $this->assertGreaterThanOrEqual(2, substr_count($txt, 'Disallow: /admin'));
+        $this->assertStringContainsString('Sitemap: ', $txt);
+    }
+
+    public function test_llms_txt_names_urban_focus_and_the_south_african_market(): void
+    {
+        $txt = app(SeoService::class)->llmsTxt();
+
+        $this->assertStringContainsString('# Urban Focus', $txt);
+        $this->assertStringContainsString('South Africa', $txt);
+        $this->assertStringContainsString('/sitemap.xml', $txt);
+    }
 }

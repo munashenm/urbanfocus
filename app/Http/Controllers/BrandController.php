@@ -77,6 +77,7 @@ class BrandController extends Controller
 
         $faqs = $brandSeo['faqs'] ?? [];
         $faqSchema = $faqs !== [] ? $this->seo->faqSchema($faqs) : [];
+        $brandSchema = $this->seo->brandSchema($brand);
         $relatedSolutions = $this->seo->solutionsForBrand($brand);
 
         $categories = Category::where('is_active', true)
@@ -97,6 +98,7 @@ class BrandController extends Controller
             'currentSort',
             'faqs',
             'faqSchema',
+            'brandSchema',
             'relatedSolutions',
         ));
     }

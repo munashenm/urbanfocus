@@ -18,16 +18,48 @@ class SeoService
 {
     public function sitemapXml(): string
     {
-        return $this->rememberSitemap('sitemap.main.v5', function () {
+        return $this->rememberSitemap('sitemap.index.v1', function () {
+            $sitemaps = [
+                ['loc' => url('/sitemap-pages.xml')],
+                ['loc' => url('/sitemap-products.xml')],
+                ['loc' => url('/sitemap-images.xml')],
+            ];
+
+            $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+            $xml .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+            foreach ($sitemaps as $sitemap) {
+                $xml .= '<sitemap>';
+                $xml .= '<loc>'.$this->xmlEscape((string) $sitemap['loc']).'</loc>';
+                $xml .= '</sitemap>';
+            }
+            $xml .= '</sitemapindex>';
+
+            return $xml;
+        });
+    }
+
+    public function pagesSitemapXml(): string
+    {
+        return $this->rememberSitemap('sitemap.pages.v1', function () {
             $urls = $this->baseUrls();
 
             Category::where('is_active', true)->visibleInCatalog()->with('parent')->get()->each(function (Category $category) use (&$urls) {
                 $urls[] = [
                     'loc' => $category->url(),
+                    'lastmod' => $category->updated_at?->toAtomString(),
                     'changefreq' => 'weekly',
                     'priority' => $category->parent_id ? '0.75' : '0.8',
                 ];
             });
+
+            return $this->buildUrlset($urls, includeImages: false);
+        });
+    }
+
+    public function productsSitemapXml(): string
+    {
+        return $this->rememberSitemap('sitemap.products.v1', function () {
+            $urls = [];
 
             Product::query()
                 ->where('is_active', true)
@@ -62,20 +94,92 @@ class SeoService
 
     public function robotsTxt(): string
     {
-        $lines = [
-            'User-agent: *',
-            'Allow: /',
+        $host = parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'www.urbanfocus.co.za';
+        $disallow = $this->robotsDisallowLines();
+        $agents = array_values(array_unique(array_merge(
+            ['*'],
+            config('seo.ai_crawlers', [])
+        )));
+
+        $blocks = [];
+        foreach ($agents as $agent) {
+            $block = ['User-agent: '.$agent, 'Allow: /'];
+            if ($keyFile = $this->indexNowKeyPath()) {
+                $block[] = 'Allow: '.$keyFile;
+            }
+            $block[] = 'Allow: /llms.txt';
+            $block = array_merge($block, $disallow);
+            $blocks[] = implode("\n", $block);
+        }
+
+        $footer = [
+            'Host: '.$host,
+            'Sitemap: '.url('/sitemap.xml'),
         ];
 
+        return implode("\n\n", $blocks)."\n\n".implode("\n", $footer)."\n";
+    }
+
+    public function llmsTxt(): string
+    {
+        $entity = config('seo.entity', []);
+        $name = $entity['legal_name'] ?? config('app.name', 'Urban Focus');
+        $site = rtrim((string) ($entity['website'] ?? config('app.url')), '/');
+
+        $lines = [
+            '# '.$name,
+            '',
+            $entity['description'] ?? config('seo.defaults.description'),
+            '',
+            '> Website: '.$site.'/',
+            '> Market: South Africa (nationwide delivery from Centurion, Gauteng)',
+            '> Audience: '.($entity['audience'] ?? 'businesses, integrators, ISPs, schools and public-sector buyers'),
+            '',
+            '## What Urban Focus sells',
+            '',
+            '- Enterprise and SMB networking (Ubiquiti UniFi, MikroTik, TP-Link, fibre, PoE, switching)',
+            '- Business laptops, desktops, servers and storage',
+            '- CCTV, access control and security electronics',
+            '- Specialist IT: hardware security keys, industrial IoT, private cloud and software licensing',
+            '',
+            '## Important URLs',
+            '',
+            '- Home: '.$site.'/',
+            '- Shop: '.$site.'/shop',
+            '- Brands: '.$site.'/brands',
+            '- About: '.$site.'/about',
+            '- Contact: '.$site.'/contact',
+            '- Corporate procurement: '.$site.'/b2b/procurement',
+            '- Request a quote: '.$site.'/b2b/quote',
+            '- Knowledge Centre: '.$site.'/knowledge-centre',
+            '- Sitemap: '.$site.'/sitemap.xml',
+            '',
+            'Prices are in South African Rand (ZAR) and include VAT where applicable.',
+            'VAT invoices, nationwide courier delivery and formal quotations are available.',
+        ];
+
+        return implode("\n", $lines)."\n";
+    }
+
+    public function indexNowKeyPath(): ?string
+    {
+        $key = trim((string) config('seo.indexing.indexnow_key', ''));
+        if ($key === '' || ! preg_match('/^[A-Za-z0-9\-]{8,128}$/', $key)) {
+            return null;
+        }
+
+        return '/'.$key.'.txt';
+    }
+
+    /** @return list<string> */
+    protected function robotsDisallowLines(): array
+    {
+        $lines = [];
         foreach (config('seo.robots_disallow', []) as $path) {
             $lines[] = 'Disallow: '.$path;
         }
 
-        $lines[] = '';
-        $lines[] = 'Sitemap: '.url('/sitemap.xml');
-        $lines[] = 'Sitemap: '.url('/sitemap-images.xml');
-
-        return implode("\n", $lines);
+        return $lines;
     }
 
     /** @return list<array<string, mixed>> */
@@ -171,11 +275,35 @@ class SeoService
             '@context' => 'https://schema.org',
             '@type' => 'Organization',
             'name' => config('app.name'),
+            'legalName' => config('seo.entity.legal_name', config('app.name')),
+            'alternateName' => ['Urban Focus South Africa', 'Urban Focus IT'],
             'url' => rtrim((string) config('app.url'), '/'),
             'logo' => asset('images/logo-stacked.png'),
+            'image' => asset('images/logo-stacked.png'),
+            'description' => config('seo.entity.description', config('seo.defaults.description')),
             'email' => config('business.email'),
             'telephone' => '+'.ltrim((string) config('business.phone_tel'), '+'),
             'address' => $this->postalAddress(),
+            'areaServed' => [
+                '@type' => 'Country',
+                'name' => 'South Africa',
+            ],
+            'knowsAbout' => [
+                'Enterprise networking',
+                'Ubiquiti UniFi',
+                'MikroTik',
+                'Business laptops',
+                'CCTV',
+                'IT procurement',
+            ],
+            'contactPoint' => [
+                '@type' => 'ContactPoint',
+                'telephone' => '+'.ltrim((string) config('business.phone_tel'), '+'),
+                'email' => config('business.email'),
+                'contactType' => 'sales',
+                'areaServed' => 'ZA',
+                'availableLanguage' => ['en', 'en-ZA'],
+            ],
         ];
 
         if ($sameAs !== []) {
@@ -185,6 +313,59 @@ class SeoService
         return $schema;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function brandSchema(Brand $brand): array
+    {
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Brand',
+            'name' => $brand->name,
+            'url' => route('brands.show', $brand),
+            'description' => $brand->seoDescription(),
+        ];
+
+        if ($brand->logo) {
+            $schema['logo'] = asset($brand->logo);
+        }
+
+        if ($brand->website) {
+            $schema['sameAs'] = [$brand->website];
+        }
+
+        return $schema;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function aboutPageSchema(): array
+    {
+        $org = $this->organizationSchema();
+        unset($org['@context']);
+
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'AboutPage',
+            'name' => 'About Urban Focus',
+            'url' => route('about'),
+            'description' => config('seo.entity.description', config('seo.defaults.description')),
+            'inLanguage' => 'en-ZA',
+            'isPartOf' => [
+                '@type' => 'WebSite',
+                'name' => config('app.name'),
+                'url' => rtrim((string) config('app.url'), '/'),
+            ],
+            'about' => $org,
+            'mainEntity' => $org,
+            'breadcrumb' => $this->breadcrumbSchema([
+                ['name' => 'Home', 'url' => route('home')],
+                ['name' => 'About Urban Focus', 'url' => route('about')],
+            ]),
+        ];
+    }
+
     public function websiteSchema(): array
     {
         return [
@@ -192,6 +373,13 @@ class SeoService
             '@type' => 'WebSite',
             'name' => config('app.name'),
             'url' => rtrim((string) config('app.url'), '/'),
+            'description' => config('seo.entity.description', config('seo.defaults.description')),
+            'inLanguage' => 'en-ZA',
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => config('app.name'),
+                'url' => rtrim((string) config('app.url'), '/'),
+            ],
             'potentialAction' => [
                 '@type' => 'SearchAction',
                 'target' => route('shop.index').'?q={search_term_string}',
@@ -324,7 +512,20 @@ class SeoService
 
     public function clearCache(): void
     {
-        foreach (['sitemap.xml', 'sitemap-images.xml', 'sitemap.main.v2', 'sitemap.main.v3', 'sitemap.main.v4', 'sitemap.main.v5', 'sitemap.images.v2', 'sitemap.images.v3'] as $key) {
+        foreach ([
+            'sitemap.xml',
+            'sitemap-images.xml',
+            'sitemap.main.v2',
+            'sitemap.main.v3',
+            'sitemap.main.v4',
+            'sitemap.main.v5',
+            'sitemap.main.v6',
+            'sitemap.index.v1',
+            'sitemap.pages.v1',
+            'sitemap.products.v1',
+            'sitemap.images.v2',
+            'sitemap.images.v3',
+        ] as $key) {
             Cache::forget($key);
         }
 
@@ -361,19 +562,6 @@ class SeoService
             Http::timeout(5)->get('https://www.bing.com/ping?sitemap='.urlencode($sitemap));
         } catch (\Throwable) {
             // Non-blocking.
-        }
-
-        $indexNowKey = config('seo.indexing.indexnow_key');
-        if ($indexNowKey) {
-            try {
-                Http::timeout(5)->post('https://api.indexnow.org/indexnow', [
-                    'host' => parse_url(config('app.url'), PHP_URL_HOST),
-                    'key' => $indexNowKey,
-                    'urlList' => [$sitemap, url('/')],
-                ]);
-            } catch (\Throwable) {
-                // Non-blocking.
-            }
         }
     }
 
@@ -414,6 +602,7 @@ class SeoService
             Brand::where('is_active', true)->get()->each(function (Brand $brand) use (&$urls) {
                 $urls[] = [
                     'loc' => route('brands.show', $brand),
+                    'lastmod' => $brand->updated_at?->toAtomString(),
                     'changefreq' => 'weekly',
                     'priority' => '0.75',
                 ];

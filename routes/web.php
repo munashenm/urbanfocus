@@ -146,8 +146,18 @@ Route::middleware('auth')->get('/orders/{order}/invoice', [InvoiceController::cl
 Route::get('/rss.xml', [SeoController::class, 'blogRss'])->name('feeds.rss');
 Route::get('/facebook-feed.xml', [SeoController::class, 'facebookCatalog'])->name('feeds.facebook');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/sitemap-pages.xml', [SeoController::class, 'pagesSitemap'])->name('sitemap.pages');
+Route::get('/sitemap-products.xml', [SeoController::class, 'productsSitemap'])->name('sitemap.products');
 Route::get('/sitemap-images.xml', [SeoController::class, 'imageSitemap'])->name('sitemap.images');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
+Route::get('/llms.txt', [SeoController::class, 'llms'])->name('llms');
+Route::get('/BingSiteAuth.xml', [SeoController::class, 'bingSiteAuth'])->name('bing.siteauth');
+Route::get('/{googleFile}', [SeoController::class, 'googleHtmlVerification'])
+    ->where('googleFile', 'google[A-Za-z0-9]+\.html')
+    ->name('google.html-verification');
+Route::get('/{indexNowKey}.txt', [SeoController::class, 'indexNowKey'])
+    ->where('indexNowKey', '[A-Za-z0-9\-]{8,128}')
+    ->name('indexnow.key');
 Route::get('/feeds/google-merchant.xml', [SeoController::class, 'googleMerchantFeed'])->name('feeds.google');
 Route::get('/feeds/google.xml', [SeoController::class, 'googleMerchantFeed'])->name('feeds.google.alias');
 Route::get('/feeds/pricecheck.csv', [SeoController::class, 'priceCheckFeed'])->name('feeds.pricecheck');

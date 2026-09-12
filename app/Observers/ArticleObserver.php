@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Article;
 use App\Services\Blog\BlogAutomationService;
 use App\Services\Marketing\MakeWebhookService;
+use App\Services\IndexNowService;
 use App\Services\SeoService;
 use App\Services\Social\SocialPostingService;
 
@@ -15,6 +16,7 @@ class ArticleObserver
         protected SeoService $seo,
         protected BlogAutomationService $blogAutomation,
         protected MakeWebhookService $make,
+        protected IndexNowService $indexNow,
     ) {}
 
     public function saving(Article $article): void
@@ -39,6 +41,14 @@ class ArticleObserver
             $this->seo->clearCache();
         } catch (\Throwable) {
             // Non-blocking.
+        }
+
+        if ($article->is_published) {
+            try {
+                $this->indexNow->notify(route('blog.show', $article));
+            } catch (\Throwable) {
+                // Non-blocking.
+            }
         }
     }
 }

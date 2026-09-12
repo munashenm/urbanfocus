@@ -13,6 +13,9 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # Serve crawler files from Laravel even if leftover static copies exist in public_html.
+    RewriteRule ^(robots\.txt|llms\.txt|BingSiteAuth\.xml|sitemap(-[a-z]+)?\.xml)$ index.php [L]
+
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$

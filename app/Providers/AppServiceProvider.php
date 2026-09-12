@@ -3,10 +3,15 @@
 namespace App\Providers;
 
 use App\Models\Article;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use App\Observers\ArticleObserver;
+use App\Observers\BrandObserver;
+use App\Observers\CategoryObserver;
 use App\Observers\ProductObserver;
 use App\Services\CartService;
+use App\Services\IndexNowService;
 use App\Support\PublicAssetSync;
 use App\View\Composers\LayoutComposer;
 use Illuminate\Pagination\Paginator;
@@ -27,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->app->singleton(CartService::class);
+        $this->app->singleton(IndexNowService::class);
     }
 
     public function boot(): void
@@ -48,6 +54,8 @@ class AppServiceProvider extends ServiceProvider
 
         Product::observe(ProductObserver::class);
         Article::observe(ArticleObserver::class);
+        Category::observe(CategoryObserver::class);
+        Brand::observe(BrandObserver::class);
 
         Blade::if('permission', fn (string $permission): bool => auth()->check() && auth()->user()->hasPermission($permission));
         Blade::if('anypermission', fn (...$permissions): bool => auth()->check() && auth()->user()->hasAnyPermission($permissions));

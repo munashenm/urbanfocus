@@ -170,7 +170,14 @@ class Product extends Model
             return $name.$suffix;
         }
 
-        return Str::limit($name, max(20, $max - mb_strlen($suffix)), '').$suffix;
+        $budget = max(20, $max - mb_strlen($suffix));
+        $trimmed = Str::limit($name, $budget, '');
+        $space = mb_strrpos($trimmed, ' ');
+        if ($space !== false && $space >= 16) {
+            $trimmed = mb_substr($trimmed, 0, $space);
+        }
+
+        return rtrim($trimmed, " \t-|,").$suffix;
     }
 
     public function seoDescription(): string
@@ -827,6 +834,42 @@ class Product extends Model
         return $specs;
     }
 
+    /**
+     * Crawlable audience copy for search engines and AI assistants.
+     *
+     * @return list<string>
+     */
+    public function buyerFitLines(): array
+    {
+        $html = (string) $this->storefrontDescriptionHtml();
+        if ($html !== '' && preg_match('/suitable for\s*<\/h[1-6]>\s*<ul>(.*?)<\/ul>/is', $html, $match)) {
+            preg_match_all('/<li\b[^>]*>(.*?)<\/li>/is', $match[1], $items);
+            $lines = [];
+            foreach ($items[1] ?? [] as $item) {
+                $text = trim(html_entity_decode(strip_tags($item), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+                if ($text !== '') {
+                    $lines[] = $text;
+                }
+            }
+            if ($lines !== []) {
+                return array_values(array_unique(array_slice($lines, 0, 8)));
+            }
+        }
+
+        $category = $this->category?->name;
+        $subject = $category ?: ($this->brand ? $this->brand.' hardware' : 'IT hardware');
+
+        $lines = [
+            'South African businesses, integrators and procurement teams buying '.$subject.' with VAT invoices and nationwide courier delivery.',
+        ];
+
+        if ($this->brand) {
+            $lines[] = $this->brand.' customers who need a local IT supplier rather than importing this product themselves.';
+        }
+
+        return $lines;
+    }
+
     public function toSchemaArray(): array
     {
         $schema = [
@@ -888,6 +931,25 @@ class Product extends Model
 
         if ($this->model_number) {
             $schema['model'] = $this->model_number;
+        }
+
+        $properties = [];
+        foreach (array_slice($this->specificationsList(), 0, 12, true) as $name => $value) {
+            if (! is_scalar($value)) {
+                continue;
+            }
+            $text = trim((string) $value);
+            if ($text === '') {
+                continue;
+            }
+            $properties[] = [
+                '@type' => 'PropertyValue',
+                'name' => (string) $name,
+                'value' => $text,
+            ];
+        }
+        if ($properties !== []) {
+            $schema['additionalProperty'] = $properties;
         }
 
         return $schema;

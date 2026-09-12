@@ -25,6 +25,17 @@ class PublicAssetSync
             return;
         }
 
+        $htaccessSource = $sourceRoot.'/.htaccess';
+        $htaccessTarget = $publicPath.'/.htaccess';
+        if (is_file($htaccessSource) && (! is_file($htaccessTarget) || (int) filemtime($htaccessSource) > (int) filemtime($htaccessTarget))) {
+            self::copyFile($htaccessSource, $htaccessTarget);
+        }
+
+        $staleRobots = $publicPath.'/robots.txt';
+        if (is_file($staleRobots)) {
+            @unlink($staleRobots);
+        }
+
         $canarySource = $sourceRoot.'/css/admin.css';
         $canaryTarget = $publicPath.'/css/admin.css';
 
@@ -74,8 +85,15 @@ class PublicAssetSync
             self::copyDirectory($sourceRoot.'/'.$dir, $publicPath.'/'.$dir);
         }
 
-        foreach (['favicon.svg', 'favicon.png', 'robots.txt'] as $file) {
+        foreach (['favicon.svg', 'favicon.png', '.htaccess'] as $file) {
             self::copyFile($sourceRoot.'/'.$file, $publicPath.'/'.$file);
+        }
+
+        // Never copy a static robots.txt over the Laravel route. Remove leftovers
+        // so Apache does not serve an old WooCommerce file.
+        $staleRobots = $publicPath.'/robots.txt';
+        if (is_file($staleRobots)) {
+            @unlink($staleRobots);
         }
     }
 

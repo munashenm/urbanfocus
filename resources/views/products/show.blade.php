@@ -13,6 +13,19 @@
 @section('twitter_card', 'summary_large_image')
 @endif
 
+@push('head')
+<meta property="product:price:amount" content="{{ number_format((float) $product->effective_price, 2, '.', '') }}">
+<meta property="product:price:currency" content="ZAR">
+<meta property="product:availability" content="{{ $product->schemaAvailabilityUrl() }}">
+<meta property="product:condition" content="new">
+@if($product->brand)
+<meta property="product:brand" content="{{ $product->brand }}">
+@endif
+@if($product->sku)
+<meta property="product:retailer_item_id" content="{{ $product->sku }}">
+@endif
+@endpush
+
 @section('content')
 <div class="container py-4 pb-5 mb-lg-0 mb-5">
     <nav aria-label="breadcrumb">
@@ -56,6 +69,8 @@
             <div class="d-flex flex-wrap gap-3 small text-muted mb-3">
                 @if($product->sku)<span>SKU: <strong>{{ $product->sku }}</strong></span>@endif
                 @if($product->model_number)<span>Model: <strong>{{ $product->model_number }}</strong></span>@endif
+                <span>Condition: <strong>New</strong></span>
+                <span>Currency: <strong>ZAR</strong></span>
             </div>
 
             @php
@@ -171,6 +186,16 @@
                     <p class="mb-0"><strong>Warranty:</strong> {{ $product->warrantyLabel() }}</p>
                 @endif
             </div>
+            @if(count($product->buyerFitLines()))
+            <div class="checkout-card mt-4">
+                <h2 class="h5 fw-bold mb-3">Who this product is suitable for</h2>
+                <ul class="mb-0">
+                    @foreach($product->buyerFitLines() as $line)
+                        <li>{{ $line }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
         </div>
         <div class="col-lg-5">
             @if(count($specs = $product->specificationsList()))

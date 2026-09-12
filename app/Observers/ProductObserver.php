@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Mail\LowStockAlert;
 use App\Models\Product;
 use App\Services\CatalogDeduper;
+use App\Services\IndexNowService;
 use App\Services\Marketing\MakeWebhookService;
 use App\Services\SeoService;
 use App\Services\Social\SocialPostingService;
@@ -19,6 +20,7 @@ class ProductObserver
         protected StockAlertService $stockAlerts,
         protected SeoService $seo,
         protected MakeWebhookService $make,
+        protected IndexNowService $indexNow,
     ) {}
 
     public function saved(Product $product): void
@@ -26,7 +28,7 @@ class ProductObserver
         $this->safe(fn () => $this->handleSocialQueue($product));
         $this->safe(fn () => $this->handleMakeWebhook($product));
         $this->safe(fn () => $this->handleStockAlerts($product));
-        $this->safe(fn () => $this->seo->clearCache());
+        $this->safe(fn () => $this->handleSearchIndex($product));
         $this->safe(fn () => app(CatalogDeduper::class)->clearCache());
     }
 
@@ -34,6 +36,11 @@ class ProductObserver
     {
         $this->safe(fn () => $this->seo->clearCache());
         $this->safe(fn () => app(CatalogDeduper::class)->clearCache());
+        $this->safe(function () use ($product) {
+            if ($product->slug) {
+                $this->indexNow->notify(route('products.show', $product));
+            }
+        });
     }
 
     protected function handleSocialQueue(Product $product): void
@@ -85,6 +92,53 @@ class ProductObserver
             && $previous > $threshold) {
             $this->sendLowStockAlert($product);
         }
+    }
+
+    protected function handleSearchIndex(Product $product): void
+    {
+        if (! $this->isSearchRelevantChange($product)) {
+            return;
+        }
+
+        $this->seo->clearCache();
+
+        if (! $product->is_active && ! $product->wasChanged('is_active')) {
+            return;
+        }
+
+        $this->indexNow->notify(route('products.show', $product));
+
+        if ($product->category) {
+            $this->indexNow->notify($product->category->url());
+        }
+    }
+
+    protected function isSearchRelevantChange(Product $product): bool
+    {
+        if ($product->wasRecentlyCreated) {
+            return true;
+        }
+
+        return $product->wasChanged([
+            'name',
+            'slug',
+            'price',
+            'sale_price',
+            'stock_quantity',
+            'in_stock',
+            'is_active',
+            'short_description',
+            'description',
+            'brand',
+            'sku',
+            'barcode',
+            'model_number',
+            'category_id',
+            'meta_title',
+            'meta_description',
+            'warranty_months',
+            'specifications',
+        ]);
     }
 
     protected function sendLowStockAlert(Product $product): void

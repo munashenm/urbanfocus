@@ -11,9 +11,18 @@ return [
         'max_description_length' => 160,
     ],
 
+    'entity' => [
+        'legal_name' => 'Urban Focus',
+        'website' => 'https://www.urbanfocus.co.za',
+        'description' => 'Urban Focus is a South African IT hardware, electronics and technology supplier. We sell networking equipment, business laptops, servers, CCTV, fibre, VoIP and specialist IT to businesses, integrators, ISPs, schools and public-sector buyers, with nationwide delivery from Centurion, Gauteng.',
+        'audience' => 'businesses, integrators, ISPs, schools, resellers and public-sector buyers across South Africa',
+        'market' => 'South Africa',
+    ],
+
     'verification' => [
         'google' => env('GOOGLE_SITE_VERIFICATION'),
         'bing' => env('BING_SITE_VERIFICATION'),
+        'google_html_file' => env('GOOGLE_HTML_VERIFICATION'),
     ],
 
     'analytics' => [
@@ -31,7 +40,21 @@ return [
 
     'indexing' => [
         'indexnow_key' => env('INDEXNOW_KEY'),
+        'indexnow_enabled' => filter_var(env('INDEXNOW_ENABLED', true), FILTER_VALIDATE_BOOL),
+        'indexnow_endpoint' => env('INDEXNOW_ENDPOINT', 'https://api.indexnow.org/indexnow'),
         'ping_search_engines' => (bool) env('SEO_PING_SEARCH_ENGINES', false),
+    ],
+
+    'ai_crawlers' => [
+        'Googlebot',
+        'Bingbot',
+        'OAI-SearchBot',
+        'ChatGPT-User',
+        'GPTBot',
+        'Google-Extended',
+        'ClaudeBot',
+        'PerplexityBot',
+        'Applebot',
     ],
 
     'sa_keywords' => [
@@ -71,6 +94,8 @@ return [
         '/register',
         '/password',
         '/api',
+        '/search',
+        '/track-order',
         '/feeds/facebook',
         '/*?q=',
         '/*?*q=',

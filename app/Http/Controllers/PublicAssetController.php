@@ -12,7 +12,6 @@ class PublicAssetController extends Controller
     private const ALLOWED_ROOT_FILES = [
         'favicon.svg',
         'favicon.png',
-        'robots.txt',
     ];
 
     public function show(string $path, ?string $prefix = null): BinaryFileResponse|Response

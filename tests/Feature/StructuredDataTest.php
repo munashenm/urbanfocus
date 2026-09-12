@@ -44,6 +44,33 @@ class StructuredDataTest extends TestCase
         $this->assertIsString($collection['mainEntity']['itemListElement'][0]['url']);
     }
 
+    public function test_product_json_ld_includes_offer_brand_and_zar_price(): void
+    {
+        $product = Product::factory()->create([
+            'name' => 'UniFi Switch Ultra',
+            'slug' => 'unifi-switch-ultra-schema',
+            'sku' => 'USW-Ultra',
+            'brand' => 'Ubiquiti',
+            'price' => 3499,
+            'specifications' => ['PoE' => 'Yes', 'Ports' => '8'],
+        ]);
+
+        $html = $this->get(route('products.show', $product))->assertOk()->getContent();
+        $productSchema = $this->firstSchemaOfType($this->jsonLdBlocks($html), 'Product');
+
+        $this->assertIsArray($productSchema);
+        $this->assertSame('UniFi Switch Ultra', $productSchema['name']);
+        $this->assertSame('USW-Ultra', $productSchema['sku']);
+        $this->assertSame('Brand', $productSchema['brand']['@type'] ?? null);
+        $this->assertSame('Ubiquiti', $productSchema['brand']['name'] ?? null);
+        $this->assertSame('Offer', $productSchema['offers']['@type'] ?? null);
+        $this->assertSame('ZAR', $productSchema['offers']['priceCurrency'] ?? null);
+        $this->assertSame('3499.00', $productSchema['offers']['price'] ?? null);
+        $this->assertNotEmpty($productSchema['offers']['availability'] ?? null);
+        $this->assertSame('https://schema.org/NewCondition', $productSchema['offers']['itemCondition'] ?? null);
+        $this->assertNotEmpty($productSchema['additionalProperty'] ?? []);
+    }
+
     public function test_shop_collection_json_ld_does_not_put_item_count_on_collection_page(): void
     {
         Product::factory()->create([
