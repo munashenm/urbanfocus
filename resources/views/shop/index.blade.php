@@ -17,6 +17,10 @@
         </ol>
     </nav>
 
+    @if(!empty($showCategoryDirectory) && $categories->count())
+        @include('partials.shop-category-directory', ['categories' => $categories])
+    @endif
+
     <div class="row g-4">
         @include('partials.shop-filters', ['showCategoryFilter' => true])
 

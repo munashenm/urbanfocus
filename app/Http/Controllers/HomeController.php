@@ -27,7 +27,7 @@ class HomeController extends Controller
             fn () => $this->homepageProductRows($limit)
         );
 
-        $categories = $this->remember('home.categories_v2', fn () => $this->homepageCategories(12));
+        $categories = $this->remember('home.categories_v4', fn () => $this->homepageCategories());
 
         if ($featuredProducts->count() < 4) {
             $featuredProducts = collect();
@@ -58,14 +58,13 @@ class HomeController extends Controller
         }
 
         $heroSlides = config('homepage.hero_slides', []);
-        $solutionBlocks = $this->resolveSolutionBlocks();
         $categoryIcons = config('homepage.category_icons', []);
         $sectionBrands = $this->remember('home.section_brands', fn () => $this->sectionBrands());
 
         return view('home', compact(
             'featuredProducts', 'popularProducts', 'topSellers', 'networkingProducts',
             'laptopProducts', 'securityProducts', 'specialistProducts', 'categories', 'brands', 'banners',
-            'articles', 'featuredArticle', 'heroSlides', 'solutionBlocks', 'categoryIcons', 'sectionBrands'
+            'articles', 'featuredArticle', 'heroSlides', 'categoryIcons', 'sectionBrands'
         ));
     }
 
@@ -544,25 +543,36 @@ class HomeController extends Controller
         return app(CatalogDeduper::class)->uniqueCollection($this->rejectExcludedAvailability($collected))->take($limit);
     }
 
-    protected function homepageCategories(int $limit)
+    /**
+     * Six core IT tiles for the homepage. Display labels come from config;
+     * each tile still links to the canonical category URL.
+     *
+     * @return Collection<int, object{category: Category, label: string, blurb: string}>
+     */
+    protected function homepageCategories(): Collection
     {
-        $categories = Category::where('is_active', true)
-            ->whereNull('parent_id')
-            ->visibleInCatalog()
-            ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])
-            ->orderBy('sort_order')
-            ->get();
+        $mapper = app(CategoryMapperService::class);
+        $tiles = collect();
 
-        $priority = config('homepage.category_priority', []);
-        if ($priority === []) {
-            return $categories->take($limit)->values();
+        foreach (config('homepage.shop_by_category', []) as $tile) {
+            $slug = (string) ($tile['slug'] ?? '');
+            if ($slug === '') {
+                continue;
+            }
+
+            $category = $mapper->resolveCategoryForFilter($slug);
+            if (! $category || ! $category->is_active) {
+                continue;
+            }
+
+            $tiles->push((object) [
+                'category' => $category,
+                'label' => (string) ($tile['label'] ?? $category->name),
+                'blurb' => (string) ($tile['blurb'] ?? ''),
+            ]);
         }
 
-        return $categories->sortBy(function (Category $category) use ($priority) {
-            $index = array_search($category->slug, $priority, true);
-
-            return $index === false ? 1000 + (int) $category->sort_order : $index;
-        })->take($limit)->values();
+        return $tiles->values();
     }
 
     /** @param list<string> $slugs @return list<string> */
@@ -620,26 +630,6 @@ class HomeController extends Controller
         }
 
         return array_values(array_unique($ids));
-    }
-
-    /** @return list<array<string, mixed>> */
-    protected function resolveSolutionBlocks(): array
-    {
-        $mapper = app(CategoryMapperService::class);
-
-        return collect(config('homepage.solution_blocks', []))
-            ->map(function (array $block) use ($mapper) {
-                $path = $block['category_path'] ?? $block['category_slug'] ?? '';
-                $category = $path !== '' ? $mapper->resolveCategoryForFilter($path) : null;
-                if ($category) {
-                    $category->loadMissing('parent');
-                }
-                $block['category'] = $category;
-                $block['url'] = $category?->url() ?? ($path !== '' ? route('shop.index', ['category' => $path]) : route('shop.index'));
-
-                return $block;
-            })
-            ->all();
     }
 
     protected function remember(string $key, callable $callback, int $minutes = 10): mixed

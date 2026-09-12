@@ -216,6 +216,88 @@ class HomepageCatalogueTest extends TestCase
         $this->assertStringContainsString('Hardware Security Keys', $html);
     }
 
+    public function test_homepage_shows_six_core_category_tiles_not_the_full_tree(): void
+    {
+        Cache::flush();
+        app(CategoryMapperService::class)->ensureCanonicalTree();
+
+        Brand::create([
+            'name' => 'Ubiquiti',
+            'slug' => 'ubiquiti',
+            'logo' => 'images/brands/ubiquiti.svg',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        Product::factory()->create([
+            'name' => 'UniFi Switch Ultra',
+            'brand' => 'Ubiquiti',
+        ]);
+
+        $html = $this->get(route('home'))->assertOk()->getContent();
+        $tiles = $this->htmlSection($html, 'id="shop-by-category"', '</section>');
+
+        $this->assertSame(6, substr_count($tiles, 'category-card--compact'));
+        $this->assertStringContainsString('Networking Equipment', $tiles);
+        $this->assertStringContainsString('Laptops &amp; PCs', $tiles);
+        $this->assertStringContainsString('CCTV &amp; Security', $tiles);
+        $this->assertStringContainsString('Software Licences', $tiles);
+        $this->assertStringContainsString('Digital Displays', $tiles);
+        $this->assertStringContainsString('Security Keys &amp; IoT', $tiles);
+        $this->assertStringNotContainsString('Specialist Solutions', $tiles);
+        $this->assertStringNotContainsString('Smart Solutions', $tiles);
+        $this->assertStringNotContainsString('Gaming &amp; Entertainment', $tiles);
+        $this->assertStringNotContainsString('subcategories', $tiles);
+        $this->assertStringNotContainsString('solution-block-card', $html);
+
+        foreach (['networking-connectivity', 'computing-office', 'security-surveillance', 'software-licences', 'digital-signage', 'specialist-technology'] as $slug) {
+            $category = Category::query()->where('slug', $slug)->whereNull('parent_id')->firstOrFail();
+            $this->assertStringContainsString($category->url(), $tiles);
+        }
+
+        $categoryPos = strpos($html, 'id="shop-by-category"');
+        $brandPos = strpos($html, 'Popular Brands');
+        $b2bPos = strpos($html, 'Corporate, Government');
+        $productsPos = strpos($html, 'Top Selling in South Africa');
+
+        $this->assertNotFalse($categoryPos);
+        $this->assertNotFalse($brandPos);
+        $this->assertNotFalse($b2bPos);
+        $this->assertLessThan($brandPos, $categoryPos);
+        $this->assertLessThan($b2bPos, $brandPos);
+        $this->assertLessThan($productsPos, $b2bPos);
+    }
+
+    public function test_shop_page_lists_the_full_category_hierarchy_with_canonical_urls(): void
+    {
+        Cache::flush();
+        app(CategoryMapperService::class)->ensureCanonicalTree();
+
+        $html = $this->get(route('shop.index'))->assertOk()->getContent();
+        $directory = $this->htmlSection($html, 'id="shop-category-directory"', '</section>');
+
+        $this->assertStringContainsString('Browse all categories', $directory);
+        $this->assertStringContainsString('Specialist Solutions', $directory);
+        $this->assertStringContainsString('Smart Solutions', $directory);
+        $this->assertStringContainsString('Gaming &amp; Entertainment', $directory);
+        $this->assertStringContainsString('Solar &amp; Power Solutions', $directory);
+
+        $parent = Category::query()->where('slug', 'specialist-solutions')->whereNull('parent_id')->firstOrFail();
+        $child = Category::query()->where('slug', 'private-cloud-solutions')->where('parent_id', $parent->id)->firstOrFail();
+
+        $this->assertStringContainsString($parent->url(), $directory);
+        $this->assertStringContainsString($child->url(), $directory);
+        $this->assertStringContainsString('Private Cloud Solutions', $directory);
+
+        $this->get($parent->url())->assertOk();
+        $this->get($child->url())->assertOk();
+        $this->get(route('categories.show', 'networking-connectivity'))->assertOk();
+        $this->get(route('categories.show', 'computing-office'))->assertOk();
+
+        $this->get(route('shop.index', ['q' => 'unifi']))
+            ->assertOk()
+            ->assertDontSee('id="shop-category-directory"', false);
+    }
+
     public function test_homepage_does_not_show_eu_stock_or_special_order_europe_products(): void
     {
         Cache::flush();
@@ -325,6 +407,8 @@ class HomepageCatalogueTest extends TestCase
         $this->assertNotFalse($start, "Missing homepage section: {$title}");
 
         $nextHeadings = [
+            'Shop by Category',
+            'Popular Brands',
             'Top Selling in South Africa',
             'Specialist Technology',
             'Top Sellers',
@@ -351,5 +435,15 @@ class HomepageCatalogueTest extends TestCase
         }
 
         return substr_count(substr($html, $start, $end - $start), 'class="product-card h-100"');
+    }
+
+    protected function htmlSection(string $html, string $startNeedle, string $endNeedle): string
+    {
+        $start = strpos($html, $startNeedle);
+        $this->assertNotFalse($start, "Missing section marker: {$startNeedle}");
+        $end = strpos($html, $endNeedle, $start);
+        $this->assertNotFalse($end, "Missing section closer after {$startNeedle}");
+
+        return substr($html, $start, $end - $start);
     }
 }

@@ -83,7 +83,12 @@ class ShopController extends Controller
         $this->browse->applySort($query, $sort, $searchTerm !== '' ? $searchTerm : null);
 
         $products = $query->paginate(24)->withQueryString();
-        $categories = Category::where('is_active', true)->whereNull('parent_id')->visibleInCatalog()->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])->orderBy('sort_order')->get();
+        $categories = Category::where('is_active', true)
+            ->whereNull('parent_id')
+            ->visibleInCatalog()
+            ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')->with('parent')])
+            ->orderBy('sort_order')
+            ->get();
         $brands = Product::where('is_active', true)->whereNotNull('brand')->distinct()->orderBy('brand')->pluck('brand');
 
         $isParameterised = $request->hasAny([
@@ -105,6 +110,7 @@ class ShopController extends Controller
             'products' => $products,
             'categories' => $categories,
             'brands' => $brands,
+            'showCategoryDirectory' => ! $isParameterised,
             'currentSort' => $sort,
             'paginationMeta' => $paginationMeta,
             'breadcrumbSchema' => $this->seo->breadcrumbSchema([

@@ -85,8 +85,35 @@
     </div>
 </section>
 
+@if($categories->count())
+<section id="shop-by-category" class="py-4 bg-light shop-by-category">
+    <div class="container">
+        @include('partials.section-header', [
+            'title' => 'Shop by Category',
+            'subtitle' => 'Core IT products for business, installers and resellers.',
+            'url' => route('shop.index'),
+            'linkLabel' => 'All categories',
+        ])
+        <div class="row g-3">
+            @foreach($categories as $tile)
+                @php $category = $tile->category; @endphp
+                <div class="col-6 col-md-4 col-lg-2">
+                    <a href="{{ $category->url() }}" class="category-card category-card--premium category-card--compact">
+                        <span class="category-card-icon">{{ $categoryIcons[$category->slug] ?? '📦' }}</span>
+                        <span class="category-card-title">{{ $tile->label }}</span>
+                        @if($tile->blurb !== '')
+                            <span class="category-card-sub">{{ $tile->blurb }}</span>
+                        @endif
+                    </a>
+                </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
 @if($brands->count())
-<section class="py-5 brand-showcase">
+<section class="py-4 brand-showcase">
     <div class="container">
         @include('partials.section-header', [
             'title' => 'Popular Brands',
@@ -99,49 +126,18 @@
 </section>
 @endif
 
-@if($categories->count())
-<section class="py-5 bg-light">
+<section class="py-4 b2b-cta">
     <div class="container">
-        @include('partials.section-header', [
-            'title' => 'Shop by Category',
-            'subtitle' => 'Professional IT categories for business, installers and resellers.',
-            'url' => route('shop.index'),
-        ])
-        <div class="row g-3">
-            @foreach($categories as $category)
-                <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-                    <a href="{{ $category->url() }}" class="category-card category-card--premium">
-                        <span class="category-card-icon">{{ $categoryIcons[$category->slug] ?? '📦' }}</span>
-                        <span class="category-card-title">{{ $category->name }}</span>
-                        @if($category->children->count())
-                            <span class="category-card-sub">{{ $category->children->count() }} subcategories</span>
-                        @endif
-                    </a>
-                </div>
-            @endforeach
-        </div>
-    </div>
-</section>
-@endif
-
-{{-- Solution blocks --}}
-<section class="py-5 solution-blocks">
-    <div class="container">
-        <div class="row g-4">
-            @foreach($solutionBlocks as $block)
-                @php
-                    $cat = $block['category'] ?? null;
-                    $iconKey = $cat?->slug ?? ($block['category_path'] ?? '');
-                @endphp
-                <div class="col-md-6 col-lg-3">
-                    <a href="{{ $block['url'] }}" class="solution-block-card">
-                        <span class="solution-block-icon">{{ $categoryIcons[$iconKey] ?? $categoryIcons[$cat?->parent?->slug ?? ''] ?? '⚡' }}</span>
-                        <h3 class="h5 fw-bold mb-1">{{ $block['title'] }}</h3>
-                        <p class="small text-muted mb-2">{{ $block['subtitle'] }}</p>
-                        <span class="solution-block-link">Browse →</span>
-                    </a>
-                </div>
-            @endforeach
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <h2 class="h3 fw-bold text-white mb-2">Corporate, Government &amp; Bulk Orders</h2>
+                <p class="text-white-50 mb-0">Dedicated account support, formal quotes, RFQ processing, bulk pricing and procurement assistance.</p>
+            </div>
+            <div class="col-lg-4 d-flex flex-wrap gap-2 justify-content-lg-end">
+                <a href="{{ route('b2b.quote') }}" class="btn btn-light">Request Quote</a>
+                <a href="{{ route('b2b.rfq') }}" class="btn btn-outline-light">Upload RFQ</a>
+                <a href="{{ route('b2b.procurement') }}" class="btn btn-outline-light">Procurement</a>
+            </div>
         </div>
     </div>
 </section>
@@ -249,25 +245,9 @@
                 @endforeach
             </div>
         @endif
-    </div>
-</section>
-@endif
-
-<section class="py-5 b2b-cta">
-    <div class="container">
-        <div class="row align-items-center g-4">
-            <div class="col-lg-8">
-                <h2 class="h3 fw-bold text-white mb-2">Corporate, Government &amp; Bulk Orders</h2>
-                <p class="text-white-50 mb-0">Dedicated account support, formal quotes, RFQ processing, bulk pricing and procurement assistance.</p>
-            </div>
-            <div class="col-lg-4 d-flex flex-wrap gap-2 justify-content-lg-end">
-                <a href="{{ route('b2b.quote') }}" class="btn btn-light">Request Quote</a>
-                <a href="{{ route('b2b.rfq') }}" class="btn btn-outline-light">Upload RFQ</a>
-                <a href="{{ route('b2b.procurement') }}" class="btn btn-outline-light">Procurement</a>
-            </div>
         </div>
-    </div>
-</section>
+    </section>
+@endif
 @endsection
 
 @push('schema')

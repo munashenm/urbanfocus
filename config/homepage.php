@@ -36,33 +36,6 @@ return [
         ],
     ],
 
-    'solution_blocks' => [
-        [
-            'title' => 'Specialist Technology',
-            'subtitle' => 'FIDO2 keys, PiKVM, private cloud & IoT',
-            'category_path' => 'specialist-technology',
-            'icon' => 'specialist',
-        ],
-        [
-            'title' => 'Networking Solutions',
-            'subtitle' => 'Switches, access points, routers & fibre',
-            'category_path' => 'networking-connectivity',
-            'icon' => 'network',
-        ],
-        [
-            'title' => 'Business Laptops',
-            'subtitle' => 'Corporate notebooks & mobile workstations',
-            'category_path' => 'computing-office/laptops',
-            'icon' => 'laptop',
-        ],
-        [
-            'title' => 'CCTV & Security',
-            'subtitle' => 'Cameras, NVRs & access control',
-            'category_path' => 'security-surveillance',
-            'icon' => 'security',
-        ],
-    ],
-
     'category_icons' => [
         'computing-office' => '💻',
         'networking-connectivity' => '🌐',
@@ -141,19 +114,57 @@ return [
     ],
 
     /*
-    | Shop-by-category tiles: South Africa IT demand first.
+    | Homepage shop-by-category tiles. Labels are product-oriented display
+    | names; slug still resolves the real category URL (unchanged for SEO).
+    | The full parent/child tree is shown on /shop, not here.
+    */
+    'shop_by_category' => [
+        [
+            'slug' => 'networking-connectivity',
+            'label' => 'Networking Equipment',
+            'blurb' => 'Switches, APs, routers and fibre',
+        ],
+        [
+            'slug' => 'computing-office',
+            'label' => 'Laptops & PCs',
+            'blurb' => 'Notebooks, desktops and monitors',
+        ],
+        [
+            'slug' => 'security-surveillance',
+            'label' => 'CCTV & Security',
+            'blurb' => 'Cameras, NVRs and access control',
+        ],
+        [
+            'slug' => 'software-licences',
+            'label' => 'Software Licences',
+            'blurb' => 'Microsoft, security and productivity',
+        ],
+        [
+            'slug' => 'digital-signage',
+            'label' => 'Digital Displays',
+            'blurb' => 'Signage, LED and interactive boards',
+        ],
+        [
+            'slug' => 'specialist-technology',
+            'label' => 'Security Keys & IoT',
+            'blurb' => 'FIDO2 keys, PiKVM and edge hardware',
+        ],
+    ],
+
+    /*
+    | Sort order for leftover parent-category listings (Shop directory, nav).
     */
     'category_priority' => [
-        'specialist-technology',
-        'software-licences',
-        'specialist-solutions',
         'networking-connectivity',
         'computing-office',
         'security-surveillance',
+        'software-licences',
+        'digital-signage',
+        'specialist-technology',
         'solar-power',
         'business-retail',
         'industrial-commercial',
-        'digital-signage',
+        'specialist-solutions',
     ],
 
     /*
