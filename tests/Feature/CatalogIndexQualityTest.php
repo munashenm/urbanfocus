@@ -128,12 +128,26 @@ class CatalogIndexQualityTest extends TestCase
             'sku' => 'IFP6550',
             'category_id' => $monitors->id,
         ]);
+        $networking = Category::query()->where('slug', 'networking-connectivity')->whereNull('parent_id')->firstOrFail();
+        $cables = Category::query()->where('slug', 'network-cables')->where('parent_id', $networking->id)->firstOrFail();
+        $wallCharger = Product::factory()->create([
+            'name' => 'Port 65W GaN wall charger & 2M EU USB-C cable',
+            'sku' => '900106',
+            'category_id' => $cables->id,
+        ]);
+        $lock = Product::factory()->create([
+            'name' => 'Dell N17 Keyed Laptop Security Lock',
+            'sku' => '461-AAFD',
+            'category_id' => $laptops->id,
+        ]);
 
         $result = app(CatalogIntegrityService::class)->applyHighConfidenceTaxonomyFixes();
-        $this->assertGreaterThanOrEqual(3, $result['fixed']);
+        $this->assertGreaterThanOrEqual(5, $result['fixed']);
 
         $this->assertSame($accessories->id, $charger->fresh()->category_id);
         $this->assertSame($accessories->id, $bag->fresh()->category_id);
+        $this->assertSame($accessories->id, $wallCharger->fresh()->category_id);
+        $this->assertSame($accessories->id, $lock->fresh()->category_id);
         $this->assertSame($boards->id, $board->fresh()->category_id);
     }
 

@@ -100,20 +100,18 @@ class CatalogIntegrityService
                     }
 
                     $highPath = $this->highConfidencePath($product);
-                    if ($highPath) {
-                        $targetId = $this->categories->resolveCategoryId($highPath);
-                        if ($targetId && $targetId !== (int) $product->category_id) {
-                            $taxonomyHighCount++;
-                            if (count($taxonomyHigh) < 80) {
-                                $taxonomyHigh[] = [
-                                    'id' => $product->id,
-                                    'sku' => $product->sku,
-                                    'name' => $product->name,
-                                    'from' => $product->category?->fullPathLabel(),
-                                    'to' => $highPath,
-                                    'confidence' => 'high',
-                                ];
-                            }
+                    $targetId = $highPath ? $this->highConfidenceTarget($product) : null;
+                    if ($highPath && $targetId && $targetId !== (int) $product->category_id) {
+                        $taxonomyHighCount++;
+                        if (count($taxonomyHigh) < 80) {
+                            $taxonomyHigh[] = [
+                                'id' => $product->id,
+                                'sku' => $product->sku,
+                                'name' => $product->name,
+                                'from' => $product->category?->fullPathLabel(),
+                                'to' => $highPath,
+                                'confidence' => 'high',
+                            ];
                         }
                     } elseif ($reviewPath = $this->reviewPath($product)) {
                         $targetId = $this->categories->resolveCategoryId($reviewPath);
@@ -256,20 +254,27 @@ class CatalogIntegrityService
             return null;
         }
 
-        return $this->categories->resolveCategoryId($path);
+        return $this->categories->resolveCategoryIdFromPath($path)
+            ?? $this->categories->resolveCategoryId($path);
     }
 
     public function highConfidencePath(Product $product): ?string
     {
         $name = trim($product->name.' '.$product->sku.' '.$product->model_number.' '.str_replace('-', ' ', (string) $product->slug));
-        $current = $product->category?->urlPath() ?? '';
-        $currentSlug = $product->category?->slug ?? '';
-
-        $inLaptops = in_array($currentSlug, ['laptops', 'business-laptops', 'gaming-laptops', 'chromebooks'], true)
-            || str_contains($current, 'laptops');
+        $hay = strtolower(trim(
+            ($product->category?->slug ?? '').' '
+            .($product->category?->urlPath() ?? '').' '
+            .($product->category?->name ?? '').' '
+            .($product->category?->parent?->name ?? '')
+        ));
+        $inAccessories = str_contains($hay, 'accessor');
+        $inLaptops = (str_contains($hay, 'laptop') || str_contains($hay, 'notebook') || str_contains($hay, 'chromebook'))
+            && ! $inAccessories;
+        $inMonitors = (str_contains($hay, 'monitor') || str_contains($hay, 'commercial-display'))
+            && ! str_contains($hay, 'interactive');
 
         $isLaptopAccessory = (bool) preg_match(
-            '/\b(charger|power adapter|ac adapter|mains adapter|laptop psu|backpack|laptop bag|notebook bag|laptop sleeve|notebook sleeve|laptop case|notebook case|clamshell)\b/i',
+            '/\b(charger|power adapter|ac adapter|mains adapter|laptop psu|backpack|laptop bag|notebook bag|laptop sleeve|notebook sleeve|laptop case|notebook case|clamshell|notebook stand|laptop stand|notebook lock|laptop lock|security lock)\b/i',
             $name
         );
 
@@ -277,10 +282,16 @@ class CatalogIntegrityService
             return 'computing-office/computer-accessories';
         }
 
-        $isBoard = (bool) preg_match('/\b(interactive|smart board|smartboard|ifp\d|ifpd|interactive flat panel|meetingboard)\b/i', $name);
-        $inMonitors = in_array($currentSlug, ['monitors', 'office-monitors', 'gaming-monitors', 'commercial-displays'], true)
-            || str_contains($current, 'monitor');
+        $isComputerCharger = (bool) preg_match(
+            '/\b(laptop charger|notebook charger|gan wall charger|ac adapter|power adapter|laptop psu)\b/i',
+            $name
+        ) && ! preg_match('/\b(solar|battery equalis|floodlamp|lead acid|battery pack|4g|camera)\b/i', $name);
 
+        if ($isComputerCharger && ! $inAccessories) {
+            return 'computing-office/computer-accessories';
+        }
+
+        $isBoard = (bool) preg_match('/\b(interactive|smart board|smartboard|ifp\d|ifpd|interactive flat panel|meetingboard)\b/i', $name);
         if ($isBoard && $inMonitors) {
             return 'digital-signage/interactive-displays';
         }
