@@ -8,7 +8,7 @@
 @if($brand->logo)
 @section('og_image', asset($brand->logo))
 @endif
-@if(request()->hasAny(['price_min', 'price_max', 'category']) || (request('sort') && ! app(\App\Services\CatalogBrowseService::class)->isDefaultSort(request())))
+@if(app(\App\Services\SeoIndexPolicy::class)->shouldNoindex(request()))
 @section('meta_robots', 'noindex, follow')
 @endif
 

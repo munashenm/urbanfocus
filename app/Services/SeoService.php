@@ -179,6 +179,12 @@ class SeoService
             $lines[] = 'Disallow: '.$path;
         }
 
+        foreach (app(SeoIndexPolicy::class)->robotsDisallowPaths() as $path) {
+            if (! in_array('Disallow: '.$path, $lines, true)) {
+                $lines[] = 'Disallow: '.$path;
+            }
+        }
+
         return $lines;
     }
 

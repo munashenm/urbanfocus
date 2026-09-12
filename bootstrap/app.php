@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
             SecurityHeaders::class,
+            \App\Http\Middleware\ControlSearchIndex::class,
         ]);
         $middleware->validateCsrfTokens(except: [
             'checkout/paystack/webhook',

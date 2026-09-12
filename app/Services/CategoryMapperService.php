@@ -156,18 +156,26 @@ class CategoryMapperService
         $brand = trim($data['brand'] ?? '');
 
         if ($name !== '') {
+            if (preg_match('/\b(charger|power adapter|ac adapter|mains adapter|laptop psu)\b/i', $name)) {
+                return 'computing-office/computer-accessories';
+            }
+
+            if (preg_match('/\b(laptop|notebook)\b/i', $name) && preg_match('/\b(bag|sleeve|case|backpack|stand|cooling pad|lock)\b/i', $name)) {
+                return 'computing-office/computer-accessories';
+            }
+
+            if (preg_match('/\b(interactive|smart board|smartboard|ifp\d|ifpd|interactive flat panel|meetingboard|touch screen|interactive display|digital signage)\b/i', $name)) {
+                return preg_match('/\b(bus|taxi|vehicle)\b/i', $name)
+                    ? 'digital-signage/bus-advertising-screens'
+                    : 'digital-signage/interactive-displays';
+            }
+
             if (preg_match('/\b(gaming laptop|g15|rog strix|omen|nitro|legion)\b/i', $name)) {
                 return 'gaming-entertainment/gaming-laptops';
             }
 
             if (preg_match('/\b(laptop|notebook|chromebook|thinkpad|latitude|elitebook|probook|ideapad|vostro|inspiron|xps|macbook|surface book|surface laptop|precision|vivobook|pavilion|envy|spectre|yoga)\b/i', $name)) {
                 return 'computing-office/laptops';
-            }
-
-            if (preg_match('/\b(interactive|smart board|smartboard|touch screen|interactive display|digital signage|led display|interactive flat panel)\b/i', $name)) {
-                return preg_match('/\b(bus|taxi|vehicle)\b/i', $name)
-                    ? 'digital-signage/bus-advertising-screens'
-                    : 'digital-signage/interactive-displays';
             }
 
             if (preg_match('/\b(server|poweredge|proliant|thinksystem|rack\s*server)\b/i', $name)) {

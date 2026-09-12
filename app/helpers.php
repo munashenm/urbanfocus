@@ -146,15 +146,38 @@ if (! function_exists('seo_canonical_url')) {
         $path = $parts['path'] ?? '/';
 
         parse_str($parts['query'] ?? '', $query);
-        $strip = array_fill_keys(config('seo.tracking_query_params', [
-            'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
-            'gclid', 'fbclid', 'msclkid', 'ttclid', 'mc_cid', 'mc_eid',
-        ]), true);
+        $strip = array_fill_keys(array_map('strtolower', array_merge(
+            config('seo.tracking_query_params', [
+                'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+                'gclid', 'fbclid', 'msclkid', 'ttclid', 'mc_cid', 'mc_eid',
+            ]),
+            class_exists(\App\Services\SeoIndexPolicy::class)
+                ? \App\Services\SeoIndexPolicy::JUNK_PARAM_KEYS
+                : [],
+        )), true);
+
         $query = array_filter(
             $query,
-            fn ($key) => ! isset($strip[strtolower((string) $key)]),
+            function ($key) use ($strip) {
+                $key = strtolower((string) $key);
+                if (isset($strip[$key])) {
+                    return false;
+                }
+                foreach (['filter_', 'etheme-', 'etheme_'] as $prefix) {
+                    if (str_starts_with($key, $prefix)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            },
             ARRAY_FILTER_USE_KEY
         );
+
+        $path = $parts['path'] ?? '/';
+        if (in_array($path, ['', '/'], true) || $path === '/shop') {
+            unset($query['page']);
+        }
 
         $canonical = $scheme.'://'.$host.$port.$path;
         if ($query !== []) {

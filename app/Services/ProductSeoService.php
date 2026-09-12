@@ -295,6 +295,11 @@ class ProductSeoService
 
     protected function resolveCategoryAssignment(Product $product): ?int
     {
+        $high = app(CatalogIntegrityService::class)->highConfidenceTarget($product);
+        if ($high) {
+            return $high;
+        }
+
         $fromName = $this->categoryMapper->resolveCategoryId(
             $this->categoryMapper->pathFromCatalogProduct($product)
         );

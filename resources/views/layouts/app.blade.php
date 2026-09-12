@@ -6,8 +6,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name'))</title>
     <meta name="description" content="@yield('meta_description', config('seo.defaults.description'))">
+    @php $seoRobots = app(\App\Services\SeoIndexPolicy::class)->robotsDirective(request()); @endphp
     @hasSection('meta_robots')
         <meta name="robots" content="@yield('meta_robots')">
+    @elseif($seoRobots)
+        <meta name="robots" content="{{ $seoRobots }}">
     @else
         <meta name="robots" content="index, follow, max-image-preview:large">
     @endif

@@ -159,7 +159,7 @@ class CategoryController extends Controller
             $breadcrumbs[] = ['name' => $crumb['name'], 'url' => $crumb['category']->url()];
         }
 
-        $hasFilters = $request->hasAny(['brand', 'price_min', 'price_max'])
+        $hasFilters = $request->hasAny(['brand', 'price_min', 'price_max', 'filter_brand', 'filter_cat', 'min_price', 'max_price', 'q'])
             || ! $this->browse->isDefaultSort($request);
 
         $paginationMeta = $hasFilters

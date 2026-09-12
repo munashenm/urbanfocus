@@ -2,10 +2,10 @@
 
 @section('title', $category->seoTitle())
 @section('meta_description', $category->seoDescription())
-@section('canonical', $canonicalUrl)
+@section('canonical', $paginationMeta['canonical'] ?? $canonicalUrl)
 @section('og_title', $category->seoTitle())
 @section('og_description', $category->seoDescription())
-@if(request()->hasAny(['brand', 'price_min', 'price_max']) || (request('sort') && ! app(\App\Services\CatalogBrowseService::class)->isDefaultSort(request())))
+@if(app(\App\Services\SeoIndexPolicy::class)->shouldNoindex(request()))
 @section('meta_robots', 'noindex, follow')
 @endif
 

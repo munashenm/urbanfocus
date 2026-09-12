@@ -3,7 +3,11 @@
 @section('title', 'Urban Focus — IT Supplier South Africa | Networking, Laptops & Security')
 @section('meta_description', 'Buy laptops, networking, CCTV, Nitrokey FIDO2 security keys and specialist IT in South Africa. Urban Focus supplies with nationwide delivery, VAT invoices and Paystack checkout.')
 @section('meta_keywords', 'buy laptops South Africa, networking equipment South Africa, Ubiquiti supplier South Africa, Hikvision supplier South Africa, business IT supplier, computer accessories South Africa')
+@section('canonical', route('home'))
 @section('og_image', asset('images/logo-stacked.png'))
+@if(app(\App\Services\SeoIndexPolicy::class)->shouldNoindex(request()))
+@section('meta_robots', 'noindex, follow')
+@endif
 
 @section('content')
 {{-- Hero carousel --}}
