@@ -153,25 +153,27 @@ class Article extends Model
         return is_array($cta) ? $cta : null;
     }
 
+    /** @return array<string, mixed> */
+    public function featuredImage(): array
+    {
+        return app(\App\Services\Blog\ArticleFeaturedImageService::class)->resolve($this);
+    }
+
     public function displayImageUrl(): string
     {
-        if ($this->image) {
-            if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
-                return $this->image;
-            }
+        return $this->featuredImage()['url'];
+    }
 
-            return storage_public_url($this->image) ?? asset(ltrim($this->image, '/'));
-        }
-
-        $key = $this->categoryKey();
-        $placeholder = $key ? config("blog.category_placeholders.{$key}") : null;
-
-        return asset($placeholder ?: 'images/blog/default.svg');
+    public function imageAlt(): string
+    {
+        return $this->featuredImage()['alt'];
     }
 
     public function ogImageUrl(): string
     {
-        return $this->displayImageUrl();
+        $url = $this->displayImageUrl();
+
+        return preg_replace('/\?v=\d+$/', '', $url) ?: $url;
     }
 
     public function readingTimeMinutes(): int

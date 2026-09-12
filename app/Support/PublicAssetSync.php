@@ -63,6 +63,17 @@ class PublicAssetSync
             self::copyDirectory($sourceRoot.'/images/specialist', $publicPath.'/images/specialist');
         }
 
+        $blogFeaturedCanary = '/images/blog/featured/macbook-vs-business-laptop.jpg';
+        if (
+            is_file($sourceRoot.$blogFeaturedCanary)
+            && (
+                ! is_file($publicPath.$blogFeaturedCanary)
+                || filemtime($sourceRoot.$blogFeaturedCanary) > filemtime($publicPath.$blogFeaturedCanary)
+            )
+        ) {
+            self::copyDirectory($sourceRoot.'/images/blog', $publicPath.'/images/blog');
+        }
+
         $jsCanary = '/js/checkout.js';
         if (is_file($sourceRoot.$jsCanary) && (! is_file($publicPath.$jsCanary) || filemtime($sourceRoot.$jsCanary) > filemtime($publicPath.$jsCanary))) {
             self::copyDirectory($sourceRoot.'/js', $publicPath.'/js');

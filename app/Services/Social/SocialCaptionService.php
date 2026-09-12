@@ -70,7 +70,7 @@ class SocialCaptionService
             'id' => $article->id,
             'title' => $article->title,
             'url' => route('blog.show', $article),
-            'image_url' => $this->absoluteUrl($article->displayImageUrl()),
+            'image_url' => $this->absoluteUrl($article->ogImageUrl()),
             'seo_description' => $article->seoDescription(),
             'category' => $article->categoryLabel(),
             'reading_time' => $article->readingTimeMinutes(),

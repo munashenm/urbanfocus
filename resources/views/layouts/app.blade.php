@@ -37,6 +37,10 @@
         @hasSection('og_image_alt')
             <meta property="og:image:alt" content="@yield('og_image_alt')">
         @endif
+        @hasSection('og_image_width')
+            <meta property="og:image:width" content="@yield('og_image_width')">
+            <meta property="og:image:height" content="@yield('og_image_height')">
+        @endif
     @else
         <meta property="og:image" content="{{ asset('images/logo-stacked.png') }}">
     @endif
@@ -45,6 +49,9 @@
     <meta name="twitter:description" content="@yield('og_description', trim($__env->yieldContent('meta_description')))">
     @hasSection('og_image')
         <meta name="twitter:image" content="@yield('og_image')">
+        @hasSection('og_image_alt')
+            <meta name="twitter:image:alt" content="@yield('og_image_alt')">
+        @endif
     @else
         <meta name="twitter:image" content="{{ asset('images/logo-stacked.png') }}">
     @endif

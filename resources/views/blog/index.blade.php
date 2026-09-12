@@ -95,7 +95,11 @@
                         @foreach($popular as $item)
                             <li class="d-flex gap-3 {{ ! $loop->last ? 'mb-3 pb-3 border-bottom' : '' }}">
                                 <a href="{{ route('blog.show', $item) }}" class="flex-shrink-0">
-                                    <img src="{{ $item->displayImageUrl() }}" alt="{{ $item->title }}" width="72" height="54" loading="lazy" class="rounded object-fit-cover" style="object-fit:cover;width:72px;height:54px;">
+                                    @include('partials.article-image', [
+                                        'article' => $item,
+                                        'loading' => 'lazy',
+                                        'class' => 'rounded object-fit-cover',
+                                    ])
                                 </a>
                                 <div>
                                     <a href="{{ route('blog.show', $item) }}" class="small fw-semibold text-decoration-none text-dark d-block">{{ \Illuminate\Support\Str::limit($item->title, 70) }}</a>

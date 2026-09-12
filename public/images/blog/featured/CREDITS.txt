@@ -1,0 +1,20 @@
+Knowledge Centre featured photography
+====================================
+Cropped to 1200x675 (16:9) for Urban Focus article cards and heroes.
+
+Unsplash License (https://unsplash.com/license)
+Free to use commercially. Attribution is appreciated.
+
+Wikimedia Commons (product / facility photographs we are permitted to use):
+- office-wifi-access.jpg
+  UniFi AC Lite Access Point, ServerGuruBrisbane
+  CC BY-SA 4.0 — https://commons.wikimedia.org/wiki/File:Unifi_AC_Lite_Access_Point.jpg
+- public-wifi-infrastructure.jpg
+  Ubiquiti UniFi AC, L3u
+  CC0 1.0 — https://commons.wikimedia.org/wiki/File:Ubiquiti_Unifi_AP.jpg
+- ups-power-equipment.jpg
+  APC Back-UPS Pro 700 (BR700G-TW), MiNe
+  CC BY 2.0 — https://commons.wikimedia.org/wiki/File:APC_BR700G-TW_20140114.jpg
+- topic-news-datacentre.jpg
+  CERN server room, Florian Hirzinger
+  CC BY-SA 3.0 — https://commons.wikimedia.org/wiki/File:CERN_Server_03.jpg

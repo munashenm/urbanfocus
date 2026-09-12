@@ -28,7 +28,7 @@ class SocialPostFormatter
         $snippets = $article->socialSnippetList();
 
         $message = $snippets['x'] ?? $snippets['facebook'] ?? trim("{$article->title}\n".Str::limit(strip_tags($article->excerpt ?: ''), 120)."\n{$url}\n".config('social-posting.hashtags'));
-        $imageUrl = $article->displayImageUrl();
+        $imageUrl = $article->ogImageUrl();
 
         return [
             'message' => Str::limit($message, 280, ''),

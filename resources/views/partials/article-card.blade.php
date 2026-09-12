@@ -2,7 +2,11 @@
 
 <a href="{{ route('blog.show', $article) }}" class="article-card {{ $featured ? 'article-card--featured' : '' }} d-block h-100">
     <div class="article-card-image">
-        <img src="{{ $article->displayImageUrl() }}" alt="{{ $article->title }}" loading="lazy" width="640" height="360">
+        @include('partials.article-image', [
+            'article' => $article,
+            'loading' => $featured ? 'eager' : 'lazy',
+            'fetchpriority' => $featured ? 'high' : null,
+        ])
     </div>
     <div class="article-card-body">
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">

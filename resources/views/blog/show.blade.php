@@ -4,7 +4,10 @@
 @section('meta_description', $article->seoDescription())
 @section('canonical', route('blog.show', $article))
 @section('og_type', 'article')
-@section('og_image', $article->displayImageUrl())
+@section('og_image', $article->ogImageUrl())
+@section('og_image_alt', $article->imageAlt())
+@section('og_image_width', '1200')
+@section('og_image_height', '675')
 @section('twitter_card', 'summary_large_image')
 
 @section('content')
@@ -47,7 +50,12 @@
             </header>
 
             <div class="article-featured-image mb-4">
-                <img src="{{ $article->displayImageUrl() }}" alt="{{ $article->title }}" width="960" height="540" loading="eager">
+                @include('partials.article-image', [
+                    'article' => $article,
+                    'loading' => 'eager',
+                    'fetchpriority' => 'high',
+                    'sizes' => '(max-width: 992px) 100vw, 800px',
+                ])
             </div>
 
             @include('blog.partials.toc', ['tocItems' => $tocItems])
