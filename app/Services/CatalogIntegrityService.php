@@ -20,57 +20,176 @@ class CatalogIntegrityService
      */
     public function audit(): array
     {
-        $this->categories->ensureCanonicalTree();
+        $all = Product::query()->count();
+        $activeCount = Product::query()->where('is_active', true)->count();
 
-        $products = Product::query()
-            ->with(['category.parent', 'images'])
+        $duplicateSkus = $this->duplicateSkuRowsFromDatabase();
+        $skuNameConflicts = collect($duplicateSkus)
+            ->filter(fn (array $row) => count($row['names']) > 1)
+            ->values()
+            ->all();
+        $duplicateNames = $this->duplicateNameRowsFromDatabase();
+
+        $missingSkuQuery = Product::query()->where('is_active', true)->where(function ($q) {
+            $q->whereNull('sku')->orWhere('sku', '');
+        });
+        $missingPriceQuery = Product::query()->where('is_active', true)
+            ->whereRaw('COALESCE(sale_price, price) <= 0');
+        $missingImageQuery = Product::query()->where('is_active', true)->whereDoesntHave('images');
+
+        $missingSkus = $this->sampleMissing($missingSkuQuery->clone()->orderBy('id')->limit(60)->get(), 'sku');
+        $missingPrices = $this->sampleMissing($missingPriceQuery->clone()->orderBy('id')->limit(60)->get(), 'price');
+        $missingImages = $this->sampleMissing($missingImageQuery->clone()->orderBy('id')->limit(60)->get(), 'image');
+
+        $malformedNames = [];
+        $wrongBrandSku = [];
+        $taxonomyHigh = [];
+        $taxonomyReview = [];
+        $missingDescriptions = [];
+        $seoTitleCollisions = [];
+        $titleIndex = [];
+        $malformedCount = 0;
+        $wrongBrandCount = 0;
+        $taxonomyHighCount = 0;
+        $taxonomyReviewCount = 0;
+        $missingDescriptionCount = 0;
+        $seoTitleCollisionCount = 0;
+
+        Product::query()
+            ->with(['category.parent'])
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->chunkById(80, function (Collection $chunk) use (
+                &$malformedNames,
+                &$wrongBrandSku,
+                &$taxonomyHigh,
+                &$taxonomyReview,
+                &$missingDescriptions,
+                &$titleIndex,
+                &$malformedCount,
+                &$wrongBrandCount,
+                &$taxonomyHighCount,
+                &$taxonomyReviewCount,
+                &$missingDescriptionCount,
+            ) {
+                foreach ($chunk as $product) {
+                    if (trim(strip_tags((string) $product->short_description)) === ''
+                        && trim(strip_tags((string) $product->description)) === '') {
+                        $missingDescriptionCount++;
+                        if (count($missingDescriptions) < 60) {
+                            $missingDescriptions[] = $this->sampleRow($product, 'description');
+                        }
+                    }
+
+                    if ($this->isMalformedName($product)) {
+                        $malformedCount++;
+                        if (count($malformedNames) < 40) {
+                            $malformedNames[] = [
+                                'id' => $product->id,
+                                'sku' => $product->sku,
+                                'name' => $product->name,
+                            ];
+                        }
+                    }
+
+                    if ($mismatch = $this->brandSkuMismatch($product)) {
+                        $wrongBrandCount++;
+                        if (count($wrongBrandSku) < 40) {
+                            $wrongBrandSku[] = $mismatch;
+                        }
+                    }
+
+                    $highPath = $this->highConfidencePath($product);
+                    if ($highPath) {
+                        $targetId = $this->categories->resolveCategoryId($highPath);
+                        if ($targetId && $targetId !== (int) $product->category_id) {
+                            $taxonomyHighCount++;
+                            if (count($taxonomyHigh) < 80) {
+                                $taxonomyHigh[] = [
+                                    'id' => $product->id,
+                                    'sku' => $product->sku,
+                                    'name' => $product->name,
+                                    'from' => $product->category?->fullPathLabel(),
+                                    'to' => $highPath,
+                                    'confidence' => 'high',
+                                ];
+                            }
+                        }
+                    } elseif ($reviewPath = $this->reviewPath($product)) {
+                        $targetId = $this->categories->resolveCategoryId($reviewPath);
+                        if ($targetId && $targetId !== (int) $product->category_id) {
+                            $taxonomyReviewCount++;
+                            if (count($taxonomyReview) < 80) {
+                                $taxonomyReview[] = [
+                                    'id' => $product->id,
+                                    'sku' => $product->sku,
+                                    'name' => $product->name,
+                                    'from' => $product->category?->fullPathLabel(),
+                                    'to' => $reviewPath,
+                                    'confidence' => 'review',
+                                ];
+                            }
+                        }
+                    }
+
+                    $titleKey = mb_strtolower($product->seoTitle());
+                    $titleIndex[$titleKey]['title'] = $product->seoTitle();
+                    $titleIndex[$titleKey]['skus'][] = $product->sku;
+                    $titleIndex[$titleKey]['names'][] = $product->name;
+                }
+            });
+
+        foreach ($titleIndex as $group) {
+            $skus = array_values(array_unique($group['skus'] ?? []));
+            $names = array_values(array_unique($group['names'] ?? []));
+            if (count($group['skus'] ?? []) < 2) {
+                continue;
+            }
+            $seoTitleCollisionCount++;
+            if (count($seoTitleCollisions) < 40) {
+                $seoTitleCollisions[] = [
+                    'title' => $group['title'],
+                    'count' => count($group['skus']),
+                    'skus' => $skus,
+                    'names' => $names,
+                ];
+            }
+        }
+
+        $uswMatches = Product::query()
+            ->with(['category.parent'])
+            ->where(function ($q) {
+                $q->whereRaw("LOWER(TRIM(COALESCE(sku, ''))) = ?", ['usw-16p'])
+                    ->orWhere('name', 'like', '%USW-16P%')
+                    ->orWhere('model_number', 'like', '%USW-16P%')
+                    ->orWhere('slug', 'like', '%usw-16p%')
+                    ->orWhere('slug', 'like', '%usw16p%');
+            })
             ->orderBy('id')
             ->get();
-
-        $active = $products->where('is_active', true)->values();
-
-        $duplicateSkus = $this->duplicateSkus($active);
-        $skuNameConflicts = $this->skuNameConflicts($active);
-        $missingSkuRows = $active->filter(fn (Product $p) => trim((string) $p->sku) === '');
-        $missingPriceRows = $active->filter(fn (Product $p) => (float) $p->effective_price <= 0);
-        $missingImageRows = $active->filter(fn (Product $p) => blank($p->primary_image_url));
-        $missingDescriptionRows = $active->filter(function (Product $p) {
-            return trim(strip_tags((string) $p->short_description)) === ''
-                && trim(strip_tags((string) $p->description)) === '';
-        });
-        $missingSkus = $this->sampleMissing($missingSkuRows, 'sku');
-        $missingPrices = $this->sampleMissing($missingPriceRows, 'price');
-        $missingImages = $this->sampleMissing($missingImageRows, 'image');
-        $missingDescriptions = $this->sampleMissing($missingDescriptionRows, 'description');
-        $malformedNames = $this->malformedNames($active);
-        $wrongBrandSku = $this->wrongBrandSku($active);
-        $taxonomyHigh = $this->taxonomyCandidates($active, highConfidence: true);
-        $taxonomyReview = $this->taxonomyCandidates($active, highConfidence: false);
-        $duplicateNames = $this->duplicateNames($active);
-        $seoTitleCollisions = $this->seoTitleCollisions($active);
-        $usw16p = $this->skuFocus($products, 'USW-16P');
-        $hiddenDuplicates = count($this->deduper->idsToHide());
+        $usw16p = $this->skuFocus($uswMatches, 'USW-16P');
+        $hiddenDuplicates = 0;
 
         return [
             'generated_at' => now()->toIso8601String(),
             'totals' => [
-                'all' => $products->count(),
-                'active' => $active->count(),
-                'inactive' => $products->count() - $active->count(),
+                'all' => $all,
+                'active' => $activeCount,
+                'inactive' => $all - $activeCount,
             ],
             'counts' => [
                 'duplicate_sku_groups' => count($duplicateSkus),
                 'sku_name_conflicts' => count($skuNameConflicts),
                 'duplicate_name_groups' => count($duplicateNames),
-                'seo_title_collisions' => count($seoTitleCollisions),
-                'missing_skus' => $missingSkuRows->count(),
-                'missing_prices' => $missingPriceRows->count(),
-                'missing_images' => $missingImageRows->count(),
-                'missing_descriptions' => $missingDescriptionRows->count(),
-                'malformed_names' => count($malformedNames),
-                'wrong_brand_sku' => count($wrongBrandSku),
-                'taxonomy_high_confidence' => count($taxonomyHigh),
-                'taxonomy_review' => count($taxonomyReview),
+                'seo_title_collisions' => $seoTitleCollisionCount,
+                'missing_skus' => $missingSkuQuery->count(),
+                'missing_prices' => $missingPriceQuery->count(),
+                'missing_images' => $missingImageQuery->count(),
+                'missing_descriptions' => $missingDescriptionCount,
+                'malformed_names' => $malformedCount,
+                'wrong_brand_sku' => $wrongBrandCount,
+                'taxonomy_high_confidence' => $taxonomyHighCount,
+                'taxonomy_review' => $taxonomyReviewCount,
                 'hidden_duplicates' => $hiddenDuplicates,
                 'usw_16p_rows' => count($usw16p['rows']),
             ],
@@ -195,6 +314,99 @@ class CatalogIntegrityService
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    protected function duplicateSkuRowsFromDatabase(): array
+    {
+        $keys = Product::query()
+            ->where('is_active', true)
+            ->whereNotNull('sku')
+            ->where('sku', '!=', '')
+            ->selectRaw('LOWER(TRIM(sku)) as sku_key, COUNT(*) as cnt')
+            ->groupByRaw('LOWER(TRIM(sku))')
+            ->havingRaw('COUNT(*) > 1')
+            ->orderByDesc('cnt')
+            ->limit(80)
+            ->get();
+
+        $rows = [];
+        foreach ($keys as $group) {
+            $items = Product::query()
+                ->where('is_active', true)
+                ->whereRaw('LOWER(TRIM(sku)) = ?', [$group->sku_key])
+                ->get(['id', 'sku', 'name', 'slug']);
+            $rows[] = [
+                'sku' => $items->first()?->sku,
+                'count' => $items->count(),
+                'names' => $items->pluck('name')->unique()->values()->all(),
+                'ids' => $items->pluck('id')->all(),
+                'slugs' => $items->pluck('slug')->all(),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function duplicateNameRowsFromDatabase(): array
+    {
+        $keys = Product::query()
+            ->where('is_active', true)
+            ->whereNotNull('name')
+            ->where('name', '!=', '')
+            ->selectRaw('LOWER(TRIM(name)) as name_key, COUNT(*) as cnt')
+            ->groupByRaw('LOWER(TRIM(name))')
+            ->havingRaw('COUNT(*) > 1')
+            ->orderByDesc('cnt')
+            ->limit(40)
+            ->get();
+
+        $rows = [];
+        foreach ($keys as $group) {
+            $items = Product::query()
+                ->where('is_active', true)
+                ->whereRaw('LOWER(TRIM(name)) = ?', [$group->name_key])
+                ->get(['id', 'sku', 'name']);
+            $rows[] = [
+                'name' => $items->first()?->name,
+                'count' => $items->count(),
+                'skus' => $items->pluck('sku')->unique()->values()->all(),
+                'ids' => $items->pluck('id')->all(),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param  Collection<int, Product>  $products
+     * @return list<array<string, mixed>>
+     */
+    protected function sampleMissing(Collection $products, string $field): array
+    {
+        return $products
+            ->map(fn (Product $p) => $this->sampleRow($p, $field))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{id:int,sku:mixed,name:mixed,field:string,slug:mixed}
+     */
+    protected function sampleRow(Product $product, string $field): array
+    {
+        return [
+            'id' => $product->id,
+            'sku' => $product->sku,
+            'name' => $product->name,
+            'field' => $field,
+            'slug' => $product->slug,
+        ];
+    }
+
+    /**
      * @param  Collection<int, Product>  $products
      * @return list<array<string, mixed>>
      */
@@ -266,6 +478,8 @@ class CatalogIntegrityService
                 || str_contains(mb_strtolower((string) $p->slug), str_replace('-', '', $needle));
         })->values();
 
+        $hidden = [];
+
         return [
             'sku' => $sku,
             'rows' => $matches->map(fn (Product $p) => [
@@ -278,28 +492,9 @@ class CatalogIntegrityService
                 'url' => $p->slug ? url('/product/'.$p->slug) : null,
                 'category' => $p->category?->fullPathLabel(),
                 'price' => $p->effective_price,
-                'hidden_as_duplicate' => in_array($p->id, $this->deduper->idsToHide(), true),
+                'hidden_as_duplicate' => isset($hidden[$p->id]),
             ])->all(),
         ];
-    }
-
-    /**
-     * @param  Collection<int, Product>  $products
-     * @return list<array<string, mixed>>
-     */
-    protected function sampleMissing(Collection $products, string $field): array
-    {
-        return $products
-            ->take(60)
-            ->map(fn (Product $p) => [
-                'id' => $p->id,
-                'sku' => $p->sku,
-                'name' => $p->name,
-                'field' => $field,
-                'slug' => $p->slug,
-            ])
-            ->values()
-            ->all();
     }
 
     /**
@@ -309,20 +504,7 @@ class CatalogIntegrityService
     protected function malformedNames(Collection $products): array
     {
         return $products
-            ->filter(function (Product $p) {
-                $name = trim($p->name);
-                if ($name === '' || mb_strlen($name) < 8) {
-                    return true;
-                }
-                if (preg_match('/[<>]|1Pieces|undefined|null|test product/i', $name)) {
-                    return true;
-                }
-                if (preg_match('/^[A-Z0-9\s\-_/]{12,}$/', $name) && ! preg_match('/[a-z]/', $name) && mb_strlen($name) > 40) {
-                    return true;
-                }
-
-                return false;
-            })
+            ->filter(fn (Product $p) => $this->isMalformedName($p))
             ->take(40)
             ->map(fn (Product $p) => [
                 'id' => $p->id,
@@ -333,6 +515,21 @@ class CatalogIntegrityService
             ->all();
     }
 
+    protected function isMalformedName(Product $product): bool
+    {
+        $name = trim($product->name);
+        if ($name === '' || mb_strlen($name) < 8) {
+            return true;
+        }
+        if (preg_match('/[<>]|1Pieces|undefined|null|test product/i', $name)) {
+            return true;
+        }
+
+        return (bool) preg_match('/^[A-Z0-9\s\-_\/]{12,}$/', $name)
+            && ! preg_match('/[a-z]/', $name)
+            && mb_strlen($name) > 40;
+    }
+
     /**
      * @param  Collection<int, Product>  $products
      * @return list<array<string, mixed>>
@@ -341,35 +538,47 @@ class CatalogIntegrityService
     {
         $rows = [];
         foreach ($products as $product) {
-            $sku = strtoupper(trim((string) $product->sku));
-            $brand = trim((string) $product->brand);
-            if ($sku === '') {
-                continue;
+            $mismatch = $this->brandSkuMismatch($product);
+            if ($mismatch) {
+                $rows[] = $mismatch;
             }
-
-            $expected = null;
-            if (preg_match('/^(USW|U6-|U7-|UCK|UDM|UAP|UVC|UC-)/', $sku)) {
-                $expected = 'Ubiquiti';
-            } elseif (preg_match('/^(RB|CRS|CCR|C52|L009)/', $sku)) {
-                $expected = 'MikroTik';
-            }
-
-            if ($expected && $brand !== '' && stripos($brand, $expected) === false && stripos($product->name, $expected) === false) {
-                $rows[] = [
-                    'id' => $product->id,
-                    'sku' => $product->sku,
-                    'name' => $product->name,
-                    'brand' => $brand,
-                    'expected_brand' => $expected,
-                ];
-            }
-
             if (count($rows) >= 40) {
                 break;
             }
         }
 
         return $rows;
+    }
+
+    /**
+     * @return array{id:int,sku:mixed,name:mixed,brand:string,expected_brand:string}|null
+     */
+    protected function brandSkuMismatch(Product $product): ?array
+    {
+        $sku = strtoupper(trim((string) $product->sku));
+        $brand = trim((string) $product->brand);
+        if ($sku === '') {
+            return null;
+        }
+
+        $expected = null;
+        if (preg_match('/^(USW|U6-|U7-|UCK|UDM|UAP|UVC|UC-)/', $sku)) {
+            $expected = 'Ubiquiti';
+        } elseif (preg_match('/^(RB|CRS|CCR|C52|L009)/', $sku)) {
+            $expected = 'MikroTik';
+        }
+
+        if ($expected && $brand !== '' && stripos($brand, $expected) === false && stripos($product->name, $expected) === false) {
+            return [
+                'id' => $product->id,
+                'sku' => $product->sku,
+                'name' => $product->name,
+                'brand' => $brand,
+                'expected_brand' => $expected,
+            ];
+        }
+
+        return null;
     }
 
     /**

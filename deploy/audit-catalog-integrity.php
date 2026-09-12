@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 use App\Services\CatalogIntegrityService;
 use Illuminate\Contracts\Console\Kernel;
+use Throwable;
 
 const AUDIT_KEY = 'CHANGE-ME-catalog-integrity-secret';
 const COOKIE_NAME = 'uf_catalog_audit_auth';
@@ -64,7 +65,27 @@ setcookie(COOKIE_NAME, auth_cookie_value($expectedKey), [
 ]);
 
 @set_time_limit(0);
-@ini_set('memory_limit', '512M');
+@ini_set('memory_limit', '1024M');
+@ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
+register_shutdown_function(function (): void {
+    $error = error_get_last();
+    if (! is_array($error) || ! in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        return;
+    }
+    if (headers_sent()) {
+        echo "\n<pre>Fatal: ".htmlspecialchars((string) $error['message'])." in ".$error['file'].':'.$error['line']."</pre>";
+        return;
+    }
+    html_page(
+        'Audit crashed',
+        '<p>PHP stopped before the report finished. Common cause: memory or a missing class after an incomplete git pull.</p>'
+        .'<pre>'.e((string) $error['message'])."\n".$error['file'].':'.$error['line'].'</pre>'
+        .'<p>Git pull <code>urbanfocus</code>, then copy this file from <code>urbanfocus/deploy/audit-catalog-integrity.php</code> over <code>public_html/audit-catalog-integrity.php</code> again, keeping your AUDIT_KEY.</p>',
+        500
+    );
+});
 
 $candidates = [
     dirname(__DIR__).'/urbanfocus',
@@ -89,15 +110,39 @@ $app = require_once $laravelRoot.'/bootstrap/app.php';
 $kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
-$integrity = $app->make(CatalogIntegrityService::class);
-$apply = (($_POST['apply'] ?? '') === '1');
-$applied = null;
+set_exception_handler(function (Throwable $e): void {
+    html_page(
+        'Audit failed',
+        '<p>Laravel booted, then threw:</p><pre>'.e($e->getMessage()."\n".$e->getFile().':'.$e->getLine()."\n\n".$e->getTraceAsString()).'</pre>',
+        500
+    );
+});
 
-if ($apply) {
-    $applied = $integrity->applyHighConfidenceTaxonomyFixes();
+if (! class_exists(CatalogIntegrityService::class)) {
+    html_page(
+        'Code not deployed',
+        '<p><code>CatalogIntegrityService</code> is missing. Git pull <code>~/urbanfocus</code> first, then reload.</p>',
+        500
+    );
 }
 
-$report = $integrity->audit();
+try {
+    $integrity = $app->make(CatalogIntegrityService::class);
+    $apply = (($_POST['apply'] ?? '') === '1');
+    $applied = null;
+
+    if ($apply) {
+        $applied = $integrity->applyHighConfidenceTaxonomyFixes();
+    }
+
+    $report = $integrity->audit();
+} catch (Throwable $e) {
+    html_page(
+        'Audit failed',
+        '<pre>'.e($e->getMessage()."\n".$e->getFile().':'.$e->getLine()."\n\n".$e->getTraceAsString()).'</pre>',
+        500
+    );
+}
 $dir = $laravelRoot.'/storage/app';
 if (! is_dir($dir)) {
     @mkdir($dir, 0755, true);
