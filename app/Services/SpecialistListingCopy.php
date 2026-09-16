@@ -114,26 +114,28 @@ class SpecialistListingCopy
             $keys .= '<li><strong>'.e($label).':</strong> '.e($value).'</li>';
         }
 
-        $faqs = '';
-        foreach ($this->faqs($item) as $faq) {
-            $faqs .= '<h4>'.e($faq['question']).'</h4>'.$this->p($faq['answer']);
+        $included = '';
+        foreach ($this->includedWith($item) as $line) {
+            $included .= '<li>'.e($line).'</li>';
         }
 
-        $name = e((string) ($item['name'] ?? 'This product'));
+        $name = (string) ($item['name'] ?? 'This product');
 
         $html = implode("\n", array_filter([
             $this->p($this->intro($item)),
-            '<h3>Advantages</h3>',
+            '<h3>Key features</h3>',
             $this->p($this->advantages($item)),
-            '<h3>Suitable for</h3>',
+            '<h3>Ideal applications</h3>',
             '<ul>'.$suitable.'</ul>',
-            '<h3>Key specifications</h3>',
+            '<h3>Technical specifications</h3>',
             '<ul>'.$keys.'</ul>',
-            '<h3>South African supply</h3>',
-            $this->p("Urban Focus supplies the {$name} to companies, schools and government buyers across South Africa with VAT invoices, courier delivery and local technical support. Listings are prepared for Google Shopping, Google Images and organic search, including Johannesburg, Cape Town, Durban and nationwide dispatch."),
-            '<h3>Recommendations</h3>',
+            '<h3>What\'s included</h3>',
+            '<ul>'.$included.'</ul>',
+            '<h3>Warranty</h3>',
+            $this->p($this->warrantyLabel($item).' through Urban Focus, with local support if you need help during the cover period.'),
+            '<h3>Delivery information</h3>',
+            $this->p("Urban Focus supplies the {$name} to companies, schools and government buyers across South Africa with VAT invoices, courier delivery and local technical support, including Johannesburg, Cape Town, Durban and nationwide dispatch. ".$this->leadTimeCopy($item)),
             $this->p($this->recommendations($item)),
-            $faqs !== '' ? '<h3>Frequently asked questions</h3>'.$faqs : null,
         ]));
 
         return $this->copySanitizer->sanitizeHtml($html);
@@ -323,25 +325,27 @@ class SpecialistListingCopy
     protected function faqs(array $item): array
     {
         if (! empty($item['faqs']) && is_array($item['faqs'])) {
-            return array_values($item['faqs']);
+            $faqs = array_values($item['faqs']);
+        } else {
+            $name = (string) ($item['name'] ?? 'this product');
+
+            $faqs = [
+                [
+                    'question' => "Can I buy the {$name} in South Africa?",
+                    'answer' => "Yes. Urban Focus supplies the {$name} with a VAT invoice and courier delivery nationwide, including Johannesburg, Cape Town, Durban, Pretoria and remote sites.",
+                ],
+                [
+                    'question' => 'How long does delivery take?',
+                    'answer' => $this->availabilityLabel($item).'. '.$this->leadTimeCopy($item),
+                ],
+                [
+                    'question' => 'What warranty is included?',
+                    'answer' => $this->warrantyLabel($item).'. Urban Focus can help with claims and replacement advice during the cover period.',
+                ],
+            ];
         }
 
-        $name = (string) ($item['name'] ?? 'this product');
-
-        return [
-            [
-                'question' => "Can I buy the {$name} in South Africa?",
-                'answer' => "Yes. Urban Focus supplies the {$name} with a VAT invoice and courier delivery nationwide, including Johannesburg, Cape Town, Durban, Pretoria and remote sites.",
-            ],
-            [
-                'question' => 'How long does delivery take?',
-                'answer' => $this->availabilityLabel($item).'. '.$this->leadTimeCopy($item),
-            ],
-            [
-                'question' => 'Is this listing ready for Google Shopping?',
-                'answer' => 'Yes. Each specialist product includes a unique title, description, MPN/SKU, brand, image alt text and structured data so Google Merchant Center, Google Images and AI search overviews can index it.',
-            ],
-        ];
+        return $this->copySanitizer->sanitizeFaqs($faqs);
     }
 
     /**
@@ -356,6 +360,35 @@ class SpecialistListingCopy
             'request_quote' => 'Lead time is confirmed on the official quote.',
             'contact_licensing' => 'Licence keys and terms are confirmed after a licensing conversation with Urban Focus.',
             default => 'Lead time is confirmed when you order.',
+        };
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @return list<string>
+     */
+    protected function includedWith(array $item): array
+    {
+        if (! empty($item['included']) && is_array($item['included'])) {
+            return array_values($item['included']);
+        }
+
+        return match ($this->family($item)) {
+            'fido-key', 'hsm', 'encrypted-storage', 'mfa-bundle' => [
+                'The specified hardware security device',
+                'Manufacturer documentation',
+            ],
+            'software' => [
+                'Licence as confirmed on the Urban Focus quotation',
+                'South African VAT invoice',
+            ],
+            'service' => [
+                'Professional services as scoped on the quotation',
+            ],
+            default => [
+                'The specified product',
+                'Manufacturer documentation',
+            ],
         };
     }
 

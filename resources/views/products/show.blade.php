@@ -68,9 +68,9 @@
             <h1 class="h2 fw-bold text-break">{{ $product->name }}</h1>
             <div class="d-flex flex-wrap gap-3 small text-muted mb-3">
                 @if($product->sku)<span>SKU: <strong>{{ $product->sku }}</strong></span>@endif
-                @if($product->model_number)<span>Model: <strong>{{ $product->model_number }}</strong></span>@endif
+                @if($product->model_number)<span>MPN: <strong>{{ $product->model_number }}</strong></span>@endif
+                @if($product->brand)<span>Brand: <strong>{{ $product->brand }}</strong></span>@endif
                 <span>Condition: <strong>New</strong></span>
-                <span>Currency: <strong>ZAR</strong></span>
             </div>
 
             @php
@@ -188,7 +188,7 @@
             </div>
             @if(count($product->buyerFitLines()))
             <div class="checkout-card mt-4">
-                <h2 class="h5 fw-bold mb-3">Who this product is suitable for</h2>
+                <h2 class="h5 fw-bold mb-3">Ideal applications</h2>
                 <ul class="mb-0">
                     @foreach($product->buyerFitLines() as $line)
                         <li>{{ $line }}</li>
@@ -200,7 +200,7 @@
         <div class="col-lg-5">
             @if(count($specs = $product->specificationsList()))
                 <div class="checkout-card">
-                    <h2 class="h5 fw-bold mb-3">Specifications</h2>
+                    <h2 class="h5 fw-bold mb-3">Technical specifications</h2>
                     <table class="table table-sm spec-table mb-0">
                         <tbody>
                             @foreach($specs as $key => $value)

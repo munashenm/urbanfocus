@@ -63,7 +63,7 @@ class SeoImplementationTest extends TestCase
         $this->assertMatchesRegularExpression('/"@type":\s*"Organization"/', $html);
         $this->assertStringContainsString('SKU: <strong>U7-Enterprise</strong>', $html);
         $this->assertStringContainsString('product:price:currency', $html);
-        $this->assertStringContainsString('Who this product is suitable for', $html);
+        $this->assertStringContainsString('Ideal applications', $html);
         $this->assertMatchesRegularExpression('/"priceCurrency":\s*"ZAR"/', $html);
         $this->assertMatchesRegularExpression('/"@type":\s*"Offer"/', $html);
         $this->assertMatchesRegularExpression('/"@type":\s*"Brand"/', $html);

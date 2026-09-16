@@ -8,7 +8,9 @@ use DOMElement;
 use DOMNode;
 
 /**
- * Strip internal pricing / margin language from customer-facing catalogue copy.
+ * Strip internal pricing language and SEO-implementation commentary from
+ * customer-facing catalogue copy. Technical SEO (schema, feeds, metadata)
+ * is left in place; this class only removes what shoppers would read.
  */
 class InternalPricingCopySanitizer
 {
@@ -76,6 +78,28 @@ class InternalPricingCopySanitizer
         '/\bdo\s+not\s+show\s+(the\s+)?customers?\b/iu',
         '/\bAI[- ]generated\s+(prompt|instruction)s?\b/iu',
         '/\bprivate\s+pricing\b/iu',
+        '/\bgoogle\s+shopping\b/iu',
+        '/\bgoogle\s+merchant(\s+center)?\b/iu',
+        '/\bmerchant\s+center\b/iu',
+        '/\bstructured\s+data\b/iu',
+        '/\bimage\s+alt\s+texts?\b/iu',
+        '/\bgoogle\s+images\b/iu',
+        '/\bai\s+search(\s+overviews?)?\b/iu',
+        '/\bgoogle\s+ai\s+overviews?\b/iu',
+        '/\bschema\s+(implementation|markup)\b/iu',
+        '/\bjson-?ld\b/iu',
+        '/\bseo\s+optimis[ae]tion\b/iu',
+        '/\bseo\s+implementation\b/iu',
+        '/\bintended\s+for\s+search\s+engines\b/iu',
+        '/\blistings?\s+are\s+prepared\s+for\b/iu',
+        '/\bis\s+this\s+listing\s+ready\s+for\s+google\b/iu',
+        '/\bready\s+for\s+google\s+shopping\b/iu',
+        '/\bso\s+google\s+(merchant|images|shopping)\b/iu',
+        '/\bcan\s+index\s+it\b/iu',
+        '/\bsearch\s+engines?\s+rather\s+than\s+customers?\b/iu',
+        '/\bfaq\s+schema\b/iu',
+        '/\bproduct\s+schema\b/iu',
+        '/\boffer\s+schema\b/iu',
     ];
 
     /**
@@ -92,6 +116,12 @@ class InternalPricingCopySanitizer
         '/\bhow\s+we\s+price\b/iu',
         '/\babout\s+our\s+pric/iu',
         '/\bprice\s+strategy\b/iu',
+        '/is\s+this\s+listing\s+ready\s+for\s+google/iu',
+        '/\bgoogle\s+shopping\b/iu',
+        '/\bgoogle\s+merchant\b/iu',
+        '/\bstructured\s+data\b/iu',
+        '/\bschema\s+implementation\b/iu',
+        '/\bseo\s+(implementation|notes?|commentary|optimis[ae]tion)\b/iu',
     ];
 
     public function whyBuyHeading(): string
@@ -163,6 +193,12 @@ class InternalPricingCopySanitizer
             return '';
         }
 
+        $html = $this->stripSeoImplementationHtml($html);
+
+        if (trim($html) === '') {
+            return '';
+        }
+
         if (! $this->containsLeak($html) && ! $this->containsInternalHeading($html)) {
             return $html;
         }
@@ -204,8 +240,14 @@ class InternalPricingCopySanitizer
         $clean = [];
 
         foreach ($faqs as $faq) {
-            $question = $this->sanitizePlain((string) ($faq['question'] ?? ''));
-            $answer = $this->sanitizePlain((string) ($faq['answer'] ?? ''));
+            $rawQuestion = (string) ($faq['question'] ?? '');
+            $rawAnswer = (string) ($faq['answer'] ?? '');
+            if ($this->isSeoImplementationFaq($rawQuestion, $rawAnswer)) {
+                continue;
+            }
+
+            $question = $this->sanitizePlain($rawQuestion);
+            $answer = $this->sanitizePlain($rawAnswer);
             if ($question !== '' && $answer !== '') {
                 $clean[] = ['question' => $question, 'answer' => $answer];
             }
@@ -238,7 +280,7 @@ class InternalPricingCopySanitizer
         for ($i = 1; $i <= 6; $i++) {
             $question = trim((string) ($clean["FAQ {$i} question"] ?? ''));
             $answer = trim((string) ($clean["FAQ {$i} answer"] ?? ''));
-            if ($question === '' || $answer === '') {
+            if ($question === '' || $answer === '' || $this->isSeoImplementationFaq($question, $answer)) {
                 unset($clean["FAQ {$i} question"], $clean["FAQ {$i} answer"]);
             }
         }
@@ -567,6 +609,49 @@ class InternalPricingCopySanitizer
                 ''
             ),
         ];
+    }
+
+    public function isSeoImplementationFaq(string $question, string $answer = ''): bool
+    {
+        $haystack = trim($question.' '.$answer);
+
+        return $haystack !== '' && ($this->containsLeak($haystack) || $this->containsInternalHeading($question));
+    }
+
+    /**
+     * Remove search-engine implementation notes that were stored as product copy.
+     */
+    public function stripSeoImplementationHtml(string $html): string
+    {
+        if ($html === '') {
+            return '';
+        }
+
+        $html = preg_replace(
+            '/<(h[1-6])\b[^>]*>\s*(?:<[^>]+>\s*)*Is this listing ready for Google Shopping\?[\s\S]*?<\/\1>\s*(?:<p\b[^>]*>[\s\S]*?<\/p>\s*)?/iu',
+            '',
+            $html
+        ) ?? $html;
+
+        $html = preg_replace(
+            '/<(h[1-6])\b[^>]*>[\s\S]*?Google Shopping[\s\S]*?<\/\1>\s*(?:<p\b[^>]*>[\s\S]*?<\/p>\s*)?/iu',
+            '',
+            $html
+        ) ?? $html;
+
+        $html = preg_replace(
+            '/<(p|li|div)\b[^>]*>[\s\S]*?(?:Google Merchant Center|image alt text|structured data so Google|AI search overviews)[\s\S]*?<\/\1>\s*/iu',
+            '',
+            $html
+        ) ?? $html;
+
+        $html = preg_replace(
+            '/\s*Listings are prepared for Google Shopping[^.]*\./iu',
+            '',
+            $html
+        ) ?? $html;
+
+        return trim($html);
     }
 
     protected function filterSentences(string $text): string

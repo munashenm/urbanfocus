@@ -151,4 +151,51 @@ class InternalPricingCopyScrubTest extends TestCase
         $this->assertSame(2, $stats['processed']);
         $this->assertSame(1, $stats['updated']);
     }
+
+    public function test_product_page_hides_seo_implementation_commentary_and_keeps_schema(): void
+    {
+        $product = $this->createDirtyProduct([
+            'name' => 'Nitrokey 3C NFC',
+            'slug' => 'nitrokey-3c-nfc',
+            'brand' => 'Nitrokey',
+            'sku' => 'UF-NK-3C-NFC',
+            'model_number' => 'NK-3C-NFC',
+            'price' => 1299,
+            'short_description' => 'USB-C plus NFC FIDO2 key for South African Microsoft 365 and Google Workspace MFA.',
+            'description' => '<p>The Nitrokey 3C NFC is a FIDO2 hardware security key supplied by Urban Focus. Listings are prepared for Google Shopping, Google Images and organic search.</p><h4>Is this listing ready for Google Shopping?</h4><p>Yes. Each specialist product includes a unique title, description, MPN/SKU, brand, image alt text and structured data so Google Merchant Center, Google Images and AI search overviews can index it.</p>',
+            'specifications' => [
+                'Interface' => 'USB-C + NFC',
+                'FAQ 1 question' => 'Can I buy the Nitrokey 3C NFC in South Africa?',
+                'FAQ 1 answer' => 'Yes. Urban Focus supplies it with a VAT invoice nationwide.',
+                'FAQ 2 question' => 'Is this listing ready for Google Shopping?',
+                'FAQ 2 answer' => 'Yes. Each specialist product includes a unique title, description, MPN/SKU, brand, image alt text and structured data so Google Merchant Center, Google Images and AI search overviews can index it.',
+            ],
+        ]);
+
+        $html = $this->get(route('products.show', $product))->assertOk()->getContent();
+
+        $this->assertStringContainsString('Nitrokey 3C NFC', $html);
+        $this->assertStringContainsString('Google Workspace MFA', $html);
+        $this->assertStringContainsString('SKU: <strong>UF-NK-3C-NFC</strong>', $html);
+        $this->assertStringContainsString('MPN: <strong>NK-3C-NFC</strong>', $html);
+        $this->assertStringContainsString('Brand: <strong>Nitrokey</strong>', $html);
+        $this->assertStringContainsString('Technical specifications', $html);
+        $this->assertStringContainsString('Ideal applications', $html);
+        $this->assertStringContainsString('application/ld+json', $html);
+        $this->assertMatchesRegularExpression('/"@type":\s*"Product"/', $html);
+        $this->assertMatchesRegularExpression('/"@type":\s*"Offer"/', $html);
+        $this->assertMatchesRegularExpression('/"sku":\s*"UF-NK-3C-NFC"/', $html);
+        $this->assertMatchesRegularExpression('/"mpn":\s*"NK-3C-NFC"/', $html);
+        $this->assertStringNotContainsString('Is this listing ready for Google Shopping?', $html);
+        $this->assertStringNotContainsString('Google Merchant Center', $html);
+        $this->assertStringNotContainsString('structured data', $html);
+        $this->assertStringNotContainsString('image alt text', $html);
+        $this->assertStringNotContainsString('AI search overviews', $html);
+        $this->assertStringNotContainsString('Listings are prepared for Google Shopping', $html);
+
+        $faqs = $product->listingFaqs();
+        $this->assertCount(1, $faqs);
+        $this->assertSame('Can I buy the Nitrokey 3C NFC in South Africa?', $faqs[0]['question']);
+        $this->assertStringNotContainsString('Google Shopping', json_encode($product->faqSchemaArray()));
+    }
 }

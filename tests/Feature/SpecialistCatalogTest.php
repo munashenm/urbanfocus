@@ -61,8 +61,15 @@ class SpecialistCatalogTest extends TestCase
         $this->assertLessThanOrEqual(70, mb_strlen((string) $key->meta_title));
         $this->assertNotEmpty($key->meta_keywords);
         $this->assertLessThanOrEqual(Product::META_KEYWORDS_MAX_LENGTH, mb_strlen((string) $key->meta_keywords));
-        $this->assertStringContainsString('<h3>Advantages</h3>', (string) $key->description);
-        $this->assertStringContainsString('<h3>Key specifications</h3>', (string) $key->description);
+        $this->assertStringContainsString('<h3>Key features</h3>', (string) $key->description);
+        $this->assertStringContainsString('<h3>Technical specifications</h3>', (string) $key->description);
+        $this->assertStringContainsString('<h3>What\'s included</h3>', (string) $key->description);
+        $this->assertStringNotContainsString('Google Shopping', (string) $key->description);
+        $this->assertStringNotContainsString('structured data', (string) $key->description);
+        $this->assertStringNotContainsString('AI search', (string) $key->description);
+        foreach ($key->listingFaqs() as $faq) {
+            $this->assertStringNotContainsString('Google Shopping', $faq['question'].' '.$faq['answer']);
+        }
         $this->assertNotEmpty($key->specifications[SpecialistCatalogService::LISTING_PHOTO_SPEC_KEY] ?? null);
     }
 
@@ -102,7 +109,7 @@ class SpecialistCatalogTest extends TestCase
         $this->assertSame(4, $result['created']);
         $this->assertSame(1, $result['updated']);
         $this->assertSame(1, Product::where('sku', 'UF-NK-PASSKEY')->count());
-        $this->assertStringContainsString('Key specifications', (string) Product::where('sku', 'UF-NK-PASSKEY')->first()?->description);
+        $this->assertStringContainsString('Technical specifications', (string) Product::where('sku', 'UF-NK-PASSKEY')->first()?->description);
     }
 
     public function test_attaches_photos_when_web_root_is_separate_from_laravel_public(): void
@@ -172,7 +179,7 @@ class SpecialistCatalogTest extends TestCase
         $this->assertSame(4, $result['created']);
         $this->assertSame(1, $result['updated']);
         $this->assertSame(1999.0, (float) $product->fresh()->price);
-        $this->assertStringContainsString('Key specifications', (string) $product->fresh()->description);
+        $this->assertStringContainsString('Technical specifications', (string) $product->fresh()->description);
     }
 
     public function test_admin_catalog_page_loads_with_specialist_card(): void
@@ -223,12 +230,18 @@ class SpecialistCatalogTest extends TestCase
             'specs' => ['Interface' => 'USB-C + NFC'],
         ]);
 
-        $this->assertStringContainsString('<h3>Advantages</h3>', $html);
-        $this->assertStringContainsString('<h3>Suitable for</h3>', $html);
-        $this->assertStringContainsString('<h3>Key specifications</h3>', $html);
-        $this->assertStringContainsString('<h3>South African supply</h3>', $html);
+        $this->assertStringContainsString('<h3>Key features</h3>', $html);
+        $this->assertStringContainsString('<h3>Ideal applications</h3>', $html);
+        $this->assertStringContainsString('<h3>Technical specifications</h3>', $html);
+        $this->assertStringContainsString('<h3>What\'s included</h3>', $html);
+        $this->assertStringContainsString('<h3>Delivery information</h3>', $html);
         $this->assertStringContainsString('Nitrokey 3C NFC', $html);
         $this->assertStringContainsString('Johannesburg', $html);
+        $this->assertStringNotContainsString('Google Shopping', $html);
+        $this->assertStringNotContainsString('Google Merchant Center', $html);
+        $this->assertStringNotContainsString('structured data', $html);
+        $this->assertStringNotContainsString('image alt text', $html);
+        $this->assertStringNotContainsString('AI search', $html);
     }
 
     public function test_canonical_specialist_categories_are_visible_in_catalog(): void
@@ -294,8 +307,10 @@ class SpecialistCatalogTest extends TestCase
             $this->assertStringContainsString('South Africa', $item['short_description'], $item['sku']);
 
             $html = app(SpecialistListingCopy::class)->descriptionHtml($item);
-            $this->assertStringContainsString('<h3>Advantages</h3>', $html, $item['sku']);
-            $this->assertStringContainsString('<h3>Key specifications</h3>', $html, $item['sku']);
+            $this->assertStringContainsString('<h3>Key features</h3>', $html, $item['sku']);
+            $this->assertStringContainsString('<h3>Technical specifications</h3>', $html, $item['sku']);
+            $this->assertStringNotContainsString('Google Shopping', $html, $item['sku']);
+            $this->assertStringNotContainsString('structured data', $html, $item['sku']);
             $this->assertGreaterThan(300, strlen(strip_tags($html)), $item['sku']);
         }
     }

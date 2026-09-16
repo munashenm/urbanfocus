@@ -89,7 +89,7 @@ class TargetRangeListingCopy
     }
 
     /**
-     * Distrinode-style description: intro, advantages, suitable for, key specs.
+     * Customer-facing description: summary, key features, applications, specs, included items.
      *
      * @param  array<string, mixed>  $item
      */
@@ -107,15 +107,23 @@ class TargetRangeListingCopy
             $keys .= '<li><strong>'.e($label).':</strong> '.e($value).'</li>';
         }
 
+        $included = '';
+        foreach ($this->includedWith($item) as $line) {
+            $included .= '<li>'.e($line).'</li>';
+        }
+
         $html = implode("\n", [
             $this->p($sheet['intro']),
-            '<h3>Advantages</h3>',
+            '<h3>Key features</h3>',
             $this->p($sheet['advantages']),
-            '<h3>Suitable for</h3>',
+            '<h3>Ideal applications</h3>',
             '<ul>'.$suitable.'</ul>',
-            '<h3>Key specifications</h3>',
+            '<h3>Technical specifications</h3>',
             '<ul>'.$keys.'</ul>',
-            '<h3>Recommendations</h3>',
+            '<h3>What\'s included</h3>',
+            '<ul>'.$included.'</ul>',
+            '<h3>Warranty</h3>',
+            $this->p($this->warrantyLabel($item).' through Urban Focus. Confirm any on-site or advance-swap options on the quotation.'),
             $this->p($sheet['recommendations']),
         ]);
 
@@ -436,6 +444,31 @@ class TargetRangeListingCopy
             default => [
                 'Professional IT bills of materials',
                 'Named OEM replacements',
+            ],
+        };
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @return list<string>
+     */
+    protected function includedWith(array $item): array
+    {
+        return match ($this->family($item)) {
+            'nas' => [
+                'Diskless chassis unless drives are on the same order',
+                'Manufacturer documentation',
+            ],
+            'nvr' => [
+                'The specified recorder',
+                'Manufacturer documentation',
+            ],
+            'software' => [
+                'Licence as confirmed on the quotation',
+            ],
+            default => [
+                'The specified hardware unit',
+                'Manufacturer documentation',
             ],
         };
     }

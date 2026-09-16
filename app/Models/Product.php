@@ -453,9 +453,17 @@ class Product extends Model
             }
         }
 
-        return $faqs !== []
-            ? app(InternalPricingCopySanitizer::class)->sanitizeFaqs($faqs)
-            : [];
+        if ($faqs === []) {
+            return [];
+        }
+
+        $faqs = app(InternalPricingCopySanitizer::class)->sanitizeFaqs($faqs);
+
+        return array_values(array_filter($faqs, function (array $faq): bool {
+            $text = $faq['question'].' '.$faq['answer'];
+
+            return preg_match('/google shopping|google merchant|structured data|ai search overview|image alt text/iu', $text) !== 1;
+        }));
     }
 
     public function storefrontShortDescription(): string
@@ -917,14 +925,14 @@ class Product extends Model
     }
 
     /**
-     * Crawlable audience copy for search engines and AI assistants.
+     * Customer-facing use cases shown on the product page.
      *
      * @return list<string>
      */
     public function buyerFitLines(): array
     {
         $html = (string) $this->storefrontDescriptionHtml();
-        if ($html !== '' && preg_match('/suitable for\s*<\/h[1-6]>\s*<ul>(.*?)<\/ul>/is', $html, $match)) {
+        if ($html !== '' && preg_match('/(?:suitable for|ideal applications)\s*<\/h[1-6]>\s*<ul>(.*?)<\/ul>/is', $html, $match)) {
             preg_match_all('/<li\b[^>]*>(.*?)<\/li>/is', $match[1], $items);
             $lines = [];
             foreach ($items[1] ?? [] as $item) {

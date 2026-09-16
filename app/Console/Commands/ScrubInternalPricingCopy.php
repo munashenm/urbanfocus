@@ -14,7 +14,7 @@ class ScrubInternalPricingCopy extends Command
                             {--no-backup : Skip JSON backup of affected rows}
                             {--limit= : Maximum number of products to scan}';
 
-    protected $description = 'Remove internal pricing, markup, margin and fee language from customer-facing product copy';
+    protected $description = 'Remove internal pricing language and SEO-implementation commentary from customer-facing product copy';
 
     public function handle(InternalPricingCopySanitizer $sanitizer, SeoService $seo): int
     {

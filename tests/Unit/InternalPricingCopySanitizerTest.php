@@ -105,4 +105,69 @@ class InternalPricingCopySanitizerTest extends TestCase
         $this->assertStringNotContainsString('Staff note', $clean);
         $this->assertStringNotContainsString('our cost', $clean);
     }
+
+    public function test_strips_google_shopping_and_structured_data_commentary(): void
+    {
+        $html = '<p>Urban Focus supplies the Nitrokey 3C NFC to companies, schools and government buyers across South Africa with VAT invoices, courier delivery and local technical support. Listings are prepared for Google Shopping, Google Images and organic search, including Johannesburg, Cape Town, Durban and nationwide dispatch.</p>'
+            .'<h3>Frequently asked questions</h3>'
+            .'<h4>Can I buy the Nitrokey 3C NFC in South Africa?</h4>'
+            .'<p>Yes. Urban Focus supplies it with a VAT invoice nationwide.</p>'
+            .'<h4>Is this listing ready for Google Shopping?</h4>'
+            .'<p>Yes. Each specialist product includes a unique title, description, MPN/SKU, brand, image alt text and structured data so Google Merchant Center, Google Images and AI search overviews can index it.</p>';
+
+        $clean = $this->sanitizer->sanitizeHtml($html);
+
+        $this->assertStringContainsString('VAT invoices', $clean);
+        $this->assertStringContainsString('Can I buy the Nitrokey 3C NFC in South Africa?', $clean);
+        $this->assertStringNotContainsString('Google Shopping', $clean);
+        $this->assertStringNotContainsString('Google Merchant Center', $clean);
+        $this->assertStringNotContainsString('structured data', $clean);
+        $this->assertStringNotContainsString('image alt text', $clean);
+        $this->assertStringNotContainsString('AI search', $clean);
+        $this->assertStringNotContainsString('Is this listing ready', $clean);
+    }
+
+    public function test_regex_strips_google_shopping_faq_heading_and_answer(): void
+    {
+        $html = '<h3>Frequently asked questions</h3>'
+            .'<h4>Can I buy the Urban Focus ZimaBoard CCTV Recording Storage Server in South Africa?</h4>'
+            .'<p>Yes. Urban Focus supplies it with a VAT invoice nationwide.</p>'
+            .'<h4>How long does delivery take?</h4>'
+            .'<p>REQUEST A QUOTE. Lead time is confirmed on the official quote.</p>'
+            .'<h4>Is this listing ready for Google Shopping?</h4>'
+            .'<p>Yes. Each specialist product includes a unique title, description, MPN/SKU, brand, image alt text and structured data so Google Merchant Center, Google Images and AI search overviews can index it.</p>';
+
+        $clean = $this->sanitizer->stripSeoImplementationHtml($html);
+
+        $this->assertStringContainsString('Can I buy the Urban Focus ZimaBoard', $clean);
+        $this->assertStringContainsString('How long does delivery take?', $clean);
+        $this->assertStringNotContainsString('Is this listing ready for Google Shopping?', $clean);
+        $this->assertStringNotContainsString('Google Merchant Center', $clean);
+        $this->assertStringNotContainsString('AI search overviews', $clean);
+    }
+
+    public function test_does_not_strip_google_workspace_customer_copy(): void
+    {
+        $text = 'Hardware-backed FIDO2 authentication for Microsoft 365 and Google Workspace MFA.';
+
+        $this->assertSame($text, $this->sanitizer->sanitizePlain($text));
+        $this->assertFalse($this->sanitizer->containsLeak($text));
+    }
+
+    public function test_drops_google_shopping_faqs(): void
+    {
+        $faqs = $this->sanitizer->sanitizeFaqs([
+            [
+                'question' => 'Can I buy this in South Africa?',
+                'answer' => 'Yes. Urban Focus supplies it with a VAT invoice.',
+            ],
+            [
+                'question' => 'Is this listing ready for Google Shopping?',
+                'answer' => 'Yes. Each specialist product includes image alt text and structured data so Google Merchant Center can index it.',
+            ],
+        ]);
+
+        $this->assertCount(1, $faqs);
+        $this->assertSame('Can I buy this in South Africa?', $faqs[0]['question']);
+    }
 }

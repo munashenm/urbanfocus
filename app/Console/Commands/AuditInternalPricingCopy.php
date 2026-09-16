@@ -12,7 +12,7 @@ class AuditInternalPricingCopy extends Command
                             {--sku= : Inspect a single SKU first}
                             {--csv= : Write findings to a CSV path}';
 
-    protected $description = 'Report customer-facing product copy that looks like internal pricing or staff notes (does not change the database)';
+    protected $description = 'Report customer-facing product copy that looks like internal pricing notes or SEO-implementation commentary (does not change the database)';
 
     public function handle(InternalPricingCopySanitizer $sanitizer): int
     {
