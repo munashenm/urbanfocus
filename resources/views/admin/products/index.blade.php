@@ -68,7 +68,7 @@
                         <button type="submit" formaction="{{ route('admin.products.bulk-update') }}" name="action" value="archive" class="btn btn-sm btn-outline-warning" form="bulk-products-form" onclick="return confirm('Archive selected products?')">Archive</button>
                     @endpermission
                     @permission('products.delete')
-                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete selected products?')">Delete</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Permanently delete selected products? This cannot be undone.')">Delete</button>
                     @endpermission
                 </div>
             @endanypermission

@@ -119,6 +119,10 @@ class ProductController extends Controller
         $validated['slug'] = $this->uniqueSlug($validated['slug'] ?? null, $validated['name'], $product->id);
 
         try {
+            if ($product->trashed() && $publicationStatus !== 'archived') {
+                $product->restore();
+            }
+
             $product->update($validated);
             $product->applyPublicationStatus($publicationStatus);
             $this->handleImages($request, $product);
@@ -175,7 +179,7 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
-            'ids.*' => 'integer|exists:products,id',
+            'ids.*' => 'integer',
         ]);
 
         $deleted = 0;
@@ -183,10 +187,15 @@ class ProductController extends Controller
         Product::withTrashed()
             ->whereIn('id', $validated['ids'])
             ->with('images')
+            ->get()
             ->each(function (Product $product) use (&$deleted) {
                 $this->deleteProduct($product);
                 $deleted++;
             });
+
+        if ($deleted === 0) {
+            return back()->with('error', 'No matching products were found to delete. Select at least one product.');
+        }
 
         $this->audit('products.bulk_delete', null, ['count' => $deleted]);
 
@@ -199,11 +208,16 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
-            'ids.*' => 'integer|exists:products,id',
+            'ids.*' => 'integer',
             'action' => 'required|in:publish,draft,archive,delete',
         ]);
 
-        $products = Product::withTrashed()->whereIn('id', $validated['ids'])->get();
+        $products = Product::withTrashed()->whereIn('id', $validated['ids'])->with('images')->get();
+
+        if ($products->isEmpty()) {
+            return back()->with('error', 'No matching products were found. Select at least one product.');
+        }
+
         $count = 0;
 
         foreach ($products as $product) {
@@ -218,7 +232,16 @@ class ProductController extends Controller
 
         $this->audit('products.bulk_update', null, ['action' => $validated['action'], 'count' => $count]);
 
-        return back()->with('success', "{$count} product(s) updated.");
+        $verb = match ($validated['action']) {
+            'publish' => 'published',
+            'draft' => 'moved to draft',
+            'archive' => 'archived',
+            'delete' => 'deleted',
+        };
+
+        return redirect()
+            ->route('admin.products.index', $request->only(['q', 'merchant_issue', 'status', 'category_id', 'brand', 'page']))
+            ->with('success', "{$count} product(s) {$verb}.");
     }
 
     public function destroyImage(Product $product, ProductImage $image): RedirectResponse
@@ -327,11 +350,14 @@ class ProductController extends Controller
 
     protected function deleteProduct(Product $product): void
     {
+        $product->loadMissing('images');
+
         foreach ($product->images as $image) {
-            $this->images->delete($image->path);
+            $this->images->delete((string) $image->path);
+            $image->delete();
         }
 
-        $product->delete();
+        $product->forceDelete();
     }
 
     protected function validateProduct(Request $request, ?int $id = null): array

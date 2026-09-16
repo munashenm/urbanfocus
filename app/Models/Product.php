@@ -297,29 +297,41 @@ class Product extends Model
 
     protected function publishProduct(): void
     {
-        if ($this->trashed()) {
-            $this->restore();
-        }
-
-        $this->update(['is_active' => true]);
+        $this->restoreIfArchived();
+        $this->forceFill(['is_active' => true])->save();
     }
 
     protected function draftProduct(): void
     {
-        if ($this->trashed()) {
-            $this->restore();
-        }
-
-        $this->update(['is_active' => false]);
+        $this->restoreIfArchived();
+        $this->forceFill(['is_active' => false])->save();
     }
 
     protected function archiveProduct(): void
     {
-        $this->update(['is_active' => false]);
+        $this->forceFill(['is_active' => false])->save();
 
         if (! $this->trashed()) {
             $this->delete();
         }
+    }
+
+    protected function restoreIfArchived(): void
+    {
+        if (! $this->trashed()) {
+            return;
+        }
+
+        $this->newQueryWithoutScopes()
+            ->whereKey($this->getKey())
+            ->update([
+                'deleted_at' => null,
+                'updated_at' => now(),
+            ]);
+
+        $this->deleted_at = null;
+        $this->exists = true;
+        $this->syncOriginalAttribute('deleted_at');
     }
 
     public function scopePublicationStatus($query, string $status)
