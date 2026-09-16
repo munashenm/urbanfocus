@@ -173,9 +173,21 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('products/bulk-update', [AdminProductController::class, 'bulkUpdate'])->middleware('permission:products.edit')->name('products.bulk-update');
         Route::get('products/export/csv', [AdminProductController::class, 'export'])->name('products.export');
         Route::post('products/{product}/duplicate', [AdminProductController::class, 'duplicate'])->middleware('permission:products.create')->name('products.duplicate');
-        Route::delete('products/{product}/images/{image}', [AdminProductController::class, 'destroyImage'])->middleware('permission:products.edit')->name('products.images.destroy');
-        Route::patch('products/{product}/images/{image}/primary', [AdminProductController::class, 'setPrimaryImage'])->middleware('permission:products.edit')->name('products.images.primary');
-        Route::resource('products', AdminProductController::class)->except(['show'])->withTrashed();
+        Route::delete('products/{product}/images/{image}', [AdminProductController::class, 'destroyImage'])
+            ->middleware('permission:products.edit')
+            ->whereNumber('image')
+            ->scopeBindings()
+            ->name('products.images.destroy');
+        Route::patch('products/{product}/images/{image}/primary', [AdminProductController::class, 'setPrimaryImage'])
+            ->middleware('permission:products.edit')
+            ->whereNumber('image')
+            ->scopeBindings()
+            ->name('products.images.primary');
+        Route::delete('products/{product}/delete', [AdminProductController::class, 'destroy'])
+            ->middleware('permission:products.delete')
+            ->withTrashed()
+            ->name('products.destroy');
+        Route::resource('products', AdminProductController::class)->except(['show', 'destroy'])->withTrashed();
         Route::get('categories/{category}/children', [AdminCategoryController::class, 'children'])->name('categories.children');
         Route::post('categories/bulk-destroy', [AdminCategoryController::class, 'bulkDestroy'])->middleware('permission:products.delete')->name('categories.bulk-destroy');
         Route::resource('categories', AdminCategoryController::class)->except(['show']);

@@ -159,15 +159,9 @@
                                         @if($image->is_primary)<span class="badge bg-primary wc-image-badge">Primary</span>@endif
                                         <div class="wc-image-actions">
                                             @unless($image->is_primary)
-                                                <form action="{{ route('admin.products.images.primary', [$product, $image]) }}" method="POST" class="d-inline">
-                                                    @csrf @method('PATCH')
-                                                    <button class="btn btn-sm btn-light">Primary</button>
-                                                </form>
+                                                <button type="submit" class="btn btn-sm btn-light" form="primary-image-{{ $image->id }}">Primary</button>
                                             @endunless
-                                            <form action="{{ route('admin.products.images.destroy', [$product, $image]) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this image?')">
-                                                @csrf @method('DELETE')
-                                                <button class="btn btn-sm btn-outline-danger">Remove</button>
-                                            </form>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" form="delete-image-{{ $image->id }}" formnovalidate onclick="return confirm('Remove this image?')">Remove</button>
                                         </div>
                                     </div>
                                 @endforeach
@@ -285,6 +279,18 @@
     @permission('products.create')
         <form id="duplicate-form" action="{{ route('admin.products.duplicate', $product) }}" method="POST" class="d-none">@csrf</form>
     @endpermission
+    @foreach($product->images as $image)
+        @unless($image->is_primary)
+            <form id="primary-image-{{ $image->id }}" action="{{ route('admin.products.images.primary', [$product, $image]) }}" method="POST" class="d-none">
+                @csrf
+                @method('PATCH')
+            </form>
+        @endunless
+        <form id="delete-image-{{ $image->id }}" action="{{ route('admin.products.images.destroy', [$product, $image]) }}" method="POST" class="d-none">
+            @csrf
+            @method('DELETE')
+        </form>
+    @endforeach
 @endif
 
 @push('scripts')

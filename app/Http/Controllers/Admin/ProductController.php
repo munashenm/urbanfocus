@@ -225,10 +225,12 @@ class ProductController extends Controller
     {
         abort_unless($image->product_id === $product->id, 404);
 
+        $wasPrimary = (bool) $image->is_primary;
+
         $this->images->delete($image->path);
         $image->delete();
 
-        if (! $product->images()->where('is_primary', true)->exists()) {
+        if ($wasPrimary || ! $product->images()->where('is_primary', true)->exists()) {
             $product->images()->orderBy('sort_order')->first()?->update(['is_primary' => true]);
         }
 
