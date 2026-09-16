@@ -23,4 +23,13 @@
         <button type="submit" class="btn btn-dark">Add specialist products</button>
     </form>
 </div></div>
+
+<div class="card border-primary mt-4"><div class="card-body">
+    <h2 class="h5 fw-bold">Add high-margin technology products</h2>
+    <p class="small text-muted">Adds up to {{ number_format($highMarginCount ?? 0) }} fibre, networking, POS and CCTV SKUs at exact VAT-inclusive prices (no specialist top-up). Available on order.</p>
+    <form action="{{ url('/admin/catalog/sync-high-margin') }}" method="POST" onsubmit="return confirm('Create or refresh the high-margin technology products at the exact VAT-inclusive prices?')">
+        @csrf
+        <button type="submit" class="btn btn-primary">Add high-margin products</button>
+    </form>
+</div></div>
 @endsection

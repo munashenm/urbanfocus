@@ -354,4 +354,5 @@ return [
     | Synced with `php artisan catalog:sync-specialist`. Existing store matches are skipped.
     */
     'specialist_path' => database_path('data/specialist-products.php'),
+    'high_margin_path' => database_path('data/high-margin-products.php'),
 ];

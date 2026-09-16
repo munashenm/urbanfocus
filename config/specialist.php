@@ -25,6 +25,13 @@ return [
             'days' => 21,
             'quote' => false,
         ],
+        'available_on_order' => [
+            'label' => 'AVAILABLE ON ORDER',
+            'google' => 'backorder',
+            'schema' => 'https://schema.org/BackOrder',
+            'days' => 21,
+            'quote' => false,
+        ],
         'request_quote' => [
             'label' => 'REQUEST A QUOTE',
             'google' => 'in_stock',
@@ -88,6 +95,8 @@ return [
         ['name' => 'ONLYOFFICE', 'website' => 'https://www.onlyoffice.com'],
         ['name' => 'OPNsense', 'website' => 'https://opnsense.org'],
         ['name' => 'Urban Focus', 'website' => 'https://www.urbanfocus.co.za'],
+        ['name' => 'NOYAFA', 'website' => 'https://www.noyafa.com'],
+        ['name' => 'Signal Fire', 'website' => 'http://www.signalfiresplicer.com'],
     ],
 
     /*

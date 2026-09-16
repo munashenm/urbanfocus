@@ -466,6 +466,21 @@ class Product extends Model
         }));
     }
 
+    /**
+     * Optional related SKUs stored in specifications (not shown on the spec table).
+     *
+     * @return list<string>
+     */
+    public function relatedSkuList(): array
+    {
+        $raw = trim((string) (($this->specifications ?? [])['Related SKUs'] ?? ''));
+        if ($raw === '') {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', $raw))));
+    }
+
     public function storefrontShortDescription(): string
     {
         return app(InternalPricingCopySanitizer::class)->sanitizePlain((string) $this->short_description);
@@ -871,6 +886,9 @@ class Product extends Model
             if ($this->availabilityKey() === 'in_stock_za') {
                 return '1–3 business days in South Africa';
             }
+            if ($this->availabilityKey() === 'available_on_order') {
+                return 'Ships on confirmed supplier availability';
+            }
 
             return $days.'–'.($days + 2).' business days';
         }
@@ -915,7 +933,17 @@ class Product extends Model
             $specs['Dimensions'] = $this->dimensions;
         }
 
-        unset($specs['Urban Focus range'], $specs['Sales focus'], $specs['Supply'], $specs['Availability key'], $specs['Listing photo']);
+        unset(
+            $specs['Urban Focus range'],
+            $specs['Sales focus'],
+            $specs['Supply'],
+            $specs['Availability key'],
+            $specs['Listing photo'],
+            $specs['Related SKUs'],
+            $specs['ICASA note'],
+            $specs['Supplier image approval'],
+            $specs['Internal notes']
+        );
 
         for ($i = 1; $i <= 6; $i++) {
             unset($specs["FAQ {$i} question"], $specs["FAQ {$i} answer"]);

@@ -192,6 +192,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('catalog/sync-target-range', [AdminCatalogController::class, 'syncTargetRange'])->middleware('permission:products.create')->name('catalog.sync-target-range');
         Route::post('catalog/sync-specialist/preview', [AdminCatalogController::class, 'syncSpecialistPreview'])->middleware('permission:products.create')->name('catalog.sync-specialist-preview');
         Route::post('catalog/sync-specialist', [AdminCatalogController::class, 'syncSpecialist'])->middleware('permission:products.create')->name('catalog.sync-specialist');
+        Route::post('catalog/sync-high-margin/preview', [AdminCatalogController::class, 'syncHighMarginPreview'])->middleware('permission:products.create')->name('catalog.sync-high-margin-preview');
+        Route::post('catalog/sync-high-margin', [AdminCatalogController::class, 'syncHighMargin'])->middleware('permission:products.create')->name('catalog.sync-high-margin');
         Route::post('catalog/clear-products', [AdminCatalogController::class, 'clearProducts'])->middleware('permission:products.delete')->name('catalog.clear-products');
         Route::post('catalog/remove-non-it', [AdminCatalogController::class, 'removeNonIt'])->middleware('permission:products.delete')->name('catalog.remove-non-it');
         Route::post('catalog/consolidate-categories', [AdminCatalogController::class, 'consolidateCategories'])->middleware('permission:products.edit')->name('catalog.consolidate-categories');

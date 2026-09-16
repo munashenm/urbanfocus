@@ -32,12 +32,27 @@ class ProductController extends Controller
             ->all();
         session(['recently_viewed' => $recentIds]);
 
-        $relatedProducts = Product::with('images')
-            ->forStorefront()
-            ->where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->take(4)
-            ->get();
+        $relatedProducts = collect();
+        $relatedSkus = $product->relatedSkuList();
+        if ($relatedSkus !== []) {
+            $relatedProducts = Product::with('images')
+                ->forStorefront()
+                ->whereIn('sku', $relatedSkus)
+                ->where('id', '!=', $product->id)
+                ->get()
+                ->sortBy(fn (Product $item) => array_search($item->sku, $relatedSkus, true))
+                ->values();
+        }
+        if ($relatedProducts->count() < 4) {
+            $fill = Product::with('images')
+                ->forStorefront()
+                ->where('category_id', $product->category_id)
+                ->where('id', '!=', $product->id)
+                ->when($relatedProducts->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $relatedProducts->pluck('id')))
+                ->take(4 - $relatedProducts->count())
+                ->get();
+            $relatedProducts = $relatedProducts->concat($fill)->values();
+        }
 
         $accessories = Product::with('images')
             ->forStorefront()

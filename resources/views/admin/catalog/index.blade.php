@@ -199,6 +199,63 @@
     </div>
 
     <div class="col-lg-6">
+        <div class="card h-100 border-primary"><div class="card-body">
+            @php
+                $highMarginCount = $highMarginCount ?? 0;
+            @endphp
+            <h2 class="h5 fw-bold">Add high-margin technology products</h2>
+            <p class="small text-muted mb-3">
+                Adds up to {{ number_format($highMarginCount) }} fibre, networking, POS, mini-PC and CCTV SKUs at the published VAT-inclusive prices (no specialist top-up).
+                Listings are available on order until Urban Focus holds local stock. Re-run to refresh copy, prices and photos.
+            </p>
+
+            @if(session('high_margin_preview'))
+                @php $preview = session('high_margin_preview'); @endphp
+                <div class="alert alert-secondary small mb-3">
+                    <strong>Preview</strong> (nothing written yet)<br>
+                    Would create: <strong>{{ $preview['created'] ?? 0 }}</strong>,
+                    would update: {{ $preview['updated'] ?? 0 }},
+                    already on store: {{ $preview['skipped'] ?? 0 }},
+                    photos: {{ $preview['imaged'] ?? 0 }},
+                    errors: {{ $preview['errors'] ?? 0 }}
+                    @if(!empty($preview['error_reasons']))
+                        <div class="mt-2"><strong>Error:</strong> {{ implode(' | ', array_slice($preview['error_reasons'], 0, 3)) }}</div>
+                    @endif
+                    @if(!empty($preview['samples']))
+                        <ul class="mb-0 ps-3 mt-2">
+                            @foreach(array_slice($preview['samples'], 0, 12) as $sample)
+                                <li>
+                                    {{ strtoupper($sample['action'] ?? '') }}
+                                    {{ $sample['sku'] ?? '' }}
+                                    — {{ $sample['name'] ?? '' }}
+                                    @if(!empty($sample['reason'])) ({{ $sample['reason'] }}) @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            @endif
+
+            @if($highMarginCount > 0)
+                <div class="d-flex flex-wrap gap-2">
+                    <form action="{{ url('/admin/catalog/sync-high-margin/preview') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary">Preview (no changes)</button>
+                    </form>
+                    <form action="{{ url('/admin/catalog/sync-high-margin') }}" method="POST" onsubmit="return confirm('Create or refresh the 10 high-margin technology products at the exact VAT-inclusive prices?')">
+                        @csrf
+                        <button type="submit" class="btn btn-primary">Add high-margin products</button>
+                    </form>
+                </div>
+            @else
+                <div class="alert alert-warning small mb-0">
+                    Pull latest <code>main</code> so <code>database/data/high-margin-products.php</code> is on the server, then refresh.
+                </div>
+            @endif
+        </div></div>
+    </div>
+
+    <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Export Products</h2>
             <p class="small text-muted">Download all products as CSV for backup or re-import.</p>

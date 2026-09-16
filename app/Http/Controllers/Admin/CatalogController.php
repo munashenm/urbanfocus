@@ -13,6 +13,7 @@ use App\Services\ProductCleanupService;
 use App\Services\ProductExportService;
 use App\Services\ProductImportService;
 use App\Services\ProductSeoService;
+use App\Services\HighMarginCatalogService;
 use App\Services\SpecialistCatalogService;
 use App\Services\TargetRangeCatalogService;
 use Illuminate\Http\RedirectResponse;
@@ -98,6 +99,7 @@ class CatalogController extends Controller
             $merchantIssueLabels = Product::googleMerchantIssueLabels();
             $targetRangeCount = $this->targetRangeCount();
             $specialistCount = $this->specialistCount();
+            $highMarginCount = $this->highMarginCount();
             $mediaHealth = app(CatalogMediaHealthService::class)->liveSummary();
 
             $feeds = [
@@ -114,12 +116,13 @@ class CatalogController extends Controller
                 ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
             ];
 
-            return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing', 'targetRangeCount', 'specialistCount', 'mediaHealth'));
+            return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing', 'targetRangeCount', 'specialistCount', 'highMarginCount', 'mediaHealth'));
         } catch (\Throwable $e) {
             report($e);
 
             $count = 0;
             $specialistCount = 0;
+            $highMarginCount = 0;
             try {
                 $count = $this->targetRangeCount();
             } catch (\Throwable) {
@@ -128,11 +131,16 @@ class CatalogController extends Controller
                 $specialistCount = $this->specialistCount();
             } catch (\Throwable) {
             }
+            try {
+                $highMarginCount = $this->highMarginCount();
+            } catch (\Throwable) {
+            }
 
             return view('admin.catalog.simple', [
                 'error' => $e->getMessage(),
                 'targetRangeCount' => $count,
                 'specialistCount' => $specialistCount,
+                'highMarginCount' => $highMarginCount,
             ]);
         }
     }
@@ -469,6 +477,45 @@ class CatalogController extends Controller
         }
     }
 
+    public function syncHighMarginPreview(HighMarginCatalogService $catalog): RedirectResponse
+    {
+        try {
+            @set_time_limit(120);
+            $result = $catalog->sync(dryRun: true);
+
+            return back()->with('high_margin_preview', $result);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'High-margin catalog preview failed: '.$e->getMessage());
+        }
+    }
+
+    public function syncHighMargin(HighMarginCatalogService $catalog): RedirectResponse
+    {
+        try {
+            @set_time_limit(0);
+
+            $result = $catalog->sync();
+            $updated = $result['updated'] ?? 0;
+            $message = "Created {$result['created']} high-margin product(s). Listings refreshed: {$updated}. Already on the store: {$result['skipped']}. Photos attached or refreshed: {$result['imaged']}. Errors: {$result['errors']}.";
+
+            if (! empty($result['error_reasons'])) {
+                $message .= ' Error: '.implode(' | ', array_slice($result['error_reasons'], 0, 3));
+            }
+
+            if ($result['errors'] > 0) {
+                return back()->with('warning', $message);
+            }
+
+            return back()->with('success', $message);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'High-margin catalog sync failed: '.$e->getMessage());
+        }
+    }
+
     public function mergeCategories(CategoryMergeService $merge): RedirectResponse
     {
         try {
@@ -506,6 +553,24 @@ class CatalogController extends Controller
     protected function specialistCount(): int
     {
         $path = (string) (config('catalog.specialist_path') ?: database_path('data/specialist-products.php'));
+        if (! is_readable($path)) {
+            return 0;
+        }
+
+        try {
+            $decoded = str_ends_with(strtolower($path), '.php')
+                ? require $path
+                : json_decode((string) file_get_contents($path), true);
+
+            return is_array($decoded) ? count($decoded) : 0;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    protected function highMarginCount(): int
+    {
+        $path = (string) (config('catalog.high_margin_path') ?: database_path('data/high-margin-products.php'));
         if (! is_readable($path)) {
             return 0;
         }
