@@ -20,42 +20,45 @@
     </div>
 </div>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top shadow-sm site-header">
-    <div class="container">
+<nav class="navbar navbar-expand-xl navbar-light bg-white border-bottom sticky-top shadow-sm site-header">
+    <div class="container site-header-inner">
         <a class="site-logo navbar-brand py-0" href="{{ route('home') }}">
             <img src="{{ asset('images/logo.png') }}" alt="Urban Focus — IT Products & Software" width="200" height="42">
         </a>
         @php
             $cartCount = app(\App\Services\CartService::class)->count();
         @endphp
-        <div class="header-actions d-flex align-items-center gap-1 ms-auto order-lg-3">
+
+        <div class="search-wrap d-none d-md-block">
+            <form action="{{ route('shop.index') }}" method="GET" role="search" id="searchForm">
+                <div class="input-group search-input-group">
+                    <input class="form-control search-input" type="search" name="q" id="searchInput"
+                           placeholder="Search by name, brand, SKU, model..." value="{{ request('q') }}"
+                           autocomplete="off" aria-label="Search products"
+                           data-suggest-url="{{ route('search.suggest') }}"
+                           data-placeholder-img="{{ asset('images/product-placeholder.svg') }}">
+                    <button class="btn btn-primary search-submit" type="submit" aria-label="Search">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                    </button>
+                </div>
+            </form>
+            <div id="searchSuggestions" class="search-suggestions d-none" role="listbox" aria-label="Search suggestions"></div>
+        </div>
+
+        <div class="header-actions d-flex align-items-center gap-1 ms-auto ms-xl-0">
             <a class="header-icon-btn header-icon-btn--cart {{ request()->routeIs('cart.*') ? 'is-active' : '' }}" href="{{ route('cart.index') }}" aria-label="Cart{{ $cartCount ? ' ('.$cartCount.' items)' : '' }}" title="Cart">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l1.313 7h8.17l1.313-7zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/></svg>
                 @if($cartCount > 0)
                     <span class="header-icon-badge">{{ $cartCount }}</span>
                 @endif
             </a>
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Toggle navigation">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
         </div>
-        <div class="collapse navbar-collapse order-lg-2 flex-grow-1" id="mainNav">
-            <div class="search-wrap mx-lg-3 flex-grow-1 my-3 my-lg-0 position-relative">
-                <form action="{{ route('shop.index') }}" method="GET" role="search" id="searchForm">
-                    <div class="input-group">
-                        <input class="form-control search-input" type="search" name="q" id="searchInput"
-                               placeholder="Search by name, brand, SKU, model..." value="{{ request('q') }}"
-                               autocomplete="off" aria-label="Search products"
-                               data-suggest-url="{{ route('search.suggest') }}"
-                               data-placeholder-img="{{ asset('images/product-placeholder.svg') }}">
-                        <button class="btn btn-primary px-3" type="submit" aria-label="Search">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
-                        </button>
-                    </div>
-                </form>
-                <div id="searchSuggestions" class="search-suggestions d-none"></div>
-            </div>
-            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+
+        <div class="collapse navbar-collapse site-header-nav" id="mainNav">
+            <ul class="navbar-nav ms-xl-auto align-items-xl-center gap-xl-1">
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Home</a></li>
                 <li class="nav-item dropdown mega-dropdown">
                     <a class="nav-link dropdown-toggle {{ request()->routeIs('shop.*') || request()->routeIs('categories.*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside">Shop</a>
@@ -93,7 +96,7 @@
                         <li><a class="dropdown-item" href="{{ route('b2b.source') }}">Source a Product</a></li>
                     </ul>
                 </li>
-                <li class="nav-item d-lg-none w-100">
+                <li class="nav-item d-xl-none w-100">
                     <div class="accordion accordion-flush mobile-shop-accordion" id="mobileShopAccordion">
                         <div class="accordion-item border-0">
                             <h2 class="accordion-header">
@@ -121,24 +124,30 @@
                     </div>
                 </li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('solutions.*') ? 'active' : '' }}" href="{{ route('solutions.index') }}">Solutions</a></li>
-                <li class="nav-item"><a class="nav-link {{ request()->routeIs('blog.*') ? 'active' : '' }}" href="{{ route('blog.index') }}">Knowledge Centre</a></li>
-                <li class="nav-item"><a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">About</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact</a></li>
+                <li class="nav-item d-xl-none">
+                    <a class="nav-link {{ request()->routeIs('cart.*') ? 'active' : '' }}" href="{{ route('cart.index') }}">Cart{{ $cartCount ? ' ('.$cartCount.')' : '' }}</a>
+                </li>
             </ul>
         </div>
     </div>
 </nav>
 
-<div class="mobile-search-bar d-lg-none border-bottom bg-white sticky-top" style="top:56px;z-index:1025">
+<div class="mobile-search-bar d-md-none border-bottom bg-white sticky-top">
     <div class="container py-2">
         <form action="{{ route('shop.index') }}" method="GET" role="search" id="mobileSearchForm">
-            <div class="position-relative">
-                <input class="form-control form-control-sm search-input" type="search" name="q" id="mobileSearchInput"
-                       placeholder="Search products, SKU, brands..." value="{{ request('q') }}" aria-label="Search"
-                       autocomplete="off"
-                       data-suggest-url="{{ route('search.suggest') }}"
-                       data-placeholder-img="{{ asset('images/product-placeholder.svg') }}">
-                <div id="mobileSearchSuggestions" class="search-suggestions d-none"></div>
+            <div class="mobile-search-inner">
+                <div class="input-group search-input-group">
+                    <input class="form-control search-input" type="search" name="q" id="mobileSearchInput"
+                           placeholder="Search products, SKU, brands..." value="{{ request('q') }}" aria-label="Search"
+                           autocomplete="off"
+                           data-suggest-url="{{ route('search.suggest') }}"
+                           data-placeholder-img="{{ asset('images/product-placeholder.svg') }}">
+                    <button class="btn btn-primary search-submit" type="submit" aria-label="Search">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                    </button>
+                </div>
+                <div id="mobileSearchSuggestions" class="search-suggestions d-none" role="listbox" aria-label="Search suggestions"></div>
             </div>
         </form>
     </div>
