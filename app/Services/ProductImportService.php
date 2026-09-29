@@ -89,6 +89,13 @@ class ProductImportService
         'retail price' => 'list_price',
         'image url' => 'images',
         'total stock' => 'stock',
+        'product url' => 'supplier_product_url',
+        'producturl' => 'supplier_product_url',
+        'url key' => 'url_key',
+        'model' => 'model_number',
+        'model number' => 'model_number',
+        'modelnumber' => 'model_number',
+        'mpn' => 'model_number',
     ];
 
     public function import(UploadedFile $file): array
@@ -181,6 +188,7 @@ class ProductImportService
 
                 $row = $this->normalizeRow($row, count($headers));
                 $data = $this->normalizeImportData($this->mapRow($headers, $row));
+                $data['source_file'] = $data['source_file'] ?? basename($path);
                 $evaluation = $this->evaluateRow($data);
 
                 if ($evaluation['action'] === 'skip') {
@@ -436,21 +444,34 @@ class ProductImportService
         $inStock = in_array($inStockValue, ['1', 'yes', 'true', 'instock', 'in stock'], true);
 
         $slug = $this->resolveImportSlug($name, $sku, $existing);
+        $supplierImageUrl = $imageUrls[0] ?? ($data['supplier_image_url'] ?? null);
+        $rawSupplierCost = $this->resolveCostPrice($data);
 
         $attributes = [
             'category_id' => $categoryId,
             'name' => $name,
             'slug' => $slug,
             'sku' => $sku ?: $existing?->sku,
+            'model_number' => trim((string) ($data['model_number'] ?? '')) ?: ($existing?->model_number),
             'short_description' => strip_tags($data['short_description'] ?? ''),
             'description' => $data['description'] ?? '',
             'cost_price' => $costPrice,
+            'supplier_cost_price' => $rawSupplierCost > 0 ? $rawSupplierCost : ($existing?->supplier_cost_price),
             'price' => $regularPrice,
             'sale_price' => $salePrice > 0 && $salePrice < $regularPrice ? $salePrice : null,
             'stock_quantity' => $stockQty,
             'manage_stock' => true,
             'in_stock' => $inStock || $stockQty > 0,
             'brand' => $data['brand'] ?? null,
+            'supplier_name' => $data['supplier_name'] ?? $existing?->supplier_name,
+            'supplier_id' => $data['supplier_id'] ?? $existing?->supplier_id,
+            'supplier_sku' => $data['supplier_sku'] ?? ($sku ?: $existing?->supplier_sku),
+            'supplier_product_url' => $data['supplier_product_url'] ?? $existing?->supplier_product_url,
+            'supplier_image_url' => $supplierImageUrl ?: $existing?->supplier_image_url,
+            'import_source' => $importSource ?: $existing?->import_source,
+            'source_file' => $data['source_file'] ?? $existing?->source_file,
+            'source_external_id' => $data['source_external_id'] ?? ($wooId ?: ($sku ?: $existing?->source_external_id)),
+            'last_synced_at' => now(),
             'barcode' => $data['barcode'] ?? null,
             'google_product_category' => $data['google_product_category'] ?? null,
             'weight' => isset($data['weight']) && $data['weight'] !== '' ? round($this->parsePrice($data['weight']), 2) : null,
@@ -785,9 +806,32 @@ class ProductImportService
     protected function normalizeScoopRow(array $data): array
     {
         $data['import_source'] = 'scoop';
+        $data['supplier_name'] = 'Scoop';
+        $data['supplier_id'] = $data['supplier_id'] ?? null;
 
         if (trim($data['name'] ?? '') === '' && trim($data['description'] ?? '') !== '') {
             $data['name'] = trim($data['description']);
+        }
+
+        $sku = trim((string) ($data['sku'] ?? ''));
+        if ($sku !== '') {
+            $data['supplier_sku'] = $sku;
+            $data['source_external_id'] = $sku;
+        }
+
+        $feedBrand = trim((string) ($data['brand'] ?? ''));
+        $oemBrand = $this->inferScoopOemBrand((string) ($data['name'] ?? ''), $feedBrand);
+        if ($oemBrand !== '') {
+            $data['brand'] = $oemBrand;
+        }
+
+        $imageUrls = $this->parseImageUrls((string) ($data['images'] ?? ''));
+        if ($imageUrls !== []) {
+            $data['supplier_image_url'] = $imageUrls[0];
+        }
+
+        if (trim((string) ($data['supplier_product_url'] ?? '')) === '') {
+            $data['supplier_product_url'] = $this->guessScoopProductUrl($data);
         }
 
         if (trim($data['short_description'] ?? '') === '' && trim($data['name'] ?? '') !== '') {
@@ -804,6 +848,70 @@ class ProductImportService
         }
 
         return $data;
+    }
+
+    /**
+     * Prefer the real OEM/manufacturer over the Scoop distributor label.
+     */
+    protected function inferScoopOemBrand(string $name, string $feedBrand): string
+    {
+        $feedBrand = trim($feedBrand);
+        if ($feedBrand !== '' && strcasecmp($feedBrand, 'Scoop') !== 0) {
+            return $feedBrand;
+        }
+
+        $known = [
+            'Procet' => 'PROCET',
+            'Ubiquiti' => 'Ubiquiti',
+            'MikroTik' => 'MikroTik',
+            'Mikrotik' => 'MikroTik',
+            'TP-Link' => 'TP-Link',
+            'Tplink' => 'TP-Link',
+            'Cisco' => 'Cisco',
+            'Hikvision' => 'Hikvision',
+            'Dahua' => 'Dahua',
+            'Dell' => 'Dell',
+            'HP' => 'HP',
+            'Lenovo' => 'Lenovo',
+            'Reyee' => 'Reyee',
+            'Cudy' => 'Cudy',
+            'Yeastar' => 'Yeastar',
+            'Yealink' => 'Yealink',
+            'Fanvil' => 'Fanvil',
+            'Linkbasic' => 'Linkbasic',
+            'Rackstuds' => 'Rackstuds',
+            'Astrum' => 'Astrum',
+        ];
+
+        foreach ($known as $needle => $normalized) {
+            if (preg_match('/^'.preg_quote($needle, '/').'\b/i', $name)) {
+                return $normalized;
+            }
+        }
+
+        // Keep non-empty Scoop brand only as a last resort so imports are not skipped.
+        return $feedBrand;
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function guessScoopProductUrl(array $data): ?string
+    {
+        $explicit = trim((string) ($data['supplier_product_url'] ?? $data['external_url'] ?? ''));
+        if ($explicit !== '' && str_starts_with($explicit, 'http')) {
+            return $explicit;
+        }
+
+        $urlKey = trim((string) ($data['url_key'] ?? ''));
+        if ($urlKey !== '') {
+            return 'https://scoop.co.za/'.trim($urlKey, '/').'.html';
+        }
+
+        $name = trim((string) ($data['name'] ?? ''));
+        if ($name === '') {
+            return null;
+        }
+
+        return 'https://scoop.co.za/'.Str::slug($name).'.html';
     }
 
     protected function isAstrumRow(array $data): bool
@@ -828,7 +936,14 @@ class ProductImportService
     protected function normalizeAstrumRow(array $data): array
     {
         $data['import_source'] = 'astrum';
+        $data['supplier_name'] = 'Astrum';
         $data['category'] = html_entity_decode(trim($data['category'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        $sku = trim((string) ($data['sku'] ?? ''));
+        if ($sku !== '') {
+            $data['supplier_sku'] = $data['supplier_sku'] ?? $sku;
+            $data['source_external_id'] = $data['source_external_id'] ?? $sku;
+        }
 
         if (trim($data['brand'] ?? '') === '') {
             $data['brand'] = 'Astrum';
@@ -859,6 +974,22 @@ class ProductImportService
     protected function normalizePinnacleRow(array $data): array
     {
         $data['import_source'] = 'pinnacle';
+        $data['supplier_name'] = 'Pinnacle';
+
+        $sku = trim((string) ($data['sku'] ?? ''));
+        if ($sku !== '') {
+            $data['supplier_sku'] = $data['supplier_sku'] ?? $sku;
+            $data['source_external_id'] = $data['source_external_id'] ?? $sku;
+        }
+
+        if (trim((string) ($data['supplier_product_url'] ?? '')) === '' && trim((string) ($data['external_url'] ?? '')) !== '') {
+            $data['supplier_product_url'] = trim((string) $data['external_url']);
+        }
+
+        $imageUrls = $this->parseImageUrls((string) ($data['images'] ?? ''));
+        if ($imageUrls !== [] && trim((string) ($data['supplier_image_url'] ?? '')) === '') {
+            $data['supplier_image_url'] = $imageUrls[0];
+        }
 
         if (trim($data['barcode'] ?? '') === '') {
             $barcode = trim($data['barcode_upc'] ?? '');

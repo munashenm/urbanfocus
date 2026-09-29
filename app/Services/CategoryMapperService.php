@@ -156,6 +156,14 @@ class CategoryMapperService
         $brand = trim($data['brand'] ?? '');
 
         if ($name !== '') {
+            // PoE injectors / splitters / USB-C converters before generic "power adapter" or router rules.
+            if (
+                preg_match('/\bpoe\b|\bpower over ethernet\b/i', $name)
+                && preg_match('/\b(usb-?c|adapter|injector|splitter|converter|midspan)\b/i', $name)
+            ) {
+                return 'networking-connectivity/poe-equipment';
+            }
+
             if (preg_match('/\b(charger|power adapter|ac adapter|mains adapter|laptop psu)\b/i', $name)) {
                 return 'computing-office/computer-accessories';
             }
