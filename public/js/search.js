@@ -40,14 +40,14 @@
             if (brands.length) {
                 html += '<div class="search-group-label">Brands</div>';
                 brands.forEach(function (b) {
-                    html += '<a href="' + escapeHtml(b.url) + '" class="search-item search-item--meta"><span><strong>' + escapeHtml(b.name) + '</strong><small>Brand</small></span></a>';
+                    html += '<a href="' + escapeHtml(b.url) + '" class="search-item search-item--meta"><span class="search-item-body"><strong>' + escapeHtml(b.name) + '</strong><small class="search-item-meta">Brand</small></span></a>';
                 });
             }
 
             if (categories.length) {
                 html += '<div class="search-group-label">Categories</div>';
                 categories.forEach(function (c) {
-                    html += '<a href="' + escapeHtml(c.url) + '" class="search-item search-item--meta"><span><strong>' + escapeHtml(c.name) + '</strong><small>Category</small></span></a>';
+                    html += '<a href="' + escapeHtml(c.url) + '" class="search-item search-item--meta"><span class="search-item-body"><strong>' + escapeHtml(c.name) + '</strong><small class="search-item-meta">Category</small></span></a>';
                 });
             }
 
@@ -55,13 +55,28 @@
                 html += '<div class="search-group-label">Products</div>';
                 products.forEach(function (item, i) {
                     const img = item.image
-                        ? '<img src="' + escapeHtml(item.image) + '" alt="" width="44" height="44" loading="lazy">'
-                        : '<img src="' + escapeHtml(placeholder) + '" alt="" width="44" height="44" loading="lazy" class="search-placeholder-img">';
-                    const stock = item.in_stock ? '<span class="text-success">In stock</span>' : '<span class="text-danger">Out of stock</span>';
+                        ? '<img src="' + escapeHtml(item.image) + '" alt="" width="56" height="56" loading="lazy">'
+                        : '<img src="' + escapeHtml(placeholder) + '" alt="" width="56" height="56" loading="lazy" class="search-placeholder-img">';
+                    const stock = item.in_stock
+                        ? '<span class="text-success">In stock</span>'
+                        : '<span class="text-danger">Out of stock</span>';
+                    const metaParts = [];
+                    if (item.brand) metaParts.push(escapeHtml(item.brand));
+                    if (item.sku) metaParts.push(escapeHtml(item.sku));
+                    const meta = metaParts.length
+                        ? '<small class="search-item-meta">' + metaParts.join(' · ') + '</small>'
+                        : '';
+
                     html += '<a href="' + escapeHtml(item.url) + '" class="search-item' + (i === idx ? ' active' : '') + '">' +
                         img +
-                        '<span><strong>' + escapeHtml(item.name) + '</strong>' +
-                        '<small>' + (item.brand ? escapeHtml(item.brand) + ' · ' : '') + escapeHtml(item.price) + (item.sku ? ' · ' + escapeHtml(item.sku) : '') + ' · ' + stock + '</small></span></a>';
+                        '<span class="search-item-body">' +
+                            '<strong>' + escapeHtml(item.name) + '</strong>' +
+                            meta +
+                            '<span class="search-item-pricing">' +
+                                '<span class="search-item-price">' + escapeHtml(item.price) + '</span>' +
+                                stock +
+                            '</span>' +
+                        '</span></a>';
                 });
             }
 
