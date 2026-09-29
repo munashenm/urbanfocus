@@ -41,4 +41,15 @@ class CategoryMapperServiceTest extends TestCase
 
         $this->assertSame('Peripherals & Accessories > Cables & Adapters', $path);
     }
+
+    public function test_maps_scoop_poe_usb_c_adapter_to_poe_equipment(): void
+    {
+        $path = $this->mapper->mapImportCategories([
+            'import_source' => 'scoop',
+            'name' => 'Procet PoE to USB-C 5V Power and Data Adapter',
+            'brand' => 'PROCET',
+        ]);
+
+        $this->assertSame('Networking & Connectivity > POE Equipment', $path);
+    }
 }

@@ -220,13 +220,46 @@ class ProductImportServiceTest extends TestCase
 
         $this->assertSame('scoop', $data['import_source']);
         $this->assertSame('Ubiquiti UISP airCube ISP WiFi Access Point', $data['name']);
-        $this->assertSame('Networking > Wireless Access Points', $data['categories']);
+        $this->assertSame('Ubiquiti', $data['brand']);
+        $this->assertSame('Scoop', $data['supplier_name']);
+        $this->assertSame('ACB-ISP', $data['supplier_sku']);
+        $this->assertSame('https://scoop.co.za/download/marketing/images/ACB-ISP.jpg', $data['supplier_image_url']);
+        $this->assertSame('Networking & Connectivity > Access Points', $data['categories']);
 
         $result = $this->import->evaluateRow($data);
 
         $this->assertSame('create', $result['action']);
         $this->assertSame(546.25, $result['cost_price']);
         $this->assertSame(650.0, $result['retail_price']);
+    }
+
+    public function test_scoop_replaces_distributor_brand_with_identifiable_oem(): void
+    {
+        $data = $this->import->normalizeImportRow([
+            'sku' => 'POE-USBC',
+            'description' => 'Procet PoE to USB-C 5V Power and Data Adapter',
+            'cost_price' => '395',
+            'stock' => '47',
+            'brand' => 'Scoop',
+            'images' => 'https://scoop.co.za/media/catalog/product/p/o/poe-usbc.jpg',
+            'source_file' => 'scoop_pricelist.csv',
+        ]);
+
+        $this->assertSame('scoop', $data['import_source']);
+        $this->assertSame('PROCET', $data['brand']);
+        $this->assertSame('Scoop', $data['supplier_name']);
+        $this->assertSame('POE-USBC', $data['supplier_sku']);
+        $this->assertSame('https://scoop.co.za/media/catalog/product/p/o/poe-usbc.jpg', $data['supplier_image_url']);
+        $this->assertSame(
+            'https://scoop.co.za/procet-poe-to-usb-c-5v-power-and-data-adapter.html',
+            $data['supplier_product_url']
+        );
+        $this->assertSame('Networking & Connectivity > POE Equipment', $data['categories']);
+
+        $result = $this->import->evaluateRow($data);
+
+        $this->assertSame('create', $result['action']);
+        $this->assertSame(454.25, $result['cost_price']);
     }
 
     public function test_skips_scoop_row_without_image(): void
