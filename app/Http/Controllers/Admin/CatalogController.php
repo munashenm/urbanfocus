@@ -115,6 +115,8 @@ class CatalogController extends Controller
                 ['method' => 'GET', 'path' => '/api/products', 'description' => 'List products (paginated)'],
                 ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
                 ['method' => 'GET', 'path' => '/api/store/health', 'description' => 'OutreachHub connection check'],
+                ['method' => 'GET', 'path' => '/api/store/catalogue', 'description' => 'Read-only catalogue pages for OutreachHub'],
+                ['method' => 'GET', 'path' => '/api/store/lookup', 'description' => 'Find one product by SKU, part number, or barcode'],
                 ['method' => 'GET', 'path' => '/api/store/orders', 'description' => 'Recent orders for OutreachHub'],
             ];
 

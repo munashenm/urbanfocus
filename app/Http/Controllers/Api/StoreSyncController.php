@@ -32,6 +32,55 @@ class StoreSyncController extends Controller
         return response()->json(['sku' => $product->sku]);
     }
 
+    public function catalogue(Request $request): JsonResponse
+    {
+        $perPage = min(max((int) $request->query('per_page', 50), 1), 100);
+        $products = Product::query()
+            ->with(['category:id,name', 'images'])
+            ->orderBy('id')
+            ->paginate($perPage);
+
+        return response()->json([
+            'page' => $products->currentPage(),
+            'perPage' => $products->perPage(),
+            'total' => $products->total(),
+            'lastPage' => $products->lastPage(),
+            'products' => $products->getCollection()->map(fn (Product $product) => $this->catalogueProduct($product))->values(),
+        ]);
+    }
+
+    public function lookup(Request $request): JsonResponse
+    {
+        $sku = trim((string) $request->query('sku', ''));
+        $mpn = trim((string) $request->query('mpn', ''));
+        $barcode = trim((string) $request->query('barcode', ''));
+        if ($sku === '' && $mpn === '' && $barcode === '') {
+            return response()->json(['error' => 'A SKU, manufacturer part number, or barcode is required.'], 422);
+        }
+
+        $product = $sku !== '' ? $this->findBySku($sku) : null;
+        if (! $product && $mpn !== '') {
+            $product = Product::withTrashed()
+                ->whereRaw('LOWER(model_number) = ?', [mb_strtolower($mpn)])
+                ->where('model_number', '!=', '')
+                ->first();
+        }
+        if (! $product && $barcode !== '') {
+            $product = Product::withTrashed()
+                ->whereRaw('LOWER(barcode) = ?', [mb_strtolower($barcode)])
+                ->where('barcode', '!=', '')
+                ->first();
+        }
+        if (! $product || trim((string) $product->sku) === '') {
+            return response()->json(['sku' => null], 404);
+        }
+
+        return response()->json([
+            'sku' => $product->sku,
+            'storeProductId' => (string) $product->id,
+        ]);
+    }
+
     public function createProduct(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -45,14 +94,40 @@ class StoreSyncController extends Controller
             'published' => ['required', 'boolean'],
             'imageUrls' => ['nullable', 'array', 'max:8'],
             'imageUrls.*' => ['string', 'max:2000'],
+            'manufacturerPartNumber' => ['nullable', 'string', 'max:191'],
+            'barcode' => ['nullable', 'string', 'max:191'],
         ]);
 
         if ($this->findBySku($data['sku'])) {
             return response()->json(['error' => 'A product with this SKU already exists.'], 409);
         }
 
+        $partNumber = trim((string) ($data['manufacturerPartNumber'] ?? ''));
+        if ($partNumber !== '') {
+            $existing = Product::withTrashed()
+                ->whereRaw('LOWER(model_number) = ?', [mb_strtolower($partNumber)])
+                ->where('model_number', '!=', '')
+                ->first();
+            if ($existing) {
+                return response()->json(['error' => 'A product with this manufacturer part number already exists.', 'sku' => $existing->sku], 409);
+            }
+        }
+
+        $barcode = trim((string) ($data['barcode'] ?? ''));
+        if ($barcode !== '') {
+            $existing = Product::withTrashed()
+                ->whereRaw('LOWER(barcode) = ?', [mb_strtolower($barcode)])
+                ->where('barcode', '!=', '')
+                ->first();
+            if ($existing) {
+                return response()->json(['error' => 'A product with this barcode already exists.', 'sku' => $existing->sku], 409);
+            }
+        }
+
         $product = Product::create([
             'sku' => $data['sku'],
+            'model_number' => $partNumber !== '' ? $partNumber : null,
+            'barcode' => $barcode !== '' ? $barcode : null,
             'name' => $data['name'],
             'slug' => $this->uniqueSlug($data['name']),
             'description' => $data['description'] ?? '',
@@ -177,6 +252,91 @@ class StoreSyncController extends Controller
             ]);
 
         return response()->json(['orders' => $orders]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function catalogueProduct(Product $product): array
+    {
+        $sale = $this->cents($product->sale_price);
+        $price = $this->cents($product->price);
+
+        return [
+            'storeProductId' => (string) $product->id,
+            'sku' => trim((string) $product->sku),
+            'manufacturerPartNumber' => trim((string) $product->model_number),
+            'barcode' => trim((string) $product->barcode),
+            'name' => (string) $product->name,
+            'brand' => trim((string) $product->brand),
+            'category' => trim((string) ($product->category?->name ?? '')),
+            'unitPriceCents' => $price ?? 0,
+            'salePriceCents' => $sale,
+            'currency' => 'ZAR',
+            'stockQuantity' => max(0, (int) $product->stock_quantity),
+            'stockStatus' => $product->in_stock && (int) $product->stock_quantity > 0 ? 'in_stock' : 'out_of_stock',
+            'description' => mb_substr(trim(strip_tags((string) $product->description)), 0, 8000),
+            'specifications' => $this->specificationText($product->specifications),
+            'imageUrls' => $this->catalogueImages($product),
+            'published' => (bool) $product->is_active,
+            'slug' => (string) $product->slug,
+            'url' => $product->slug ? route('products.show', $product) : '',
+            'updatedAt' => $product->updated_at?->toIso8601String(),
+        ];
+    }
+
+    private function cents(mixed $amount): ?int
+    {
+        if ($amount === null || $amount === '') {
+            return null;
+        }
+        $cents = (int) round(((float) $amount) * 100);
+        if ($cents < 0) {
+            return null;
+        }
+
+        return $cents;
+    }
+
+    private function specificationText(mixed $specs): string
+    {
+        if (! is_array($specs) || $specs === []) {
+            return '';
+        }
+        $lines = [];
+        foreach ($specs as $key => $value) {
+            if (is_array($value)) {
+                $value = json_encode($value);
+            }
+            $lines[] = is_int($key) ? (string) $value : $key.': '.$value;
+        }
+
+        return mb_substr(implode("\n", $lines), 0, 8000);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function catalogueImages(Product $product): array
+    {
+        $urls = [];
+        foreach ($product->images as $image) {
+            if (is_catalog_placeholder_path($image->path)) {
+                continue;
+            }
+            $url = storage_public_url($image->path);
+            if (! is_string($url) || (! str_starts_with($url, 'https://') && ! str_starts_with($url, 'http://'))) {
+                continue;
+            }
+            if (! in_array($url, $urls, true)) {
+                $urls[] = $url;
+            }
+            if (count($urls) === 8) {
+                break;
+            }
+        }
+
+        return $urls;
     }
 
     private function requiredProduct(string $sku): Product

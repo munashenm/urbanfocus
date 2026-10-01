@@ -125,4 +125,75 @@ class OutreachStoreSyncTest extends TestCase
             ->assertJsonPath('orders.0.totalCents', 11500)
             ->assertJsonPath('orders.0.lines.0.sku', 'SW-24');
     }
+
+    public function test_catalogue_read_lists_every_product_without_changing_it(): void
+    {
+        $active = Product::factory()->create([
+            'sku' => 'SW-24',
+            'model_number' => 'D11G8ET',
+            'barcode' => '6001234567890',
+            'brand' => 'HP',
+            'price' => 100,
+            'sale_price' => 90,
+            'stock_quantity' => 0,
+            'in_stock' => false,
+            'name' => 'HP Laptop',
+        ]);
+        Product::factory()->create([
+            'sku' => null,
+            'is_active' => false,
+            'price' => 0,
+            'name' => 'Unpublished item',
+        ]);
+        $stamp = $active->updated_at;
+        $headers = ['Authorization' => 'Bearer test-api-key'];
+
+        $first = $this->getJson('/api/store/catalogue?per_page=1&page=1', $headers)->assertOk();
+        $first->assertJsonPath('total', 2);
+        $first->assertJsonPath('lastPage', 2);
+        $first->assertJsonPath('products.0.storeProductId', (string) $active->id);
+        $first->assertJsonPath('products.0.sku', 'SW-24');
+        $first->assertJsonPath('products.0.manufacturerPartNumber', 'D11G8ET');
+        $first->assertJsonPath('products.0.barcode', '6001234567890');
+        $first->assertJsonPath('products.0.brand', 'HP');
+        $first->assertJsonPath('products.0.unitPriceCents', 10000);
+        $first->assertJsonPath('products.0.salePriceCents', 9000);
+        $first->assertJsonPath('products.0.stockQuantity', 0);
+        $first->assertJsonPath('products.0.stockStatus', 'out_of_stock');
+        $first->assertJsonPath('products.0.published', true);
+        $this->assertStringContainsString('Ports: 8', (string) $first->json('products.0.specifications'));
+
+        $this->getJson('/api/store/catalogue?per_page=1&page=2', $headers)
+            ->assertOk()
+            ->assertJsonPath('products.0.sku', '')
+            ->assertJsonPath('products.0.published', false)
+            ->assertJsonPath('products.0.unitPriceCents', 0);
+
+        $active->refresh();
+        $this->assertTrue($active->updated_at->equalTo($stamp));
+        $this->assertEquals(100, (float) $active->price);
+
+        $this->getJson('/api/store/lookup?mpn=d11g8et', $headers)
+            ->assertOk()
+            ->assertJsonPath('sku', 'SW-24');
+    }
+
+    public function test_create_refuses_a_barcode_that_already_exists(): void
+    {
+        Product::factory()->create([
+            'sku' => 'OLD-1',
+            'barcode' => '6001234567890',
+        ]);
+
+        $this->postJson('/api/store/products', [
+            'sku' => 'NEW-9',
+            'name' => 'Duplicate barcode',
+            'unitPriceCents' => 1000,
+            'stockQuantity' => 1,
+            'published' => true,
+            'barcode' => '6001234567890',
+        ], ['Authorization' => 'Bearer test-api-key'])->assertStatus(409);
+
+        $this->assertDatabaseMissing('products', ['sku' => 'NEW-9']);
+    }
 }

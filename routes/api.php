@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('api.key')->prefix('store')->group(function () {
     Route::get('/health', [StoreSyncController::class, 'health']);
+    Route::get('/catalogue', [StoreSyncController::class, 'catalogue']);
+    Route::get('/lookup', [StoreSyncController::class, 'lookup']);
     Route::get('/products', [StoreSyncController::class, 'findProduct']);
     Route::post('/products', [StoreSyncController::class, 'createProduct']);
     Route::patch('/products/{sku}/price', [StoreSyncController::class, 'updatePrice'])->where('sku', '[^/]+');
