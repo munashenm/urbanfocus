@@ -542,7 +542,7 @@
     <div class="col-lg-6">
         <div class="card h-100"><div class="card-body">
             <h2 class="h5 fw-bold">Products API</h2>
-            <p class="small text-muted">Pass your API key via header <code>X-API-Key</code> or query <code>?api_key=</code></p>
+            <p class="small text-muted">Pass your API key via header <code>X-API-Key</code> or <code>Authorization: Bearer</code>. OutreachHub uses <code>{{ url('/api/store') }}</code> with that same key.</p>
 
             @if($apiKey)
                 <div class="mb-3">

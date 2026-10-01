@@ -114,6 +114,8 @@ class CatalogController extends Controller
             $apiEndpoints = [
                 ['method' => 'GET', 'path' => '/api/products', 'description' => 'List products (paginated)'],
                 ['method' => 'GET', 'path' => '/api/products/{slug|sku|id}', 'description' => 'Single product'],
+                ['method' => 'GET', 'path' => '/api/store/health', 'description' => 'OutreachHub connection check'],
+                ['method' => 'GET', 'path' => '/api/store/orders', 'description' => 'Recent orders for OutreachHub'],
             ];
 
             return view('admin.catalog.index', compact('apiKey', 'feeds', 'apiEndpoints', 'feedStats', 'nonItPreview', 'categoryConsolidationPreview', 'merchantIssueLabels', 'ineligibleSample', 'importPricing', 'targetRangeCount', 'specialistCount', 'highMarginCount', 'mediaHealth'));
