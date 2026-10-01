@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class StoreSyncController extends Controller
@@ -96,6 +99,12 @@ class StoreSyncController extends Controller
             'imageUrls.*' => ['string', 'max:2000'],
             'manufacturerPartNumber' => ['nullable', 'string', 'max:191'],
             'barcode' => ['nullable', 'string', 'max:191'],
+            'brand' => ['nullable', 'string', 'max:191'],
+            'category' => ['nullable', 'string', 'max:191'],
+            'seoTitle' => ['nullable', 'string', 'max:191'],
+            'metaDescription' => ['nullable', 'string', 'max:500'],
+            'shortDescription' => ['nullable', 'string', 'max:500'],
+            'slug' => ['nullable', 'string', 'max:191'],
         ]);
 
         if ($this->findBySku($data['sku'])) {
@@ -124,20 +133,27 @@ class StoreSyncController extends Controller
             }
         }
 
+        $categoryName = trim((string) ($data['category'] ?? ''));
+        $category = $categoryName === '' ? null : Category::query()->whereRaw('LOWER(name) = ?', [mb_strtolower($categoryName)])->first();
+        $requestedSlug = Str::slug((string) ($data['slug'] ?? ''));
         $product = Product::create([
             'sku' => $data['sku'],
             'model_number' => $partNumber !== '' ? $partNumber : null,
             'barcode' => $barcode !== '' ? $barcode : null,
+            'brand' => trim((string) ($data['brand'] ?? '')) ?: null,
+            'category_id' => $category?->id,
             'name' => $data['name'],
-            'slug' => $this->uniqueSlug($data['name']),
+            'slug' => $requestedSlug !== '' && ! Product::withTrashed()->where('slug', $requestedSlug)->exists() ? $requestedSlug : $this->uniqueSlug($data['name']),
             'description' => $data['description'] ?? '',
             'short_description' => Str::limit(trim(strip_tags((string) ($data['description'] ?? ''))), 500, ''),
+            'meta_title' => trim((string) ($data['seoTitle'] ?? '')) ?: null,
+            'meta_description' => trim((string) ($data['metaDescription'] ?? '')) ?: null,
             'price' => $this->rands($data['unitPriceCents']),
             'sale_price' => null,
             'stock_quantity' => $data['stockQuantity'],
             'manage_stock' => true,
             'in_stock' => $data['stockQuantity'] > 0,
-            'is_active' => (bool) $data['published'],
+            'is_active' => (bool) $data['published'] && $category !== null,
             'specifications' => $this->mergedSpecifications([], $data['specifications'] ?? ''),
         ]);
 
@@ -186,6 +202,8 @@ class StoreSyncController extends Controller
             'name' => ['required', 'string', 'max:191'],
             'description' => ['nullable', 'string', 'max:20000'],
             'specifications' => ['nullable', 'string', 'max:8000'],
+            'seoTitle' => ['nullable', 'string', 'max:180'],
+            'metaDescription' => ['nullable', 'string', 'max:300'],
         ]);
 
         $product->forceFill([
@@ -193,6 +211,8 @@ class StoreSyncController extends Controller
             'description' => $data['description'] ?? '',
             'short_description' => Str::limit(trim(strip_tags((string) ($data['description'] ?? ''))), 500, ''),
             'specifications' => $this->mergedSpecifications($product->specifications ?? [], $data['specifications'] ?? ''),
+            'meta_title' => trim((string) ($data['seoTitle'] ?? '')) ?: $product->meta_title,
+            'meta_description' => trim((string) ($data['metaDescription'] ?? '')) ?: $product->meta_description,
         ])->save();
 
         return response()->json(['sku' => $product->sku]);
@@ -393,34 +413,76 @@ class StoreSyncController extends Controller
      */
     private function replaceImages(Product $product, array $urls): void
     {
-        $kept = [];
+        $stored = [];
         foreach ($urls as $url) {
-            $url = trim($url);
-            if (! str_starts_with($url, 'https://') || str_contains($url, ' ')) {
-                continue;
+            $path = $this->downloadProductImage($product, trim($url));
+            if ($path !== null && ! in_array($path, $stored, true)) {
+                $stored[] = $path;
             }
-            if (! in_array($url, $kept, true)) {
-                $kept[] = $url;
-            }
-            if (count($kept) === 8) {
+            if (count($stored) === 8) {
                 break;
             }
         }
 
-        if ($kept === []) {
+        if ($stored === []) {
             return;
         }
 
         $product->images()->delete();
-        foreach ($kept as $index => $url) {
+        foreach ($stored as $index => $path) {
             ProductImage::create([
                 'product_id' => $product->id,
-                'path' => $url,
+                'path' => $path,
                 'alt_text' => $product->imageAlt(),
                 'sort_order' => $index,
                 'is_primary' => $index === 0,
             ]);
         }
+    }
+
+    private function downloadProductImage(Product $product, string $url): ?string
+    {
+        if (! str_starts_with($url, 'https://') || str_contains($url, ' ') || strlen($url) > 2000) {
+            return null;
+        }
+        $host = parse_url($url, PHP_URL_HOST);
+        if (! is_string($host) || $this->isPrivateHost($host)) {
+            return null;
+        }
+        try {
+            $response = Http::timeout(12)->withOptions(['allow_redirects' => false])->get($url);
+        } catch (\Throwable) {
+            return null;
+        }
+        if (! $response->successful()) {
+            return null;
+        }
+        $type = strtolower((string) $response->header('Content-Type'));
+        $extension = str_contains($type, 'png') ? 'png' : (str_contains($type, 'webp') ? 'webp' : ((str_contains($type, 'jpeg') || str_contains($type, 'jpg')) ? 'jpg' : ''));
+        if ($extension === '') {
+            return null;
+        }
+        $body = $response->body();
+        if (strlen($body) < 8000 || strlen($body) > 8000000) {
+            return null;
+        }
+        $path = 'catalog/'.$product->id.'/'.substr(sha1($url), 0, 16).'.'.$extension;
+        Storage::disk('public')->put($path, $body);
+
+        return $path;
+    }
+
+    private function isPrivateHost(string $host): bool
+    {
+        $host = strtolower(trim($host, '[]'));
+        if ($host === 'localhost' || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return true;
+        }
+        if (! filter_var($host, FILTER_VALIDATE_IP)) {
+            return false;
+        }
+
+        return ! filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
     }
 
     private function outreachStatus(string $status): string
