@@ -70,6 +70,25 @@ class SeoImplementationTest extends TestCase
         $this->assertMatchesRegularExpression('/"@type":\s*"BreadcrumbList"/', $html);
     }
 
+    public function test_product_page_uses_a_saved_seo_title(): void
+    {
+        $product = Product::factory()->create([
+            'name' => 'Lenovo ThinkPad E14',
+            'slug' => 'lenovo-thinkpad-e14-business-laptop',
+            'sku' => 'UF-SEO-E14',
+            'brand' => 'Lenovo',
+            'price' => 100,
+            'meta_title' => 'Lenovo ThinkPad E14 Business Laptop | Urban Focus',
+        ]);
+
+        $html = $this->get(route('products.show', $product))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<title>\s*Lenovo ThinkPad E14 Business Laptop \| Urban Focus\s*<\/title>/',
+            $html,
+        );
+    }
+
     public function test_sitemap_includes_public_pages_and_excludes_private_routes(): void
     {
         $product = Product::factory()->create([

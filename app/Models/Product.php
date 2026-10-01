@@ -177,6 +177,15 @@ class Product extends Model
 
     public function seoTitle(): string
     {
+        $saved = trim(strip_tags((string) ($this->attributes['meta_title'] ?? '')));
+        $saved = preg_replace('/\s+/u', ' ', $saved) ?? '';
+        if ($saved !== '') {
+            $saved = trim(app(InternalPricingCopySanitizer::class)->sanitizePlain($saved));
+        }
+        if ($saved !== '') {
+            return $this->limitedSeoTitle($saved);
+        }
+
         $name = trim($this->name);
         $suffix = ' | South Africa | Urban Focus';
         $max = 70;
@@ -193,6 +202,22 @@ class Product extends Model
         }
 
         return rtrim($trimmed, " \t-|,").$suffix;
+    }
+
+    private function limitedSeoTitle(string $title): string
+    {
+        $max = 70;
+        if (mb_strlen($title) <= $max) {
+            return $title;
+        }
+
+        $trimmed = Str::limit($title, $max, '');
+        $space = mb_strrpos($trimmed, ' ');
+        if ($space !== false && $space >= 16) {
+            $trimmed = mb_substr($trimmed, 0, $space);
+        }
+
+        return rtrim($trimmed, " \t-|,");
     }
 
     public function seoDescription(): string
