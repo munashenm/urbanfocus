@@ -30,7 +30,7 @@ class CheckoutController extends Controller
     public function index(): View|RedirectResponse
     {
         if ($this->cart->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+            return $this->redirectForEmptyCart();
         }
 
         $unavailable = $this->unavailableCartItems();
@@ -90,7 +90,7 @@ class CheckoutController extends Controller
     public function store(Request $request): RedirectResponse
     {
         if ($this->cart->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+            return $this->redirectForEmptyCart();
         }
 
         $unavailable = $this->unavailableCartItems();
@@ -240,13 +240,43 @@ class CheckoutController extends Controller
 
         if (($result['status'] ?? false) && ! empty($result['data']['authorization_url'])) {
             $this->cart->clear();
-            session(['checkout_order_id' => $order->id]);
+            session([
+                'checkout_order_id' => $order->id,
+                'paystack_authorization_url' => $result['data']['authorization_url'],
+            ]);
 
-            return redirect()->away($result['data']['authorization_url']);
+            // Same-origin handoff avoids CSP form-action blocking an external
+            // 302 after the checkout form POST. The handoff page then navigates
+            // to Paystack via JS / meta refresh / link click.
+            return redirect()->route('checkout.paystack.handoff', $order);
         }
 
         return redirect()->route('checkout.success', $order)
             ->with('error', $result['message'] ?? 'We could not start the Paystack payment. You can try again or complete the order by Manual EFT.');
+    }
+
+    public function paystackHandoff(Order $order): View|RedirectResponse
+    {
+        if ($order->payment_status === 'paid') {
+            return redirect()->route('checkout.success', $order);
+        }
+
+        if ($order->payment_method !== 'paystack') {
+            return redirect()->route('checkout.success', $order);
+        }
+
+        $authorizationUrl = session('paystack_authorization_url');
+
+        if (! is_string($authorizationUrl) || $authorizationUrl === '' || ! $this->isAllowedPaystackUrl($authorizationUrl)) {
+            return redirect()->route('checkout.paystack.pay', $order);
+        }
+
+        session()->forget('paystack_authorization_url');
+
+        return view('checkout.paystack-handoff', [
+            'order' => $order,
+            'authorizationUrl' => $authorizationUrl,
+        ]);
     }
 
     public function paystackCallback(Request $request): RedirectResponse
@@ -348,6 +378,46 @@ class CheckoutController extends Controller
         $canRetryPayment = $order->payment_method === 'paystack' && $order->payment_status !== 'paid';
 
         return view('checkout.success', compact('order', 'canRetryPayment'));
+    }
+
+    /**
+     * When the cart is empty after a Paystack handoff, send the shopper back to
+     * their unpaid order instead of a dead-end "cart is empty" message.
+     */
+    protected function redirectForEmptyCart(): RedirectResponse
+    {
+        $orderId = session('checkout_order_id');
+
+        if ($orderId) {
+            $order = Order::query()->find($orderId);
+
+            if (
+                $order
+                && $order->payment_method === 'paystack'
+                && $order->payment_status !== 'paid'
+            ) {
+                return redirect()->route('checkout.success', $order)
+                    ->with('error', 'Your previous order is waiting for payment. Tap Pay now below to finish — or contact us if you need help.');
+            }
+        }
+
+        return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+    }
+
+    protected function isAllowedPaystackUrl(string $url): bool
+    {
+        $parts = parse_url($url);
+
+        if (($parts['scheme'] ?? null) !== 'https' || empty($parts['host'])) {
+            return false;
+        }
+
+        $host = strtolower((string) $parts['host']);
+
+        return $host === 'checkout.paystack.com'
+            || $host === 'standard.paystack.co'
+            || str_ends_with($host, '.paystack.com')
+            || str_ends_with($host, '.paystack.co');
     }
 
     /** @return list<string> */

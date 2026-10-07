@@ -44,7 +44,7 @@ class CheckoutTest extends TestCase
             'https://api.paystack.co/transaction/initialize' => Http::response([
                 'status' => true,
                 'data' => [
-                    'authorization_url' => 'https://paystack.test/pay/abc',
+                    'authorization_url' => 'https://checkout.paystack.com/pay/abc',
                     'reference' => 'UF-TEST-REF',
                 ],
             ], 200),
@@ -52,14 +52,20 @@ class CheckoutTest extends TestCase
 
         $product = Product::factory()->create(['price' => 500]);
 
-        $this->withSession(['cart' => [$product->id => 1]])
-            ->post(route('checkout.store'), $this->validCheckoutPayload())
-            ->assertRedirect('https://paystack.test/pay/abc');
+        $response = $this->withSession(['cart' => [$product->id => 1]])
+            ->post(route('checkout.store'), $this->validCheckoutPayload());
 
         $order = Order::first();
         $this->assertNotNull($order);
         $this->assertSame('paystack', $order->payment_method);
         $this->assertSame('pending', $order->payment_status);
+
+        $response->assertRedirect(route('checkout.paystack.handoff', $order));
+
+        $this->followRedirects($response)
+            ->assertOk()
+            ->assertSee('Taking you to Paystack', false)
+            ->assertSee('https://checkout.paystack.com/pay/abc', false);
     }
 
     public function test_unpaid_paystack_order_can_retry_without_checkout_session(): void
@@ -68,7 +74,7 @@ class CheckoutTest extends TestCase
             'https://api.paystack.co/transaction/initialize' => Http::response([
                 'status' => true,
                 'data' => [
-                    'authorization_url' => 'https://paystack.test/pay/retry',
+                    'authorization_url' => 'https://checkout.paystack.com/pay/retry',
                     'reference' => 'UF-RETRY-REF',
                 ],
             ], 200),
@@ -77,8 +83,38 @@ class CheckoutTest extends TestCase
         $order = Order::create($this->orderAttributes());
 
         $this->get(route('checkout.paystack.pay', $order))
-            ->assertRedirect('https://paystack.test/pay/retry')
+            ->assertRedirect(route('checkout.paystack.handoff', $order))
             ->assertSessionMissing('errors');
+    }
+
+    public function test_empty_cart_after_paystack_start_recovers_unpaid_order(): void
+    {
+        $order = Order::create($this->orderAttributes());
+
+        $this->withSession(['checkout_order_id' => $order->id])
+            ->post(route('checkout.store'), $this->validCheckoutPayload())
+            ->assertRedirect(route('checkout.success', $order));
+
+        $this->get(route('checkout.success', $order))
+            ->assertOk()
+            ->assertSee('waiting for payment', false)
+            ->assertSee('Pay now with Paystack', false);
+    }
+
+    public function test_csp_allows_paystack_form_redirects(): void
+    {
+        $product = Product::factory()->create();
+
+        $csp = $this->withSession(['cart' => [$product->id => 1]])
+            ->get(route('checkout.index'))
+            ->assertOk()
+            ->headers
+            ->get('Content-Security-Policy');
+
+        $this->assertNotNull($csp);
+        $this->assertStringContainsString("form-action 'self'", $csp);
+        $this->assertStringContainsString('https://checkout.paystack.com', $csp);
+        $this->assertStringContainsString('https://standard.paystack.co', $csp);
     }
 
     public function test_paystack_init_failure_shows_retry_instead_of_breaking_checkout(): void
@@ -113,7 +149,7 @@ class CheckoutTest extends TestCase
             'https://api.paystack.co/transaction/initialize' => Http::response([
                 'status' => true,
                 'data' => [
-                    'authorization_url' => 'https://paystack.test/pay/ok',
+                    'authorization_url' => 'https://checkout.paystack.com/pay/ok',
                     'reference' => 'UF-OK',
                 ],
             ], 200),
@@ -121,9 +157,11 @@ class CheckoutTest extends TestCase
 
         $product = Product::factory()->create(['price' => 500]);
 
-        $this->withSession(['cart' => [$product->id => 1]])
-            ->post(route('checkout.store'), $this->validCheckoutPayload())
-            ->assertRedirect('https://paystack.test/pay/ok');
+        $response = $this->withSession(['cart' => [$product->id => 1]])
+            ->post(route('checkout.store'), $this->validCheckoutPayload());
+
+        $order = Order::firstOrFail();
+        $response->assertRedirect(route('checkout.paystack.handoff', $order));
 
         Mail::assertSent(OrderConfirmation::class);
         $this->assertDatabaseCount('orders', 1);
