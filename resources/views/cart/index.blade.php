@@ -69,8 +69,17 @@
     @else
         <div class="text-center py-5 checkout-card">
             <h2 class="h4 fw-bold mb-2">Your cart is empty</h2>
-            <p class="text-muted mb-4">Browse networking, laptops and security products to add items to your cart.</p>
-            <a href="{{ route('shop.index') }}" class="btn btn-primary">Start Shopping</a>
+            @if($pendingCheckoutOrder ?? null)
+                <p class="text-muted mb-4">
+                    Order <strong>{{ $pendingCheckoutOrder->order_number }}</strong> is waiting for payment.
+                    Finish paying to confirm it, or keep shopping.
+                </p>
+                <a href="{{ route('checkout.success', $pendingCheckoutOrder) }}" class="btn btn-primary me-2">Finish payment</a>
+                <a href="{{ route('shop.index') }}" class="btn btn-outline-secondary">Start Shopping</a>
+            @else
+                <p class="text-muted mb-4">Browse networking, laptops and security products to add items to your cart.</p>
+                <a href="{{ route('shop.index') }}" class="btn btn-primary">Start Shopping</a>
+            @endif
         </div>
     @endif
 </div>

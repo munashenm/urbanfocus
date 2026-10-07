@@ -97,6 +97,7 @@ Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('thro
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 Route::get('/checkout/paystack/callback', [CheckoutController::class, 'paystackCallback'])->name('checkout.paystack.callback');
 Route::post('/checkout/paystack/webhook', [CheckoutController::class, 'paystackWebhook'])->name('checkout.paystack.webhook');
+Route::get('/checkout/paystack/handoff/{order}', [CheckoutController::class, 'paystackHandoff'])->name('checkout.paystack.handoff');
 Route::get('/checkout/paystack/{order}', [CheckoutController::class, 'paystackPay'])->middleware('throttle:20,1')->name('checkout.paystack.pay');
 
 Route::get('/track-order', [OrderTrackingController::class, 'showForm'])->name('orders.track');

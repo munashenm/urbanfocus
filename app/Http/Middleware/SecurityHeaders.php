@@ -50,7 +50,11 @@ class SecurityHeaders
             "frame-src https:",
             "object-src 'none'",
             "base-uri 'self'",
-            "form-action 'self'",
+            // Paystack hosts are required so a checkout form POST can follow the
+            // gateway redirect. Browsers apply form-action to the whole redirect
+            // chain after submit — 'self' alone blocks checkout.paystack.com and
+            // leaves customers stuck on "Taking you to payment…" with an empty cart.
+            "form-action 'self' https://checkout.paystack.com https://standard.paystack.co https://*.paystack.com https://*.paystack.co",
             "frame-ancestors 'self'",
             'upgrade-insecure-requests',
         ];

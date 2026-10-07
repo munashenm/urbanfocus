@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Product;
 use App\Services\CartService;
 use Illuminate\Http\RedirectResponse;
@@ -14,9 +15,24 @@ class CartController extends Controller
 
     public function index(): View
     {
+        $pendingCheckoutOrder = null;
+
+        if ($this->cart->isEmpty() && ($pendingId = session('checkout_order_id'))) {
+            $candidate = Order::query()->find($pendingId);
+
+            if (
+                $candidate
+                && $candidate->payment_method === 'paystack'
+                && $candidate->payment_status !== 'paid'
+            ) {
+                $pendingCheckoutOrder = $candidate;
+            }
+        }
+
         return view('cart.index', [
             'items' => $this->cart->items(),
             'subtotal' => $this->cart->subtotal(),
+            'pendingCheckoutOrder' => $pendingCheckoutOrder,
         ]);
     }
 

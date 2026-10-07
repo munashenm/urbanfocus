@@ -46,19 +46,24 @@
     </div>
 </div>
 @if($order->payment_status === 'paid' || $order->payment_method === 'eft')
+@php
+    $purchasePayload = [
+        'transaction_id' => $order->order_number,
+        'value' => (float) $order->total,
+        'currency' => $order->currency ?: 'ZAR',
+        'items' => $order->items->map(function ($item) {
+            return array_filter([
+                'item_id' => $item->product_sku ?: (string) $item->product_id,
+                'item_name' => $item->product_name,
+                'quantity' => (int) $item->quantity,
+                'price' => (float) $item->unit_price,
+            ]);
+        })->values()->all(),
+    ];
+@endphp
 @push('scripts')
 <script>
-window.ufPurchase = @json([
-    'transaction_id' => $order->order_number,
-    'value' => (float) $order->total,
-    'currency' => $order->currency ?: 'ZAR',
-    'items' => $order->items->map(fn ($item) => array_filter([
-        'item_id' => $item->product_sku ?: (string) $item->product_id,
-        'item_name' => $item->product_name,
-        'quantity' => (int) $item->quantity,
-        'price' => (float) $item->unit_price,
-    ]))->values()->all(),
-]);
+window.ufPurchase = @json($purchasePayload);
 </script>
 @endpush
 @endif
