@@ -330,6 +330,7 @@ class StoreSyncController extends Controller
             'category' => trim((string) ($product->category?->name ?? '')),
             'unitPriceCents' => $price ?? 0,
             'salePriceCents' => $sale,
+            'costExVatCents' => $this->cents($product->supplier_cost_price),
             'currency' => 'ZAR',
             'stockQuantity' => max(0, (int) $product->stock_quantity),
             'stockStatus' => $product->in_stock && (int) $product->stock_quantity > 0 ? 'in_stock' : 'out_of_stock',

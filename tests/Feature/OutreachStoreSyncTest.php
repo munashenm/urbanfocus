@@ -192,11 +192,14 @@ class OutreachStoreSyncTest extends TestCase
         ]);
         Product::factory()->create([
             'sku' => 'DESK-1',
+            'model_number' => 'OD-1600',
             'name' => 'Office desk 1600',
             'price' => 4500,
+            'supplier_cost_price' => 1800,
             'stock_quantity' => 2,
             'in_stock' => true,
             'is_active' => true,
+            'specifications' => ['Size' => '1600 mm'],
         ]);
         Product::factory()->create([
             'sku' => 'HIDDEN',
@@ -214,11 +217,26 @@ class OutreachStoreSyncTest extends TestCase
             ->assertJsonPath('products.0.stockQuantity', 6)
             ->assertJsonPath('products.0.published', true);
 
+        $page = $this->getJson('/api/store/catalogue?per_page=1&page=1', $headers)->assertOk();
+        $page->assertJsonPath('products.0.sku', 'LAP-1');
+
         $this->getJson('/api/store/catalogue?sku=desk-1', $headers)
             ->assertOk()
             ->assertJsonPath('total', 1)
             ->assertJsonPath('products.0.name', 'Office desk 1600')
-            ->assertJsonPath('products.0.unitPriceCents', 450000);
+            ->assertJsonPath('products.0.unitPriceCents', 450000)
+            ->assertJsonPath('products.0.costExVatCents', 180000)
+            ->assertJsonPath('products.0.stockQuantity', 2);
+        $this->assertStringContainsString('Size: 1600 mm', (string) $this->getJson('/api/store/catalogue?sku=desk-1', $headers)->json('products.0.specifications'));
+
+        $this->getJson('/api/store/catalogue?mpn=od-1600', $headers)
+            ->assertOk()
+            ->assertJsonPath('products.0.sku', 'DESK-1')
+            ->assertJsonPath('products.0.costExVatCents', 180000);
+
+        $this->getJson('/api/store/catalogue?q=business%20laptop&per_page=40', $headers)
+            ->assertOk()
+            ->assertJsonPath('products.0.costExVatCents', null);
     }
 
     public function test_create_refuses_a_barcode_that_already_exists(): void
