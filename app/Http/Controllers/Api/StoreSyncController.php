@@ -38,7 +38,7 @@ class StoreSyncController extends Controller
     public function catalogue(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->query('per_page', 50), 1), 100);
-        $products = Product::query()
+        $products = $this->catalogueQuery($request)
             ->with(['category:id,name', 'images'])
             ->orderBy('id')
             ->paginate($perPage);
@@ -50,6 +50,44 @@ class StoreSyncController extends Controller
             'lastPage' => $products->lastPage(),
             'products' => $products->getCollection()->map(fn (Product $product) => $this->catalogueProduct($product))->values(),
         ]);
+    }
+
+    /**
+     * An unfiltered request keeps the full catalogue page. A quotation search
+     * uses q, sku, or mpn and returns the current selling price.
+     */
+    private function catalogueQuery(Request $request)
+    {
+        $query = Product::query();
+        $q = trim((string) $request->query('q', ''));
+        $sku = trim((string) $request->query('sku', ''));
+        $mpn = trim((string) $request->query('mpn', ''));
+        if ($q === '' && $sku === '' && $mpn === '') {
+            return $query;
+        }
+
+        $query->where('is_active', true);
+        if ($sku !== '') {
+            $query->whereRaw('LOWER(sku) = ?', [mb_strtolower($sku)]);
+        }
+        if ($mpn !== '') {
+            $query->whereRaw('LOWER(model_number) = ?', [mb_strtolower($mpn)]);
+        }
+        if ($q !== '') {
+            $terms = preg_split('/\s+/u', $q) ?: [];
+            $terms = array_values(array_filter($terms, fn ($term) => mb_strlen(trim((string) $term)) >= 2));
+            foreach (array_slice($terms === [] ? [$q] : $terms, 0, 6) as $term) {
+                $like = '%'.mb_strtolower((string) $term).'%';
+                $query->where(function ($builder) use ($like) {
+                    $builder->whereRaw('LOWER(name) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(COALESCE(sku, \'\')) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(COALESCE(model_number, \'\')) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(COALESCE(brand, \'\')) LIKE ?', [$like]);
+                });
+            }
+        }
+
+        return $query;
     }
 
     public function lookup(Request $request): JsonResponse

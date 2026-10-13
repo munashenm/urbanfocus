@@ -178,6 +178,49 @@ class OutreachStoreSyncTest extends TestCase
             ->assertJsonPath('sku', 'SW-24');
     }
 
+    public function test_catalogue_search_returns_the_current_selling_price(): void
+    {
+        Product::factory()->create([
+            'sku' => 'LAP-1',
+            'name' => 'Business laptop 14',
+            'brand' => 'Lenovo',
+            'price' => 12000,
+            'sale_price' => null,
+            'stock_quantity' => 6,
+            'in_stock' => true,
+            'is_active' => true,
+        ]);
+        Product::factory()->create([
+            'sku' => 'DESK-1',
+            'name' => 'Office desk 1600',
+            'price' => 4500,
+            'stock_quantity' => 2,
+            'in_stock' => true,
+            'is_active' => true,
+        ]);
+        Product::factory()->create([
+            'sku' => 'HIDDEN',
+            'name' => 'Business laptop draft',
+            'price' => 1000,
+            'is_active' => false,
+        ]);
+
+        $headers = ['Authorization' => 'Bearer test-api-key'];
+        $this->getJson('/api/store/catalogue?q=business%20laptop&per_page=40', $headers)
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('products.0.sku', 'LAP-1')
+            ->assertJsonPath('products.0.unitPriceCents', 1200000)
+            ->assertJsonPath('products.0.stockQuantity', 6)
+            ->assertJsonPath('products.0.published', true);
+
+        $this->getJson('/api/store/catalogue?sku=desk-1', $headers)
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('products.0.name', 'Office desk 1600')
+            ->assertJsonPath('products.0.unitPriceCents', 450000);
+    }
+
     public function test_create_refuses_a_barcode_that_already_exists(): void
     {
         Product::factory()->create([
