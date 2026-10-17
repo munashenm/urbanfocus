@@ -3,11 +3,13 @@
 namespace Tests\Unit;
 
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Services\CatalogFilterService;
 use App\Services\CategoryMapperService;
 use App\Services\ProductImportService;
 use App\Services\ProductPricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class ProductImportServiceTest extends TestCase
@@ -302,6 +304,62 @@ class ProductImportServiceTest extends TestCase
         $result = $this->import->evaluateRow($data);
 
         $this->assertSame('create', $result['action']);
+    }
+
+    public function test_products_table_has_supplier_cost_price_column(): void
+    {
+        $this->assertTrue(
+            Schema::hasColumn('products', 'supplier_cost_price'),
+            'products.supplier_cost_price must exist so imports can store supplier cost (ex-VAT)'
+        );
+    }
+
+    public function test_import_persists_supplier_cost_price_beside_selling_price(): void
+    {
+        $product = Product::create([
+            'name' => 'Ubiquiti UniFi Switch Lite 8 PoE',
+            'slug' => 'ubiquiti-unifi-switch-lite-8-poe',
+            'sku' => 'USW-Lite-8-PoE',
+            'brand' => 'Ubiquiti',
+            'price' => 2500,
+            'cost_price' => 100,
+            'is_active' => true,
+            'in_stock' => true,
+            'stock_quantity' => 5,
+        ]);
+        ProductImage::create([
+            'product_id' => $product->id,
+            'path' => 'products/usw-lite-8-poe.webp',
+            'alt_text' => $product->name,
+            'sort_order' => 0,
+            'is_primary' => true,
+        ]);
+
+        $row = [
+            'name' => 'Ubiquiti UniFi Switch Lite 8 PoE',
+            'sku' => 'USW-Lite-8-PoE',
+            'brand' => 'Ubiquiti',
+            'category_head' => 'Networking-Active',
+            'categories' => 'Networking-Active > Switches',
+            'regular_price' => '1800',
+            'stock' => '5',
+            'in_stock' => '1',
+            'published' => '1',
+            'images' => '',
+            'supplier_name' => 'Scoop',
+            'import_source' => 'scoop',
+        ];
+
+        $method = new \ReflectionMethod($this->import, 'importRow');
+        $method->setAccessible(true);
+        $status = $method->invoke($this->import, $row);
+
+        $this->assertSame('updated', $status);
+
+        $product->refresh();
+        $this->assertSame(1800.0, (float) $product->supplier_cost_price);
+        // Selling price must sit above the stored supplier cost (ex-VAT).
+        $this->assertGreaterThan((float) $product->supplier_cost_price, (float) $product->price);
     }
 
     public function test_resolve_import_slug_avoids_soft_deleted_slug_collision(): void
