@@ -60,6 +60,13 @@ $app = require_once $laravelRoot.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
+if (! Illuminate\Support\Facades\Schema::hasColumn('products', 'supplier_cost_price')) {
+    exit(
+        "Missing products.supplier_cost_price — imports cannot store supplier cost (ex-VAT).\n"
+        ."Run migrate.php (or: php artisan migrate --force), then retry this import.\n"
+    );
+}
+
 $import = $app->make(App\Services\ProductImportService::class);
 $pricing = $import->pricingPolicy();
 
