@@ -42,6 +42,26 @@ class CategoryMapperServiceTest extends TestCase
         $this->assertSame('Peripherals & Accessories > Cables & Adapters', $path);
     }
 
+    public function test_infer_slug_path_keeps_network_switches_and_moves_lookalikes(): void
+    {
+        $this->assertSame(
+            'networking-connectivity/switches',
+            $this->mapper->inferSlugPath(['name' => '24-Port Gigabit Switch'])
+        );
+        $this->assertSame(
+            'computing-office/storage-devices',
+            $this->mapper->inferSlugPath(['name' => 'SanDisk 256GB microSDXC for Nintendo Switch'])
+        );
+        $this->assertSame(
+            'computing-office/computer-accessories',
+            $this->mapper->inferSlugPath(['name' => '4-Port HDMI KVM Switch'])
+        );
+        $this->assertSame(
+            'gaming-entertainment/console-accessories',
+            $this->mapper->inferSlugPath(['name' => 'Nintendo Switch Pro Controller'])
+        );
+    }
+
     public function test_maps_scoop_poe_usb_c_adapter_to_poe_equipment(): void
     {
         $path = $this->mapper->mapImportCategories([

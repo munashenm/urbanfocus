@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 class SearchService
@@ -200,29 +201,43 @@ class SearchService
 
     public function megaMenuCategories(): array
     {
-        $columns = config('mega-menu.columns', []);
-        $dbCategories = Category::where('is_active', true)
-            ->whereNull('parent_id')
-            ->visibleInCatalog()
-            ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])
-            ->get()
-            ->keyBy('slug');
+        return Cache::remember(CatalogNavigation::MEGA_KEY, 600, function () {
+            $columns = config('mega-menu.columns', []);
+            $navigation = app(CatalogNavigation::class);
+            $stocked = array_flip($navigation->stockedCategoryIds());
+            $dbCategories = Category::where('is_active', true)
+                ->whereNull('parent_id')
+                ->visibleInCatalog()
+                ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])
+                ->get()
+                ->keyBy('slug');
 
-        return collect($columns)->map(function ($col) use ($dbCategories) {
-            $category = $dbCategories->get($col['slug']);
+            return collect($columns)->map(function ($col) use ($dbCategories, $stocked) {
+                $category = $dbCategories->get($col['slug']);
 
-            return [
-                'label' => $col['label'],
-                'slug' => $col['slug'],
-                'icon' => $col['icon'],
-                'url' => $category
-                    ? $category->url()
-                    : route('shop.index', ['category' => $col['slug']]),
-                'children' => $category?->children->map(fn ($c) => [
-                    'name' => $c->name,
-                    'url' => $c->url(),
-                ])->all() ?? [],
-            ];
-        })->all();
+                if ($category) {
+                    $category->setRelation(
+                        'children',
+                        $category->children
+                            ->filter(fn (Category $child) => isset($stocked[(int) $child->id]))
+                            ->each(fn (Category $child) => $child->setRelation('parent', $category))
+                            ->values()
+                    );
+                }
+
+                return [
+                    'label' => $col['label'],
+                    'slug' => $col['slug'],
+                    'icon' => $col['icon'],
+                    'url' => $category
+                        ? $category->url()
+                        : route('shop.index', ['category' => $col['slug']]),
+                    'children' => $category?->children->map(fn ($c) => [
+                        'name' => $c->name,
+                        'url' => $c->url(),
+                    ])->all() ?? [],
+                ];
+            })->all();
+        });
     }
 }

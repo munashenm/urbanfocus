@@ -4,7 +4,9 @@ namespace App\View\Composers;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Services\CatalogNavigation;
 use App\Services\SearchService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
@@ -15,12 +17,16 @@ class LayoutComposer
     public function compose(View $view): void
     {
         try {
-            $view->with('navCategories', Category::where('is_active', true)
-                ->whereNull('parent_id')
-                ->visibleInCatalog()
-                ->orderBy('sort_order')
-                ->take(12)
-                ->get());
+            $view->with('navCategories', Cache::remember(CatalogNavigation::NAV_KEY, 600, function () {
+                $categories = Category::where('is_active', true)
+                    ->whereNull('parent_id')
+                    ->visibleInCatalog()
+                    ->orderBy('sort_order')
+                    ->take(12)
+                    ->get();
+
+                return app(CatalogNavigation::class)->filterStocked($categories, false);
+            }));
 
             $view->with('megaMenuCategories', $this->search->megaMenuCategories());
 
