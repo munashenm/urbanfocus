@@ -25,14 +25,25 @@ class CategoryController extends Controller
 
     public function show(string $category, Request $request): View|RedirectResponse
     {
-        if ($redirect = $this->redirectForLegacySlug($category)) {
+        if ($redirect = $this->redirectForLegacySlug($category, $category)) {
             return $redirect;
         }
 
         $categoryModel = $this->resolveCategoryBySlug($category);
 
         if ($categoryModel->parent_id) {
-            return redirect($categoryModel->url(), 301);
+            $categoryModel->loadMissing('parent');
+            if ($categoryModel->parent) {
+                $target = trim(parse_url($categoryModel->url(), PHP_URL_PATH) ?? '', '/');
+                $current = trim('category/'.$category, '/');
+                if (strcasecmp($target, $current) !== 0) {
+                    return redirect($categoryModel->url(), 301);
+                }
+            }
+        }
+
+        if ($redirect = $this->redirectIfCatalogExcluded($categoryModel)) {
+            return $redirect;
         }
 
         return $this->renderCategory($categoryModel, $request);
@@ -40,11 +51,15 @@ class CategoryController extends Controller
 
     public function showChild(string $parent, string $child, Request $request): View|RedirectResponse
     {
-        if ($redirect = $this->redirectForLegacySlug($child)) {
+        if ($redirect = $this->redirectForLegacySlug($child, $parent.'/'.$child)) {
             return $redirect;
         }
 
         [$parentModel, $childModel] = $this->resolveChildCategories($parent, $child);
+
+        if ($redirect = $this->redirectIfCatalogExcluded($childModel)) {
+            return $redirect;
+        }
 
         return $this->renderCategory($childModel, $request, $parentModel);
     }
@@ -76,11 +91,18 @@ class CategoryController extends Controller
         return [$parent, $child];
     }
 
-    protected function redirectForLegacySlug(string $slug): ?RedirectResponse
+    protected function redirectForLegacySlug(string $slug, string $currentPath): ?RedirectResponse
     {
-        $targetPath = CategorySlugRedirect::targetForSlug($slug);
+        $targetPath = $this->resolveRedirectTarget($slug);
 
-        if (! $targetPath) {
+        if ($targetPath === null) {
+            return null;
+        }
+
+        $targetPath = trim($targetPath, '/');
+        $currentPath = trim($currentPath, '/');
+
+        if ($targetPath === '' || strcasecmp($targetPath, $currentPath) === 0) {
             return null;
         }
 
@@ -89,6 +111,63 @@ class CategoryController extends Controller
             : route('categories.show', $targetPath);
 
         return redirect($url, 301);
+    }
+
+    /**
+     * Follow category_slug_redirects, stopping on a self-target or a cycle.
+     * A row whose target is the slug itself must not 301 the canonical URL to itself.
+     */
+    protected function resolveRedirectTarget(string $slug): ?string
+    {
+        $seen = [];
+        $current = trim($slug, '/');
+        $resolved = null;
+
+        for ($hop = 0; $hop < 6; $hop++) {
+            $next = CategorySlugRedirect::targetForSlug($current);
+            if (! is_string($next) || trim($next) === '') {
+                break;
+            }
+
+            $next = trim($next, '/');
+            if (strcasecmp($next, $current) === 0 || isset($seen[strtolower($next)])) {
+                return $resolved;
+            }
+
+            $seen[strtolower($current)] = true;
+            $resolved = $next;
+
+            if (str_contains($next, '/')) {
+                return $next;
+            }
+
+            $current = $next;
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * Legacy top-level categories outside the canonical tree used to 301 to
+     * themselves. Send those URLs to computer accessories instead of a loop or a 404.
+     * Names that the catalogue filter bans still 404.
+     */
+    protected function redirectIfCatalogExcluded(Category $category): ?RedirectResponse
+    {
+        if ($this->catalogFilter->isExcludedName($category->name)) {
+            abort(404);
+        }
+
+        if (! $this->catalogFilter->isCategoryExcluded($category)) {
+            return null;
+        }
+
+        $fallback = Category::query()->where('slug', 'computer-accessories')->whereNotNull('parent_id')->first();
+        if ($fallback && $fallback->id !== $category->id) {
+            return redirect($fallback->url(), 301);
+        }
+
+        abort(404);
     }
 
     protected function renderCategory(Category $category, Request $request, ?Category $parent = null): View
@@ -107,6 +186,10 @@ class CategoryController extends Controller
         $query = Product::with('images')
             ->whereIn('category_id', $categoryIds)
             ->where('is_active', true);
+
+        if ($category->slug === 'switches') {
+            $this->categoryMapper->excludeMisplacedSwitchProducts($query);
+        }
 
         Product::applyStorefrontStockFilter($query, $request);
 
@@ -127,27 +210,32 @@ class CategoryController extends Controller
 
         $products = $query->paginate(24)->withQueryString();
 
-        $brands = Product::whereIn('category_id', $categoryIds)
+        $brandQuery = Product::whereIn('category_id', $categoryIds)
             ->where('is_active', true)
-            ->whereNotNull('brand')
-            ->distinct()
-            ->orderBy('brand')
-            ->pluck('brand');
+            ->whereNotNull('brand');
+        if ($category->slug === 'switches') {
+            $this->categoryMapper->excludeMisplacedSwitchProducts($brandQuery);
+        }
+        $brands = $brandQuery->distinct()->orderBy('brand')->pluck('brand');
 
         $relatedBrandModels = $brands->isNotEmpty()
             ? Brand::query()->where('is_active', true)->whereIn('name', $brands)->orderBy('name')->get()
             : collect();
 
-        $subcategories = $category->children;
+        $navigation = app(\App\Services\CatalogNavigation::class);
+        $subcategories = $navigation->filterStocked($category->children, false);
 
         $siblingCategories = collect();
         if ($category->parent_id) {
-            $siblingCategories = Category::query()
-                ->where('parent_id', $category->parent_id)
-                ->where('is_active', true)
-                ->visibleInCatalog()
-                ->orderBy('sort_order')
-                ->get();
+            $siblingCategories = $navigation->filterStocked(
+                Category::query()
+                    ->where('parent_id', $category->parent_id)
+                    ->where('is_active', true)
+                    ->visibleInCatalog()
+                    ->orderBy('sort_order')
+                    ->get(),
+                false
+            );
         }
 
         $breadcrumbs = [
