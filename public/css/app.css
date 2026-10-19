@@ -9,7 +9,7 @@
     --uf-gray-100: #f5f7fa;
     --uf-gray-200: #e8edf3;
     --uf-text: #1a1f2e;
-    --uf-muted: #6b7280;
+    --uf-muted: #4b5563;
     --header-height: 56px;
 }
 
@@ -67,6 +67,8 @@ body {
 }
 
 .top-bar { background: var(--uf-navy); font-size: 0.875rem; }
+.top-bar .text-white-50 { color: #e8eef6 !important; }
+.text-muted { color: #4b5563 !important; }
 
 .site-logo {
     display: inline-flex;
@@ -190,14 +192,15 @@ body {
 .product-card-image {
     position: relative;
     aspect-ratio: 1;
-    background: var(--uf-gray-100);
+    background: #fff;
     overflow: hidden;
 }
 .product-card-image img {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    padding: 1rem;
+    background: #fff;
+    padding: 0.75rem;
 }
 .product-placeholder {
     height: 100%;
@@ -263,25 +266,64 @@ body {
 .trust-item { text-align: center; padding: 1rem; }
 .trust-item strong { display: block; color: var(--uf-navy); }
 
-.site-footer { background: var(--uf-navy); color: rgba(255,255,255,0.7); }
+.site-footer { background: var(--uf-navy); color: #e8eef6; }
 .footer-links a,
-.footer-links .footer-address-link { color: rgba(255,255,255,0.7); text-decoration: none; }
+.footer-links .footer-address-link { color: #e8eef6; text-decoration: none; }
 .footer-links a:hover,
 .footer-links .footer-address-link:hover { color: #fff; }
 .footer-text,
 .footer-bottom-links a,
-.footer-bottom .footer-text { color: rgba(255,255,255,0.7); }
+.footer-bottom .footer-text { color: #e8eef6; }
 .footer-bottom-links a:hover { color: #fff; }
 .footer-bottom { background: rgba(0,0,0,0.2); }
 .footer-payment-logos { height: 28px; width: auto; object-fit: contain; display: block; }
 
 .product-detail-image {
-    background: var(--uf-gray-100);
+    background: #fff;
+    border: 1px solid var(--uf-gray-200);
     border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
-.product-detail-image img { max-width: 100%; height: auto; max-height: 400px; object-fit: contain; }
+.product-zoom-hit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 1.5rem;
+    border: 0;
+    background: #fff;
+    cursor: zoom-in;
+}
+.product-detail-image img {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.product-lightbox {
+    border: 0;
+    padding: 1.5rem;
+    max-width: min(960px, 92vw);
+    background: #fff;
+    border-radius: 12px;
+}
+.product-lightbox::backdrop { background: rgba(10, 22, 40, 0.72); }
+.product-lightbox img { width: 100%; height: auto; object-fit: contain; }
+.product-lightbox-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.75rem;
+    border: 0;
+    background: transparent;
+    font-size: 1.75rem;
+    line-height: 1;
+}
 
 .checkout-card, .cart-table-wrap {
     background: #fff;
@@ -885,7 +927,7 @@ a:hover { color: var(--uf-blue); }
 }
 .brand-hero-logo { max-height: 48px; width: auto; }
 .subcategory-chips .btn { border-radius: 999px; }
-.product-card-image img { width: 100%; height: 220px; object-fit: contain; background: #f8fafc; padding: 0.5rem; }
+.product-card-image img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .product-sku { font-size: 0.75rem; }
 .product-thumb.active { border-color: var(--uf-blue); box-shadow: 0 0 0 2px rgba(0,136,255,0.25); }
 .mobile-buy-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--uf-gray-200); box-shadow: 0 -4px 20px rgba(10,22,40,0.08); z-index: 1030; }
@@ -911,9 +953,19 @@ a:hover { color: var(--uf-blue); }
 }
 
 @media (max-width: 768px) {
-    .hero-carousel .carousel-item { min-height: 320px; }
-    .product-card-image img { height: 160px; }
+    .hero-carousel .carousel-item { min-height: 0; }
     body.has-mobile-buy-bar { padding-bottom: 72px; }
+}
+@media (max-width: 575.98px) {
+    .min-vh-50 { min-height: 0; }
+    .hero-carousel .carousel-control-prev,
+    .hero-carousel .carousel-control-next {
+        top: auto;
+        bottom: 0.35rem;
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+    .hero-content { padding-bottom: 2.75rem !important; }
 }
 
 .skip-link {

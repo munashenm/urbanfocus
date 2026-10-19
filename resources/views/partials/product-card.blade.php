@@ -23,9 +23,9 @@
                 <div class="product-sku small text-muted">SKU: {{ $product->sku }}</div>
             @endif
         </div>
-        <h3 class="product-title">
+        <h2 class="product-title h6">
             <a href="{{ route('products.show', $product) }}" title="{{ $product->name }}">{{ $product->name }}</a>
-        </h3>
+        </h2>
         <div class="product-card-footer">
             <div class="product-price">
                 @if($product->is_on_sale)

@@ -43,7 +43,7 @@ class SeoIndexPolicy
 
     public function shouldNoindex(Request $request): bool
     {
-        if ($this->isPrivatePath($request)) {
+        if ($this->isPrivatePath($request) || $this->isQuoteProductPage($request)) {
             return true;
         }
 
@@ -152,7 +152,13 @@ class SeoIndexPolicy
             '/*?*price_min=',
             '/*?price_max=',
             '/*?*price_max=',
+            '/b2b/quote?',
         ];
+    }
+
+    public function isQuoteProductPage(Request $request): bool
+    {
+        return $request->is('b2b/quote') && $request->filled('product');
     }
 
     /** @return list<string> */

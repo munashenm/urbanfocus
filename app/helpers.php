@@ -99,6 +99,116 @@ if (! function_exists('product_image_url')) {
     }
 }
 
+if (! function_exists('seo_utf8')) {
+    /** Drop invalid UTF-8 so mb_* and /u regexes cannot throw on imported copy. */
+    function seo_utf8(?string $value): string
+    {
+        $value = (string) $value;
+        if ($value === '' || mb_check_encoding($value, 'UTF-8')) {
+            return $value;
+        }
+
+        $clean = @iconv('UTF-8', 'UTF-8//IGNORE', $value);
+
+        return is_string($clean) ? $clean : '';
+    }
+}
+
+if (! function_exists('seo_limit_words')) {
+    /** Shorten text to $max characters, ending on a word boundary when possible. */
+    function seo_limit_words(string $text, int $max, string $end = ''): string
+    {
+        $text = seo_utf8($text);
+        $text = trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
+        if ($text === '' || mb_strlen($text) <= $max) {
+            return $text;
+        }
+
+        $slice = mb_substr($text, 0, max(1, $max - mb_strlen($end)));
+        $space = mb_strrpos($slice, ' ');
+        if ($space !== false && $space >= (int) floor($max * 0.4)) {
+            $slice = mb_substr($slice, 0, $space);
+        }
+
+        return rtrim($slice, " \t-|,").$end;
+    }
+}
+
+if (! function_exists('seo_title_looks_truncated')) {
+    /** True when a stored title was cut mid-word, usually through the brand suffix. */
+    function seo_title_looks_truncated(string $title): bool
+    {
+        if (preg_match('/urban focus\s*$/iu', $title)) {
+            return false;
+        }
+
+        return (bool) preg_match('/(?:\||\b)(?:urban\s+fo\w{0,4}|urba\w{0,3}|knowledg\w{0,2}|centr\w{0,1})\s*$/iu', $title);
+    }
+}
+
+if (! function_exists('seo_page_title')) {
+    /**
+     * Page title at most 65 characters, cut on a word boundary.
+     * A suffix that was previously sliced mid-word ("| Urban Fo") is replaced.
+     */
+    function seo_page_title(string $title, int $max = 65): string
+    {
+        $title = seo_utf8($title);
+        $title = trim(preg_replace('/\s+/u', ' ', strip_tags($title)) ?? '');
+        if ($title === '') {
+            return 'Urban Focus';
+        }
+
+        if (seo_title_looks_truncated($title)) {
+            $base = trim(preg_replace('/\s*\|\s*.*$/u', '', $title) ?? $title);
+            $suffix = ' | Urban Focus';
+            if ($base !== '' && mb_strlen($base.$suffix) <= $max) {
+                return $base.$suffix;
+            }
+
+            return seo_limit_words($base !== '' ? $base : $title, $max);
+        }
+
+        if (mb_strlen($title) <= $max) {
+            return $title;
+        }
+
+        return seo_limit_words($title, $max);
+    }
+}
+
+if (! function_exists('public_social_url')) {
+    /**
+     * Public social URL, or null when it is empty or a known-broken placeholder.
+     * TODO: replace Facebook (HTTP 400) and the Google review link (lands on google.com)
+     * once the owner confirms the real profile and Place ID.
+     */
+    function public_social_url(?string $url): ?string
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return null;
+        }
+
+        $normalised = rtrim(strtolower($url), '/');
+        $blocked = [
+            'https://www.facebook.com/urbanfocusonline',
+            'http://www.facebook.com/urbanfocusonline',
+            'https://facebook.com/urbanfocusonline',
+            'https://g.page/r/urbanfocus/review',
+            'http://g.page/r/urbanfocus/review',
+        ];
+
+        foreach ($blocked as $bad) {
+            if ($normalised === rtrim(strtolower($bad), '/')) {
+                return null;
+            }
+        }
+
+        return $url;
+    }
+}
+
 if (! function_exists('seo_meta_description')) {
     /**
      * Build a meta description within SEO length targets (120–160 chars by default).
@@ -107,12 +217,13 @@ if (! function_exists('seo_meta_description')) {
      */
     function seo_meta_description(string $base, array $context = []): string
     {
+        $base = seo_utf8($base);
         $base = trim(preg_replace('/\s+/u', ' ', strip_tags($base)) ?? '');
         $min = (int) config('seo.defaults.min_description_length', 120);
         $max = (int) config('seo.defaults.max_description_length', 160);
 
         if ($base !== '' && mb_strlen($base) >= $min) {
-            return Str::limit($base, $max, '');
+            return seo_limit_words($base, $max);
         }
 
         $name = $context['name'] ?? '';
@@ -147,13 +258,13 @@ if (! function_exists('seo_meta_description')) {
         foreach ($suffixes as $suffix) {
             $combined = $prefix.$suffix;
             if (mb_strlen($combined) >= $min) {
-                return Str::limit($combined, $max, '');
+                return seo_limit_words($combined, $max);
             }
         }
 
         $fallback = $prefix.($suffixes[0] ?? 'Shop IT products online at Urban Focus with nationwide delivery across South Africa.');
 
-        return Str::limit($fallback, $max, '');
+        return seo_limit_words($fallback, $max);
     }
 }
 
@@ -231,13 +342,15 @@ if (! function_exists('clean_html')) {
      * scripts, iframes, inline event handlers and javascript: URLs while keeping
      * a safe allowlist of formatting tags.
      */
-    function clean_html(?string $html): string
+    function clean_html(?string $html, ?string $defaultAlt = null): string
     {
         if ($html === null) {
             return '';
         }
 
+        $html = seo_utf8($html);
         $html = trim($html);
+        $defaultAlt = trim(seo_utf8($defaultAlt));
 
         if ($html === '') {
             return '';
@@ -307,6 +420,25 @@ if (! function_exists('clean_html')) {
             if (strtolower($node->nodeName) === 'a' && strtolower((string) $node->getAttribute('target')) === '_blank') {
                 $node->setAttribute('rel', 'noopener noreferrer');
             }
+
+            if (strtolower($node->nodeName) === 'img' && $defaultAlt !== '' && trim((string) $node->getAttribute('alt')) === '') {
+                $node->setAttribute('alt', $defaultAlt);
+            }
+        }
+
+        foreach (iterator_to_array($xpath->query('.//h1', $root)) as $heading) {
+            if (! $heading instanceof DOMElement) {
+                continue;
+            }
+
+            $replacement = $dom->createElement('h2');
+            foreach (iterator_to_array($heading->attributes) as $attr) {
+                $replacement->setAttribute($attr->nodeName, $attr->nodeValue);
+            }
+            while ($heading->firstChild) {
+                $replacement->appendChild($heading->firstChild);
+            }
+            $heading->parentNode?->replaceChild($replacement, $heading);
         }
 
         $out = '';

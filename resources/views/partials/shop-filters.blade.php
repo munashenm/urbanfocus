@@ -3,19 +3,19 @@
 @endif
     <div class="filter-sidebar">
         <div class="d-flex justify-content-between align-items-center mb-3 d-lg-none">
-            <h6 class="fw-bold mb-0">Filters</h6>
-            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#shopFilters">Toggle</button>
+            <p class="fw-bold mb-0">Filters</p>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#shopFilters" aria-controls="shopFilters" aria-label="Toggle filters">Toggle</button>
         </div>
         <div class="collapse d-lg-block" id="shopFilters">
-            <h6 class="fw-bold mb-3 d-none d-lg-block">Filters</h6>
+            <p class="fw-bold mb-3 d-none d-lg-block">Filters</p>
             <form method="GET" action="{{ $filterAction ?? route('shop.index') }}">
                 @foreach(request()->except(['category', 'brand', 'in_stock', 'include_out_of_stock', 'deals', 'price_min', 'price_max', 'sort', 'page']) as $key => $val)
                     @if(is_string($val))<input type="hidden" name="{{ $key }}" value="{{ $val }}">@endif
                 @endforeach
                 @if(!empty($showCategoryFilter) && $categories->count())
                 <div class="mb-3">
-                    <label class="form-label small fw-semibold">Category</label>
-                    <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <label class="form-label small fw-semibold" for="filter-category">Category</label>
+                    <select name="category" id="filter-category" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">All Categories</option>
                         @foreach($categories as $cat)
                             <option value="{{ $cat->slug }}" @selected(request('category') === $cat->slug)>{{ $cat->name }}</option>
@@ -28,8 +28,8 @@
                 @endif
                 @if(!empty($showBrandFilter ?? true) && $brands->count())
                 <div class="mb-3">
-                    <label class="form-label small fw-semibold">Brand</label>
-                    <select name="brand" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <label class="form-label small fw-semibold" for="filter-brand">Brand</label>
+                    <select name="brand" id="filter-brand" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">All Brands</option>
                         @foreach($brands as $b)
                             <option value="{{ $b }}" @selected(request('brand') === $b)>{{ $b }}</option>
@@ -38,10 +38,10 @@
                 </div>
                 @endif
                 <div class="mb-3">
-                    <label class="form-label small fw-semibold">Price (ZAR)</label>
+                    <label class="form-label small fw-semibold" for="filter-price-min">Price (ZAR)</label>
                     <div class="row g-2">
-                        <div class="col-6"><input type="number" name="price_min" class="form-control form-control-sm" placeholder="Min" value="{{ request('price_min') }}" min="0"></div>
-                        <div class="col-6"><input type="number" name="price_max" class="form-control form-control-sm" placeholder="Max" value="{{ request('price_max') }}" min="0"></div>
+                        <div class="col-6"><input type="number" name="price_min" id="filter-price-min" class="form-control form-control-sm" placeholder="Min" aria-label="Minimum price in rand" value="{{ request('price_min') }}" min="0"></div>
+                        <div class="col-6"><input type="number" name="price_max" id="filter-price-max" class="form-control form-control-sm" placeholder="Max" aria-label="Maximum price in rand" value="{{ request('price_max') }}" min="0"></div>
                     </div>
                 </div>
                 @if(config('catalog.hide_out_of_stock', true))
@@ -60,8 +60,8 @@
                     <label class="form-check-label small" for="dealsOnly">Deals only</label>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label small fw-semibold">Sort by</label>
-                    <select name="sort" class="form-select form-select-sm">
+                    <label class="form-label small fw-semibold" for="filter-sort">Sort by</label>
+                    <select name="sort" id="filter-sort" class="form-select form-select-sm">
                         @include('partials.sort-options')
                     </select>
                 </div>

@@ -5,9 +5,17 @@
 
     RewriteEngine On
 
-    # Force HTTPS
+    # Canonical host for the live store. Apex and plain HTTP on that host
+    # go to https://www.urbanfocus.co.za. X-Forwarded-Proto is checked so
+    # Cloudflare Flexible SSL does not bounce forever. Other hosts (local,
+    # staging) are left alone.
+    RewriteCond %{HTTP_HOST} ^urbanfocus\.co\.za$ [NC]
+    RewriteRule ^ https://www.urbanfocus.co.za%{REQUEST_URI} [L,R=301]
+
+    RewriteCond %{HTTP_HOST} ^www\.urbanfocus\.co\.za$ [NC]
     RewriteCond %{HTTPS} !=on
-    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+    RewriteRule ^ https://www.urbanfocus.co.za%{REQUEST_URI} [L,R=301]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
@@ -27,11 +35,16 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
-# Security headers
+# PHP sets these on HTML responses. Repeat them only for static files so
+# Apache and PHP do not send the same header twice on every page.
 <IfModule mod_headers.c>
-    Header set X-Content-Type-Options "nosniff"
-    Header set X-Frame-Options "SAMEORIGIN"
-    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header unset X-Powered-By
+    <FilesMatch "\.(css|js|mjs|jpg|jpeg|png|gif|webp|svg|ico|woff2?|ttf|eot|map)$">
+        Header set X-Content-Type-Options "nosniff"
+        Header set X-Frame-Options "SAMEORIGIN"
+        Header set Referrer-Policy "strict-origin-when-cross-origin"
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
 </IfModule>
 
 # Cache static assets

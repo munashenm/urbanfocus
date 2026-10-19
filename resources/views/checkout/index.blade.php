@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Checkout | Urban Focus')
+@section('meta_description', 'Secure Urban Focus checkout with Paystack, EFT and nationwide courier delivery in South Africa.')
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')
@@ -131,7 +132,7 @@
                 <div class="checkout-card mb-4">
                     <h2 class="h5 fw-bold mb-3">Coupon Code</h2>
                     <div class="input-group">
-                        <input type="text" name="coupon_code" class="form-control @error('coupon_code') is-invalid @enderror" value="{{ old('coupon_code') }}" placeholder="Enter coupon code">
+                        <input type="text" name="coupon_code" class="form-control @error('coupon_code') is-invalid @enderror" value="{{ old('coupon_code', session('coupon_code')) }}" placeholder="Enter coupon code" aria-label="Coupon code">
                         <button type="button" class="btn btn-outline-secondary" id="apply-coupon-btn">Apply</button>
                     </div>
                     @error('coupon_code')<div class="text-danger small mt-1">{{ $message }}</div>@enderror

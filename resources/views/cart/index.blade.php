@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Shopping Cart | Urban Focus')
+@section('meta_description', 'Review the IT products in your Urban Focus cart before Paystack or EFT checkout, with nationwide delivery from South Africa.')
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')
@@ -37,7 +38,9 @@
                                         </div>
                                     </td>
                                     <td>R {{ number_format($item['product']->effective_price, 2) }}</td>
-                                    <td><input type="number" name="quantities[{{ $item['product']->id }}]" value="{{ $item['quantity'] }}" min="0" class="form-control form-control-sm" aria-label="Quantity for {{ $item['product']->name }}"></td>
+                                    <td>
+                                        <input type="number" name="quantities[{{ $item['product']->id }}]" value="{{ $item['quantity'] }}" step="1" inputmode="numeric" class="form-control form-control-sm" aria-label="Quantity for {{ $item['product']->name }}">
+                                    </td>
                                     <td class="fw-semibold">R {{ number_format($item['line_total'], 2) }}</td>
                                     <td>
                                         <button
@@ -53,13 +56,33 @@
                         </tbody>
                     </table>
                 </div>
+                <p class="small text-muted mb-0 mt-2">Quantity must be a whole number. Enter 0 and update the cart to remove an item.</p>
                 <div class="d-flex justify-content-between align-items-center mt-3">
                     <button type="submit" class="btn btn-outline-primary btn-sm">Update Cart</button>
                     <div class="text-end">
                         <div class="h5 mb-0">Subtotal: <strong>R {{ number_format($subtotal, 2) }}</strong></div>
-                        <small class="text-muted">Shipping calculated at checkout</small>
+                        @php
+                            $freeShippingAt = (float) config('shipping.free_threshold', 1500);
+                            $flatShipping = (float) config('shipping.flat_rate', 99);
+                        @endphp
+                        <small class="text-muted d-block">
+                            @if($subtotal >= $freeShippingAt)
+                                This order qualifies for free shipping.
+                            @else
+                                Courier shipping is R {{ number_format($flatShipping, 2) }}. Free shipping on orders over R {{ number_format($freeShippingAt, 0) }}.
+                            @endif
+                        </small>
                     </div>
                 </div>
+            </form>
+            <form action="{{ route('cart.coupon') }}" method="POST" class="mt-3">
+                @csrf
+                <label for="cart-coupon-code" class="form-label small fw-semibold mb-1">Coupon code</label>
+                <div class="input-group" style="max-width: 28rem;">
+                    <input type="text" name="coupon_code" id="cart-coupon-code" class="form-control" value="{{ session('coupon_code') }}" placeholder="Enter coupon code" maxlength="50">
+                    <button type="submit" class="btn btn-outline-secondary">Apply</button>
+                </div>
+                <p class="small text-muted mb-0 mt-1">The discount is confirmed on the checkout page.</p>
             </form>
         </div>
         <div class="text-end mt-4">

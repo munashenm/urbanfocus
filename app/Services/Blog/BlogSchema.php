@@ -4,6 +4,7 @@ namespace App\Services\Blog;
 
 use App\Models\Article;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Schema;
 
 class BlogSchema
@@ -78,8 +79,14 @@ class BlogSchema
         return $missing;
     }
 
-    /** @param Builder<\App\Models\Article> $query */
-    public static function withOptionalRelations(Builder $query): Builder
+    /**
+     * Author archives pass a HasMany relation; listings pass a builder.
+     * Both support with().
+     *
+     * @param  Builder<Article>|Relation<Article, Article, *>  $query
+     * @return Builder<Article>|Relation<Article, Article, *>
+     */
+    public static function withOptionalRelations(Builder|Relation $query): Builder|Relation
     {
         $with = [];
 

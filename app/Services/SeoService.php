@@ -40,10 +40,15 @@ class SeoService
 
     public function pagesSitemapXml(): string
     {
-        return $this->rememberSitemap('sitemap.pages.v1', function () {
+        return $this->rememberSitemap('sitemap.pages.v2', function () {
             $urls = $this->baseUrls();
+            $stocked = array_flip(app(CatalogNavigation::class)->stockedCategoryIds());
 
-            Category::where('is_active', true)->visibleInCatalog()->with('parent')->get()->each(function (Category $category) use (&$urls) {
+            Category::where('is_active', true)->visibleInCatalog()->with('parent')->get()->each(function (Category $category) use (&$urls, $stocked) {
+                if (! isset($stocked[(int) $category->id])) {
+                    return;
+                }
+
                 $urls[] = [
                     'loc' => $category->url(),
                     'lastmod' => $category->updated_at?->toAtomString(),
@@ -94,30 +99,15 @@ class SeoService
 
     public function robotsTxt(): string
     {
-        $host = parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'www.urbanfocus.co.za';
-        $disallow = $this->robotsDisallowLines();
-        $agents = array_values(array_unique(array_merge(
-            ['*'],
-            config('seo.ai_crawlers', [])
-        )));
-
-        $blocks = [];
-        foreach ($agents as $agent) {
-            $block = ['User-agent: '.$agent, 'Allow: /'];
-            if ($keyFile = $this->indexNowKeyPath()) {
-                $block[] = 'Allow: '.$keyFile;
-            }
-            $block[] = 'Allow: /llms.txt';
-            $block = array_merge($block, $disallow);
-            $blocks[] = implode("\n", $block);
+        $lines = ['User-agent: *', 'Allow: /'];
+        if ($keyFile = $this->indexNowKeyPath()) {
+            $lines[] = 'Allow: '.$keyFile;
         }
+        $lines[] = 'Allow: /llms.txt';
+        $lines = array_merge($lines, $this->robotsDisallowLines());
+        $lines[] = 'Sitemap: '.url('/sitemap.xml');
 
-        $footer = [
-            'Host: '.$host,
-            'Sitemap: '.url('/sitemap.xml'),
-        ];
-
-        return implode("\n\n", $blocks)."\n\n".implode("\n", $footer)."\n";
+        return implode("\n", $lines)."\n";
     }
 
     public function llmsTxt(): string
@@ -271,10 +261,10 @@ class SeoService
     public function organizationSchema(): array
     {
         $sameAs = array_values(array_filter([
-            config('social.facebook'),
-            config('social.instagram'),
-            config('social.x'),
-            config('social.tiktok'),
+            public_social_url(config('social.facebook')),
+            public_social_url(config('social.instagram')),
+            public_social_url(config('social.x')),
+            public_social_url(config('social.tiktok')),
         ]));
 
         $schema = [
@@ -528,6 +518,7 @@ class SeoService
             'sitemap.main.v6',
             'sitemap.index.v1',
             'sitemap.pages.v1',
+            'sitemap.pages.v2',
             'sitemap.products.v1',
             'sitemap.images.v2',
             'sitemap.images.v3',

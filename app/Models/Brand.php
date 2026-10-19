@@ -39,10 +39,10 @@ class Brand extends Model
         $configured = config("brand_seo.{$this->slug}.title");
 
         if (is_string($configured) && $configured !== '') {
-            return $configured;
+            return seo_page_title($configured);
         }
 
-        return $this->name.' Supplier South Africa | Urban Focus';
+        return seo_page_title($this->name.' Supplier South Africa | Urban Focus');
     }
 
     public function seoDescription(): string
