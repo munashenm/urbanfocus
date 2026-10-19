@@ -21,7 +21,6 @@ class ProductController extends Controller
             return redirect()->route('products.show', $canonical, 301);
         }
 
-        $product->increment('views');
         $product->load(['category', 'images']);
 
         $recentIds = collect(session('recently_viewed', []))
@@ -30,6 +29,9 @@ class ProductController extends Controller
             ->take(9)
             ->values()
             ->all();
+        if (! in_array($product->id, session('recently_viewed', []), true)) {
+            $product->increment('views');
+        }
         session(['recently_viewed' => $recentIds]);
 
         $relatedProducts = collect();
@@ -44,13 +46,15 @@ class ProductController extends Controller
                 ->values();
         }
         if ($relatedProducts->count() < 4) {
-            $fill = Product::with('images')
+            $fillQuery = Product::with('images')
                 ->forStorefront()
                 ->where('category_id', $product->category_id)
                 ->where('id', '!=', $product->id)
-                ->when($relatedProducts->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $relatedProducts->pluck('id')))
-                ->take(4 - $relatedProducts->count())
-                ->get();
+                ->when($relatedProducts->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $relatedProducts->pluck('id')));
+            if ($product->category?->slug === 'switches') {
+                app(\App\Services\CategoryMapperService::class)->excludeMisplacedSwitchProducts($fillQuery);
+            }
+            $fill = $fillQuery->take(4 - $relatedProducts->count())->get();
             $relatedProducts = $relatedProducts->concat($fill)->values();
         }
 

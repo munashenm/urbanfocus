@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class CatalogFilterService
 {
@@ -348,7 +349,11 @@ class CatalogFilterService
             return $this->excludedCategoryIdsCache;
         }
 
-        $this->excludedCategoryIdsCache = $this->collectExcludedCategoryIds();
+        $this->excludedCategoryIdsCache = Cache::remember(
+            CatalogNavigation::EXCLUDED_KEY,
+            600,
+            fn () => $this->collectExcludedCategoryIds()
+        );
 
         return $this->excludedCategoryIdsCache;
     }
@@ -356,10 +361,21 @@ class CatalogFilterService
     /** @return list<int> */
     public function collectExcludedCategoryIds(): array
     {
-        return Category::query()
-            ->get()
+        $categories = Category::query()->get();
+        $byId = $categories->keyBy('id');
+
+        foreach ($categories as $category) {
+            if ($category->parent_id && $byId->has($category->parent_id)) {
+                $category->setRelation('parent', $byId->get($category->parent_id));
+            } else {
+                $category->setRelation('parent', null);
+            }
+        }
+
+        return $categories
             ->filter(fn (Category $category) => $this->isCategoryExcluded($category))
             ->pluck('id')
+            ->map(fn ($id) => (int) $id)
             ->values()
             ->all();
     }

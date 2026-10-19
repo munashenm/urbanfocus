@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Page Not Found | Urban Focus')
+@section('meta_description', 'That Urban Focus page is missing. Browse the shop or contact sales for help finding a product.')
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')

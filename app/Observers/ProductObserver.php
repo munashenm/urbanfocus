@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Mail\LowStockAlert;
 use App\Models\Product;
 use App\Services\CatalogDeduper;
+use App\Services\CatalogNavigation;
 use App\Services\IndexNowService;
 use App\Services\Marketing\MakeWebhookService;
 use App\Services\SeoService;
@@ -30,11 +31,15 @@ class ProductObserver
         $this->safe(fn () => $this->handleStockAlerts($product));
         $this->safe(fn () => $this->handleSearchIndex($product));
         $this->safe(fn () => app(CatalogDeduper::class)->clearCache());
+        if ($product->wasRecentlyCreated || $product->wasChanged(['category_id', 'is_active', 'name', 'brand'])) {
+            $this->safe(fn () => CatalogNavigation::forget());
+        }
     }
 
     public function deleted(Product $product): void
     {
         $this->safe(fn () => $this->seo->clearCache());
+        $this->safe(fn () => CatalogNavigation::forget());
         $this->safe(fn () => app(CatalogDeduper::class)->clearCache());
         $this->safe(function () use ($product) {
             if ($product->slug) {

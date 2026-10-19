@@ -264,6 +264,15 @@ class CategoryReorganizationService
                     $targetPath = $category->parent->slug.'/'.$category->slug;
                 }
 
+                if ($this->redirectPathsEquivalent($category->slug, $targetPath)) {
+                    CategorySlugRedirect::query()
+                        ->where('old_slug', $category->slug)
+                        ->where('target_path', $targetPath)
+                        ->delete();
+
+                    continue;
+                }
+
                 if (in_array($category->slug, $canonicalSlugs, true) && ! $category->parent_id) {
                     continue;
                 }
@@ -282,7 +291,11 @@ class CategoryReorganizationService
                 $existing = CategorySlugRedirect::where('old_slug', $category->slug)->first();
 
                 if ($existing) {
-                    $existing->update(['target_path' => $targetPath]);
+                    if ($this->redirectPathsEquivalent($category->slug, $targetPath)) {
+                        $existing->delete();
+                    } else {
+                        $existing->update(['target_path' => $targetPath]);
+                    }
 
                     continue;
                 }
@@ -298,6 +311,10 @@ class CategoryReorganizationService
         });
 
         foreach (config('category_tree.legacy_slug_map', []) as $oldSlug => $newPath) {
+            if ($this->redirectPathsEquivalent((string) $oldSlug, (string) $newPath)) {
+                continue;
+            }
+
             if (CategorySlugRedirect::where('old_slug', $oldSlug)->exists()) {
                 continue;
             }
@@ -314,6 +331,11 @@ class CategoryReorganizationService
         }
 
         return $created;
+    }
+
+    protected function redirectPathsEquivalent(string $slug, string $targetPath): bool
+    {
+        return strcasecmp(trim($slug, '/'), trim($targetPath, '/')) === 0;
     }
 
     protected function redirectTargetExists(string $path): bool

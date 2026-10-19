@@ -46,8 +46,14 @@
         <div class="col-lg-6">
             <div class="product-detail-image">
                 @php $primaryAlt = $product->images->first()?->alt_text ?: $product->imageAlt(); @endphp
-                <img id="productMainImage" src="{{ $product->display_image_url }}" alt="{{ $primaryAlt }}" width="500" height="500" loading="eager" fetchpriority="high" decoding="async">
+                <button type="button" class="product-zoom-hit" id="productZoomButton" aria-label="Zoom product image">
+                    <img id="productMainImage" src="{{ $product->display_image_url }}" alt="{{ $primaryAlt }}" width="800" height="800" loading="eager" fetchpriority="high" decoding="async">
+                </button>
             </div>
+            <dialog id="productLightbox" class="product-lightbox" aria-label="Enlarged product image">
+                <button type="button" class="product-lightbox-close" id="productLightboxClose" aria-label="Close enlarged image">&times;</button>
+                <img id="productLightboxImage" alt="{{ $primaryAlt }}" width="1200" height="1200">
+            </dialog>
             @if($product->images->count() > 1)
                 <div class="d-flex gap-2 mt-3 flex-wrap product-thumbs">
                     @foreach($product->images as $img)
@@ -164,7 +170,7 @@
             @if($product->storefrontDescriptionHtml())
                 <div class="checkout-card mb-4">
                     <h2 class="h5 fw-bold mb-3">Product overview</h2>
-                    <div class="product-description">{!! clean_html($product->storefrontDescriptionHtml()) !!}</div>
+                    <div class="product-description">{!! clean_html($product->storefrontDescriptionHtml(), $product->imageAlt()) !!}</div>
                 </div>
             @endif
             <div class="checkout-card mb-4">
@@ -279,7 +285,6 @@
 @endsection
 
 @push('scripts')
-<script>document.body.classList.add('has-mobile-buy-bar');</script>
 <script src="{{ asset('js/product-gallery.js') }}" defer></script>
 <script>window.ufAnalyticsItem = @json($analyticsItem ?? []); window.ufAnalyticsViewItem = true;</script>
 @endpush

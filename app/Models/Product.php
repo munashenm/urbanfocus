@@ -183,41 +183,23 @@ class Product extends Model
             $saved = trim(app(InternalPricingCopySanitizer::class)->sanitizePlain($saved));
         }
         if ($saved !== '') {
-            return $this->limitedSeoTitle($saved);
+            return seo_page_title($saved);
         }
 
         $name = trim($this->name);
-        $suffix = ' | South Africa | Urban Focus';
-        $max = 70;
+        $long = ' | South Africa | Urban Focus';
+        $short = ' | Urban Focus';
+        $max = 65;
 
-        if (mb_strlen($name.$suffix) <= $max) {
-            return $name.$suffix;
+        if (mb_strlen($name.$long) <= $max) {
+            return $name.$long;
         }
 
-        $budget = max(20, $max - mb_strlen($suffix));
-        $trimmed = Str::limit($name, $budget, '');
-        $space = mb_strrpos($trimmed, ' ');
-        if ($space !== false && $space >= 16) {
-            $trimmed = mb_substr($trimmed, 0, $space);
+        if (mb_strlen($name.$short) <= $max) {
+            return $name.$short;
         }
 
-        return rtrim($trimmed, " \t-|,").$suffix;
-    }
-
-    private function limitedSeoTitle(string $title): string
-    {
-        $max = 70;
-        if (mb_strlen($title) <= $max) {
-            return $title;
-        }
-
-        $trimmed = Str::limit($title, $max, '');
-        $space = mb_strrpos($trimmed, ' ');
-        if ($space !== false && $space >= 16) {
-            $trimmed = mb_substr($trimmed, 0, $space);
-        }
-
-        return rtrim($trimmed, " \t-|,");
+        return seo_limit_words($name, $max - mb_strlen($short)).$short;
     }
 
     public function seoDescription(): string
@@ -241,7 +223,7 @@ class Product extends Model
         $description = 'Buy '.$subject.' from Urban Focus South Africa. VAT-compliant invoicing, nationwide delivery and corporate/bulk procurement support. Request a quote online.';
         $description = preg_replace('/\s+/u', ' ', trim($description)) ?? '';
 
-        return Str::limit($description, (int) config('seo.defaults.max_description_length', 160), '');
+        return seo_limit_words($description, (int) config('seo.defaults.max_description_length', 160));
     }
 
     public function seoKeywords(): string
@@ -1066,7 +1048,7 @@ class Product extends Model
             ],
         ];
 
-        if (! $this->isQuoteOnly() && $this->effective_price > 0) {
+        if ($this->effective_price > 0) {
             $schema['offers']['price'] = number_format((float) $this->effective_price, 2, '.', '');
         }
 

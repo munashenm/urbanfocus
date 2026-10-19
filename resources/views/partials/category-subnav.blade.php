@@ -1,6 +1,6 @@
 @if($categories->count())
 <div class="filter-sidebar mb-3">
-    <h6 class="fw-bold mb-3">{{ $title ?? 'Categories' }}</h6>
+    <p class="fw-bold mb-3">{{ $title ?? 'Categories' }}</p>
     <ul class="category-subnav-list list-unstyled mb-0">
         @foreach($categories as $item)
             <li>
