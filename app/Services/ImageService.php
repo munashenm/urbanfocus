@@ -95,6 +95,7 @@ class ImageService
                 ],
             ]);
 
+            $url = preg_replace_callback('/[^\x21-\x7E]/', fn($m) => rawurlencode($m[0]), $url);
             $contents = @file_get_contents($url, false, $context);
             if ($contents === false || $contents === '') {
                 return null;
