@@ -17,6 +17,12 @@
         </ol>
     </nav>
 
+    <h1 class="h3 mb-3">
+        @if(request('q'))Results for "{{ request('q') }}"
+        @elseif(request('deals'))Deals &amp; Specials
+        @else All Products @endif
+    </h1>
+
     @if(!empty($showCategoryDirectory) && $categories->count())
         @include('partials.shop-category-directory', ['categories' => $categories])
     @endif
@@ -26,11 +32,7 @@
 
         <div class="col-lg-9">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-                <h1 class="h3 mb-0">
-                    @if(request('q'))Results for "{{ request('q') }}"
-                    @elseif(request('deals'))Deals &amp; Specials
-                    @else All Products @endif
-                </h1>
+                <p class="mb-0 visually-hidden">Product listing</p>
                 <div class="d-flex align-items-center gap-2">
                     <form method="GET" action="{{ route('shop.index') }}" class="d-lg-none">
                         @foreach(request()->except(['sort', 'page']) as $key => $val)

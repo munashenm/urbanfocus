@@ -181,14 +181,19 @@ class ProductSeoService
         }
 
         $title = trim($name);
-        $suffix = ' | South Africa | Urban Focus';
-        $max = 70;
+        $long = ' | South Africa | Urban Focus';
+        $short = ' | Urban Focus';
+        $max = 65;
 
-        if (mb_strlen($title.$suffix) <= $max) {
-            return $title.$suffix;
+        if (mb_strlen($title.$long) <= $max) {
+            return $title.$long;
         }
 
-        return Str::limit($title, max(20, $max - mb_strlen($suffix)), '').$suffix;
+        if (mb_strlen($title.$short) <= $max) {
+            return $title.$short;
+        }
+
+        return seo_limit_words($title, $max - mb_strlen($short)).$short;
     }
 
     public function buildMetaDescription(Product $product): string

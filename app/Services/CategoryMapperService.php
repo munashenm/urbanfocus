@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Category;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class CategoryMapperService
@@ -216,6 +218,18 @@ class CategoryMapperService
                     : 'security-surveillance/intercom-systems';
             }
 
+            if (preg_match('/micro\s*sd|sdxc|sdhc|\bsd\s*card\b|memory\s*card/i', $name)) {
+                return 'computing-office/storage-devices';
+            }
+
+            if (preg_match('/\bnintendo\b/i', $name)) {
+                return 'gaming-entertainment/console-accessories';
+            }
+
+            if (preg_match('/\bkvm\b/i', $name)) {
+                return 'computing-office/computer-accessories';
+            }
+
             if (preg_match('/\b(ssd|nvme|hard drive|hdd|ram|memory|motherboard|graphics|gpu|processor|cpu)\b/i', $name)) {
                 return 'computing-office/storage-devices';
             }
@@ -319,9 +333,38 @@ class CategoryMapperService
         return $parent->id;
     }
 
+    /**
+     * Hide memory cards, Nintendo accessories and KVM hardware that the word
+     * "switch" would otherwise place among network switches.
+     */
+    public function excludeMisplacedSwitchProducts(Builder $query): void
+    {
+        $query->where(function (Builder $inner) {
+            $inner->where('name', 'not like', '%nintendo%')
+                ->where('name', 'not like', '%microsd%')
+                ->where('name', 'not like', '%micro sd%')
+                ->where('name', 'not like', '%sdxc%')
+                ->where('name', 'not like', '%sdhc%')
+                ->where('name', 'not like', '%sd card%')
+                ->where('name', 'not like', '%memory card%')
+                ->where('name', 'not like', '%kvm%');
+        });
+    }
+
     public function ensureCanonicalTree(): void
     {
-        if ($this->canonicalTreeEnsured && Category::query()->whereNull('parent_id')->where('slug', 'computing-office')->exists()) {
+        if ($this->canonicalTreeEnsured) {
+            return;
+        }
+
+        $tree = config('category_tree.tree', config('category_map.tree', []));
+        $hash = md5((string) json_encode($tree));
+        $cached = Cache::get(CatalogNavigation::TREE_HASH_KEY);
+        $anchorExists = Category::query()->whereNull('parent_id')->where('slug', 'computing-office')->exists();
+
+        if ($cached === $hash && $anchorExists) {
+            $this->canonicalTreeEnsured = true;
+
             return;
         }
 
@@ -356,6 +399,9 @@ class CategoryMapperService
                 );
             }
         }
+
+        Cache::put(CatalogNavigation::TREE_HASH_KEY, $hash, now()->addHours(6));
+        CatalogNavigation::forget();
     }
 
     /** @return list<string> */

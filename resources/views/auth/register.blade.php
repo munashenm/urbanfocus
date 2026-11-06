@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Register | Urban Focus')
+@section('meta_description', 'Create an Urban Focus account for faster checkout, order tracking and B2B quotes.')
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')

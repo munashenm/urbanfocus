@@ -134,16 +134,16 @@ class Category extends Model
     /** @return array<int> */
     public static function descendantIds(int $categoryId): array
     {
-        $all = static::where('is_active', true)->get(['id', 'parent_id']);
+        $map = app(\App\Services\CatalogNavigation::class)->childrenMap();
         $ids = [$categoryId];
-        $changed = true;
+        $queue = [$categoryId];
 
-        while ($changed) {
-            $changed = false;
-            foreach ($all as $cat) {
-                if ($cat->parent_id && in_array($cat->parent_id, $ids, true) && ! in_array($cat->id, $ids, true)) {
-                    $ids[] = $cat->id;
-                    $changed = true;
+        while ($queue !== []) {
+            $id = array_shift($queue);
+            foreach ($map[$id] ?? [] as $childId) {
+                if (! in_array($childId, $ids, true)) {
+                    $ids[] = $childId;
+                    $queue[] = $childId;
                 }
             }
         }
@@ -154,10 +154,10 @@ class Category extends Model
     public function seoTitle(): string
     {
         if (! empty($this->attributes['meta_title'])) {
-            return $this->attributes['meta_title'];
+            return seo_page_title((string) $this->attributes['meta_title']);
         }
 
-        return $this->name.' | Buy in South Africa | Urban Focus';
+        return seo_page_title($this->name.' | Buy in South Africa | Urban Focus');
     }
 
     public function seoDescription(): string

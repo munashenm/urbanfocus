@@ -41,7 +41,7 @@ return [
         'networking-connectivity' => '🌐',
         'security-surveillance' => '📹',
         'solar-power' => '⚡',
-        'digital-signage' => '🖵',
+        'digital-signage' => '📺',
         'gaming-entertainment' => '🎮',
         'business-retail' => '🏪',
         'industrial-commercial' => '🏭',

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Track Your Order | Urban Focus')
+@section('meta_description', 'Track an Urban Focus order with your order number and the email address used at checkout.')
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')

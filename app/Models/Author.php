@@ -46,12 +46,12 @@ class Author extends Model
 
     public function seoTitle(): string
     {
-        return $this->meta_title ?: ($this->name.' | Urban Focus Blog');
+        return seo_page_title((string) ($this->meta_title ?: ($this->name.' | Urban Focus Blog')));
     }
 
     public function seoDescription(): string
     {
-        $base = $this->meta_description ?: ($this->bio ?: "Articles by {$this->name} at Urban Focus.");
+        $base = seo_utf8($this->meta_description ?: ($this->bio ?: "Articles by {$this->name} at Urban Focus."));
 
         return seo_meta_description($base, ['type' => 'article', 'name' => $this->name]);
     }

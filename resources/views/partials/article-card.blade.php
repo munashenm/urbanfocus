@@ -18,7 +18,7 @@
         </div>
         <h2 class="article-card-title {{ $featured ? 'h3' : 'h5' }}">{{ $article->title }}</h2>
         @if($article->excerpt)
-            <p class="article-card-excerpt mb-0">{{ \Illuminate\Support\Str::limit($article->excerpt, $featured ? 220 : 140) }}</p>
+            <p class="article-card-excerpt mb-0">{{ seo_limit_words(seo_utf8($article->excerpt), $featured ? 220 : 140) }}</p>
         @endif
         <span class="article-card-link">Read article →</span>
     </div>

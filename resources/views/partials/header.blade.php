@@ -99,11 +99,11 @@
                 <li class="nav-item d-xl-none w-100">
                     <div class="accordion accordion-flush mobile-shop-accordion" id="mobileShopAccordion">
                         <div class="accordion-item border-0">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2 px-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileShopCategories">
+                            <div class="accordion-header">
+                                <button class="accordion-button collapsed py-2 px-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileShopCategories" aria-controls="mobileShopCategories">
                                     Shop by category
                                 </button>
-                            </h2>
+                            </div>
                             <div id="mobileShopCategories" class="accordion-collapse collapse" data-bs-parent="#mobileShopAccordion">
                                 <div class="accordion-body px-0 pt-0">
                                     @foreach($megaMenuCategories ?? [] as $col)

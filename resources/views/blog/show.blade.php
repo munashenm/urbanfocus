@@ -61,7 +61,7 @@
             @include('blog.partials.toc', ['tocItems' => $tocItems])
 
             <div class="article-content">
-                {!! clean_html($content) !!}
+                {!! clean_html($content, $article->imageAlt()) !!}
             </div>
 
             @include('blog.partials.faq', ['article' => $article])

@@ -65,7 +65,9 @@ class Article extends Model
 
     public function seoTitle(): string
     {
-        return $this->meta_title ?: ($this->title.' | Urban Focus Knowledge Centre');
+        $title = $this->meta_title ?: ($this->title.' | Urban Focus Knowledge Centre');
+
+        return seo_page_title((string) $title);
     }
 
     public function seoDescription(): string
@@ -178,7 +180,7 @@ class Article extends Model
 
     public function readingTimeMinutes(): int
     {
-        $text = strip_tags($this->content ?: $this->excerpt ?: '');
+        $text = strip_tags(seo_utf8($this->content ?: $this->excerpt ?: ''));
         $words = str_word_count($text);
 
         return max(1, (int) ceil($words / 200));

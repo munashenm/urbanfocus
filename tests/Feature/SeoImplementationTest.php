@@ -21,9 +21,9 @@ class SeoImplementationTest extends TestCase
         $this->assertStringContainsString('Disallow: /admin', $body);
         $this->assertStringContainsString('Disallow: /api', $body);
         $this->assertStringContainsString('Disallow: /search', $body);
-        $this->assertStringContainsString('User-agent: Googlebot', $body);
-        $this->assertStringContainsString('User-agent: Bingbot', $body);
-        $this->assertStringContainsString('User-agent: OAI-SearchBot', $body);
+        $this->assertSame(1, substr_count($body, 'User-agent:'));
+        $this->assertStringNotContainsString('Host:', $body);
+        $this->assertStringContainsString('Disallow: /b2b/quote?', $body);
         $this->assertStringNotContainsString('Disallow: /products', $body);
         $this->assertStringNotContainsString('Disallow: /brands', $body);
         $this->assertStringNotContainsString('Disallow: /storage', $body);

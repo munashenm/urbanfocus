@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Order Confirmed | Urban Focus')
+@section('meta_description', 'Your Urban Focus order confirmation and payment status.')
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')

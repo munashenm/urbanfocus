@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'My Account | Urban Focus')
+@section('meta_description', 'Your Urban Focus account dashboard with recent orders and profile details.')
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')

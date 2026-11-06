@@ -25,7 +25,11 @@
                         <div class="row align-items-center min-vh-50">
                             <div class="col-lg-7 hero-content py-5">
                                 <span class="hero-eyebrow">{{ $slide['eyebrow'] }}</span>
-                                <h1 class="hero-title">{{ $slide['title'] }}</h1>
+                                @if($i === 0)
+                                    <h1 class="hero-title">{{ $slide['title'] }}</h1>
+                                @else
+                                    <h2 class="hero-title">{{ $slide['title'] }}</h2>
+                                @endif
                                 <p class="hero-lead">{{ $slide['subtitle'] }}</p>
                                 <div class="d-flex flex-wrap gap-2 mb-4">
                                     @php
@@ -46,8 +50,8 @@
                 </div>
             @endforeach
         </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon"></span></button>
-        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next"><span class="carousel-control-next-icon"></span></button>
+        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev" aria-label="Previous slide"><span class="carousel-control-prev-icon" aria-hidden="true"></span></button>
+        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next" aria-label="Next slide"><span class="carousel-control-next-icon" aria-hidden="true"></span></button>
     </div>
 </section>
 

@@ -8,7 +8,7 @@
                 <p class="text-white-50 mb-3">Urban Focus is a South African IT hardware, electronics and technology supplier — networking, enterprise hardware, CCTV, fibre solutions and software licensing for business procurement. Website: <a href="https://www.urbanfocus.co.za/" class="text-white-50">www.urbanfocus.co.za</a></p>
                 @include('partials.social-links', ['title' => 'Follow us', 'class' => 'mt-2'])
                 <div class="mt-4">
-                    <h6 class="text-white mb-2">Deals &amp; Updates</h6>
+                    <p class="text-white fw-bold mb-2">Deals &amp; Updates</p>
                     <form action="{{ route('newsletter.store') }}" method="POST" class="newsletter-form d-flex gap-2">
                         @csrf
                         <label for="newsletter-email" class="visually-hidden">Email address</label>
@@ -19,7 +19,7 @@
             </div>
 
             <div class="col-6 col-lg-2">
-                <h6 class="text-white mb-3">Quick Links</h6>
+                <p class="text-white fw-bold mb-3">Quick Links</p>
                 <ul class="list-unstyled footer-links">
                     <li><a href="{{ route('home') }}">Home</a></li>
                     <li><a href="{{ route('shop.index') }}">Shop</a></li>
@@ -35,7 +35,7 @@
             </div>
 
             <div class="col-6 col-lg-2">
-                <h6 class="text-white mb-3">Solutions</h6>
+                <p class="text-white fw-bold mb-3">Solutions</p>
                 <ul class="list-unstyled footer-links">
                     <li><a href="{{ route('solutions.show', 'corporate-it-supplier-south-africa') }}">Corporate IT Supplier</a></li>
                     <li><a href="{{ route('solutions.show', 'ubiquiti-supplier-south-africa') }}">Ubiquiti Supplier</a></li>
@@ -47,7 +47,7 @@
             </div>
 
             <div class="col-6 col-lg-2">
-                <h6 class="text-white mb-3">Information</h6>
+                <p class="text-white fw-bold mb-3">Information</p>
                 <ul class="list-unstyled footer-links">
                     <li><a href="{{ route('faq') }}">FAQ</a></li>
                     <li><a href="{{ route('shipping') }}">Delivery Policy</a></li>
@@ -61,7 +61,7 @@
             </div>
 
             <div class="col-6 col-lg-2">
-                <h6 class="text-white mb-3">Get in Touch</h6>
+                <p class="text-white fw-bold mb-3">Get in Touch</p>
                 <ul class="list-unstyled footer-links mb-2">
                     <li><a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phone') }}</a></li>
                     <li><a href="mailto:{{ config('business.email') }}">{{ config('business.email') }}</a></li>

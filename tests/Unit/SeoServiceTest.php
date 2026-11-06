@@ -64,10 +64,11 @@ class SeoServiceTest extends TestCase
         $txt = app(SeoService::class)->robotsTxt();
 
         $this->assertStringContainsString('User-agent: *', $txt);
-        $this->assertStringContainsString('User-agent: Googlebot', $txt);
-        $this->assertStringContainsString('User-agent: Bingbot', $txt);
-        $this->assertStringContainsString('User-agent: OAI-SearchBot', $txt);
-        $this->assertGreaterThanOrEqual(2, substr_count($txt, 'Disallow: /admin'));
+        $this->assertSame(1, substr_count($txt, 'User-agent:'));
+        $this->assertStringNotContainsString('User-agent: Googlebot', $txt);
+        $this->assertStringNotContainsString('Host:', $txt);
+        $this->assertSame(1, substr_count($txt, 'Disallow: /admin'));
+        $this->assertStringContainsString('Disallow: /b2b/quote?', $txt);
         $this->assertStringContainsString('Sitemap: ', $txt);
     }
 

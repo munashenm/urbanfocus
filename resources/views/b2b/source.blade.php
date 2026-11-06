@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Source a Product | Urban Focus')
+@section('meta_description', 'Ask Urban Focus to source a specific IT product, brand or model from our South African supplier network when it is not listed in the shop.')
 
 @section('content')
 @include('b2b._form', [

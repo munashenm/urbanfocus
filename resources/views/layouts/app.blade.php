@@ -69,7 +69,7 @@
     @stack('schema')
     <script type="application/ld+json">{!! json_encode(app(\App\Services\SeoService::class)->organizationSchema(), JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100{{ request()->routeIs('products.show') ? ' has-mobile-buy-bar' : '' }}">
     @include('partials.analytics')
     <a href="#main-content" class="visually-hidden-focusable skip-link">Skip to content</a>
     @include('partials.header')

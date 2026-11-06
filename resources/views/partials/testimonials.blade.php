@@ -22,7 +22,10 @@
             @endforeach
         </div>
 
-        @php $reviews = config('trust.google_reviews'); @endphp
+        @php
+            $reviews = config('trust.google_reviews');
+            $reviews['url'] = public_social_url($reviews['url'] ?? null);
+        @endphp
         @if(!empty($reviews['enabled']) || !empty($reviews['url']))
             <div class="google-reviews-bar mt-4 text-center">
                 <div class="d-inline-flex align-items-center gap-3 flex-wrap justify-content-center bg-white border rounded-pill px-4 py-2">

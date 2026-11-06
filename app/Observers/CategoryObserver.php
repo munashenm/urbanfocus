@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Category;
+use App\Services\CatalogNavigation;
 use App\Services\IndexNowService;
 use App\Services\SeoService;
 
@@ -20,6 +21,7 @@ class CategoryObserver
         }
 
         $this->safe(fn () => $this->seo->clearCache());
+        $this->safe(fn () => CatalogNavigation::forget(tree: true));
 
         $this->safe(function () use ($category) {
             $this->indexNow->notify($category->url());
@@ -32,6 +34,7 @@ class CategoryObserver
     public function deleted(Category $category): void
     {
         $this->safe(fn () => $this->seo->clearCache());
+        $this->safe(fn () => CatalogNavigation::forget(tree: true));
         $this->safe(fn () => $this->indexNow->notify($category->url()));
     }
 

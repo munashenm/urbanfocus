@@ -41,6 +41,7 @@ return [
         'place_id' => env('GOOGLE_PLACE_ID', ''),
         'rating' => env('GOOGLE_RATING', '4.8'),
         'count' => env('GOOGLE_REVIEW_COUNT', '50'),
-        'url' => env('GOOGLE_REVIEWS_URL', 'https://g.page/r/urbanfocus/review'),
+        // TODO: https://g.page/r/urbanfocus/review lands on the Google home page. Set GOOGLE_PLACE_ID and a real review URL.
+        'url' => env('GOOGLE_REVIEWS_URL', ''),
     ],
 ];

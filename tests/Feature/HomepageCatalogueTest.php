@@ -272,6 +272,21 @@ class HomepageCatalogueTest extends TestCase
         Cache::flush();
         app(CategoryMapperService::class)->ensureCanonicalTree();
 
+        $parent = Category::query()->where('slug', 'specialist-solutions')->whereNull('parent_id')->firstOrFail();
+        $child = Category::query()->where('slug', 'private-cloud-solutions')->where('parent_id', $parent->id)->firstOrFail();
+        $gaming = Category::query()->where('slug', 'gaming-entertainment')->whereNull('parent_id')->firstOrFail();
+        $smart = Category::query()->where('slug', 'smart-solutions')->whereNull('parent_id')->firstOrFail();
+        $solar = Category::query()->where('slug', 'solar-power')->whereNull('parent_id')->firstOrFail();
+
+        foreach ([$child, $gaming, $smart, $solar] as $category) {
+            Product::factory()->create([
+                'name' => $category->name.' catalogue item',
+                'category_id' => $category->id,
+            ]);
+        }
+
+        Cache::flush();
+
         $html = $this->get(route('shop.index'))->assertOk()->getContent();
         $directory = $this->htmlSection($html, 'id="shop-category-directory"', '</section>');
 
@@ -280,9 +295,7 @@ class HomepageCatalogueTest extends TestCase
         $this->assertStringContainsString('Smart Solutions', $directory);
         $this->assertStringContainsString('Gaming &amp; Entertainment', $directory);
         $this->assertStringContainsString('Solar &amp; Power Solutions', $directory);
-
-        $parent = Category::query()->where('slug', 'specialist-solutions')->whereNull('parent_id')->firstOrFail();
-        $child = Category::query()->where('slug', 'private-cloud-solutions')->where('parent_id', $parent->id)->firstOrFail();
+        $this->assertStringNotContainsString('Taxi Screens', $directory);
 
         $this->assertStringContainsString($parent->url(), $directory);
         $this->assertStringContainsString($child->url(), $directory);
@@ -290,6 +303,8 @@ class HomepageCatalogueTest extends TestCase
 
         $this->get($parent->url())->assertOk();
         $this->get($child->url())->assertOk();
+        $taxi = Category::query()->where('slug', 'taxi-screens')->firstOrFail();
+        $this->get($taxi->url())->assertOk();
         $this->get(route('categories.show', 'networking-connectivity'))->assertOk();
         $this->get(route('categories.show', 'computing-office'))->assertOk();
 

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($archiveTitle ?? 'Blog').' | Urban Focus')
+@section('title', seo_page_title(($archiveTitle ?? 'Blog').' | Urban Focus'))
 @section('meta_description', $archiveDescription ?? config('blog.index_description'))
 @php $paginationMeta = $pagination ?? null; @endphp
 @include('partials.pagination-seo')

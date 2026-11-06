@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Corporate & Government Procurement | Urban Focus')
+@section('meta_description', 'Corporate and government procurement from Urban Focus: vendor registration, formal quotes, VAT invoices and nationwide IT supply.')
 
 @section('content')
 @include('b2b._form', [
