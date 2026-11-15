@@ -42,7 +42,17 @@ class Brand extends Model
             return $configured;
         }
 
+        if ($this->isStoreBrand()) {
+            return 'Urban Focus | IT Hardware Supplier South Africa';
+        }
+
         return $this->name.' Supplier South Africa | Urban Focus';
+    }
+
+    protected function isStoreBrand(): bool
+    {
+        return $this->slug === 'urban-focus'
+            || strcasecmp(trim($this->name), trim((string) config('app.name', 'Urban Focus'))) === 0;
     }
 
     public function seoDescription(): string

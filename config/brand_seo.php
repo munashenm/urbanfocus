@@ -204,4 +204,11 @@ return [
         ],
         'faqs' => [],
     ],
+
+    'urban-focus' => [
+        'title' => 'Urban Focus | IT Hardware Supplier South Africa',
+        'description' => 'Shop Urban Focus IT hardware and specialist products in South Africa. VAT invoices, nationwide delivery and corporate procurement from our own store.',
+        'headline' => 'Urban Focus IT Products',
+        'intro' => 'Urban Focus is a South African IT supplier. This page lists products we brand and supply ourselves, alongside the networking, computing and security ranges we stock for businesses across the country.',
+    ],
 ];

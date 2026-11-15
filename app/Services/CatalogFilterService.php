@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\StorefrontCache;
 use Illuminate\Support\Collection;
 
 class CatalogFilterService
@@ -348,7 +349,10 @@ class CatalogFilterService
             return $this->excludedCategoryIdsCache;
         }
 
-        $this->excludedCategoryIdsCache = $this->collectExcludedCategoryIds();
+        $this->excludedCategoryIdsCache = StorefrontCache::remember(
+            StorefrontCache::EXCLUDED_CATEGORIES,
+            fn () => $this->collectExcludedCategoryIds()
+        );
 
         return $this->excludedCategoryIdsCache;
     }
@@ -373,8 +377,8 @@ class CatalogFilterService
             ->values();
     }
 
-    /** @param \Illuminate\Support\Collection<int, Category> $categories */
-    public function filterVisibleCategories(\Illuminate\Support\Collection $categories): \Illuminate\Support\Collection
+    /** @param Collection<int, Category> $categories */
+    public function filterVisibleCategories(Collection $categories): Collection
     {
         $excluded = array_flip($this->excludedCategoryIds());
 

@@ -2,6 +2,8 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\ApiKeyMiddleware;
+use App\Http\Middleware\CanonicalHost;
+use App\Http\Middleware\ControlSearchIndex;
 use App\Http\Middleware\PermissionMiddleware;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -24,9 +26,12 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->web(prepend: [
+            CanonicalHost::class,
+        ]);
         $middleware->web(append: [
             SecurityHeaders::class,
-            \App\Http\Middleware\ControlSearchIndex::class,
+            ControlSearchIndex::class,
         ]);
         $middleware->validateCsrfTokens(except: [
             'checkout/paystack/webhook',

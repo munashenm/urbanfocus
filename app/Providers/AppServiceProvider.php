@@ -46,9 +46,13 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
 
-            // Match asset()/route() URLs to the host the visitor actually used (www vs apex).
-            if (! $this->app->runningInConsole() && request()->getHost()) {
-                URL::forceRootUrl('https://'.request()->getHttpHost());
+            // Always generate absolute URLs from APP_URL. Using the request host
+            // let a hit on mail.urbanfocus.co.za or the apex domain write that
+            // host into the cached pages sitemap (sitemap.pages.*).
+            $root = rtrim((string) config('app.url'), '/');
+            $host = strtolower((string) parse_url($root, PHP_URL_HOST));
+            if ($host !== '' && ! in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+                URL::forceRootUrl($root);
             }
         }
 

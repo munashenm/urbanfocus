@@ -10,6 +10,7 @@ use App\Services\Marketing\MakeWebhookService;
 use App\Services\SeoService;
 use App\Services\Social\SocialPostingService;
 use App\Services\StockAlertService;
+use App\Support\StorefrontCache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 
@@ -30,6 +31,7 @@ class ProductObserver
         $this->safe(fn () => $this->handleStockAlerts($product));
         $this->safe(fn () => $this->handleSearchIndex($product));
         $this->safe(fn () => app(CatalogDeduper::class)->clearCache());
+        $this->safe(fn () => $this->forgetStorefrontBrandLists($product));
     }
 
     public function deleted(Product $product): void
@@ -110,6 +112,13 @@ class ProductObserver
 
         if ($product->category) {
             $this->indexNow->notify($product->category->url());
+        }
+    }
+
+    protected function forgetStorefrontBrandLists(Product $product): void
+    {
+        if ($product->wasRecentlyCreated || $product->wasChanged(['brand', 'is_active', 'category_id'])) {
+            StorefrontCache::bumpBrandLists();
         }
     }
 

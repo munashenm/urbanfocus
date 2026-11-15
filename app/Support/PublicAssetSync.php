@@ -12,6 +12,27 @@ class PublicAssetSync
             return;
         }
 
+        // Stat-and-copy of public/ into public_html on every request dominates
+        // TTFB on shared hosting when a canary file stays newer than the copy.
+        // Recheck at most once every two minutes.
+        $stamp = storage_path('framework/public-asset-sync.stamp');
+        if (is_file($stamp) && (time() - (int) filemtime($stamp)) < 120) {
+            return;
+        }
+
+        try {
+            self::syncPublicAssets($publicPath);
+        } finally {
+            $directory = dirname($stamp);
+            if (! is_dir($directory)) {
+                @mkdir($directory, 0755, true);
+            }
+            @touch($stamp);
+        }
+    }
+
+    public static function syncPublicAssets(string $publicPath): void
+    {
         $sourceRoot = base_path('public');
 
         if (! is_dir($sourceRoot)) {
