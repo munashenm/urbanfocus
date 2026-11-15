@@ -10,6 +10,7 @@ use App\Services\CatalogBrowseService;
 use App\Services\CatalogFilterService;
 use App\Services\CategoryMapperService;
 use App\Services\SeoService;
+use App\Support\StorefrontCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -32,7 +33,12 @@ class CategoryController extends Controller
         $categoryModel = $this->resolveCategoryBySlug($category);
 
         if ($categoryModel->parent_id) {
-            return redirect($categoryModel->url(), 301);
+            $target = $categoryModel->url();
+            if ($this->isCurrentPath($target)) {
+                return $this->renderCategory($categoryModel, $request, $categoryModel->parent);
+            }
+
+            return redirect(seo_canonical_url($target), 301);
         }
 
         return $this->renderCategory($categoryModel, $request);
@@ -84,11 +90,36 @@ class CategoryController extends Controller
             return null;
         }
 
+        $targetPath = trim($targetPath);
+        if (str_contains($targetPath, '://')) {
+            $path = (string) parse_url($targetPath, PHP_URL_PATH);
+            $targetPath = preg_replace('#^/?category/#', '', $path) ?? $path;
+        }
+        $targetPath = trim($targetPath, '/');
+
+        if ($targetPath === '') {
+            return null;
+        }
+
         $url = str_contains($targetPath, '/')
             ? url('/category/'.$targetPath)
             : route('categories.show', $targetPath);
 
-        return redirect($url, 301);
+        // A row that points at the URL already being requested is a 301 loop.
+        // Fall through so an existing category is rendered, or a missing one 404s.
+        if ($this->isCurrentPath($url)) {
+            return null;
+        }
+
+        return redirect(seo_canonical_url($url), 301);
+    }
+
+    protected function isCurrentPath(string $url): bool
+    {
+        $target = '/'.trim((string) (parse_url($url, PHP_URL_PATH) ?? ''), '/');
+        $current = '/'.trim(request()->path(), '/');
+
+        return strcasecmp($target, $current) === 0;
     }
 
     protected function renderCategory(Category $category, Request $request, ?Category $parent = null): View
@@ -127,12 +158,19 @@ class CategoryController extends Controller
 
         $products = $query->paginate(24)->withQueryString();
 
-        $brands = Product::whereIn('category_id', $categoryIds)
-            ->where('is_active', true)
-            ->whereNotNull('brand')
-            ->distinct()
-            ->orderBy('brand')
-            ->pluck('brand');
+        $brands = collect(StorefrontCache::remember(
+            StorefrontCache::categoryBrandsKey($category->id),
+            function () use ($categoryIds) {
+                return Product::whereIn('category_id', $categoryIds)
+                    ->where('is_active', true)
+                    ->whereNotNull('brand')
+                    ->where('brand', '!=', '')
+                    ->distinct()
+                    ->orderBy('brand')
+                    ->pluck('brand')
+                    ->all();
+            }
+        ));
 
         $relatedBrandModels = $brands->isNotEmpty()
             ? Brand::query()->where('is_active', true)->whereIn('name', $brands)->orderBy('name')->get()

@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Brand;
 use App\Services\IndexNowService;
 use App\Services\SeoService;
+use App\Support\StorefrontCache;
 
 class BrandObserver
 {
@@ -20,6 +21,7 @@ class BrandObserver
         }
 
         $this->safe(fn () => $this->seo->clearCache());
+        $this->safe(fn () => StorefrontCache::forgetNavigation());
 
         if (! $brand->is_active && ! $brand->wasChanged('is_active')) {
             return;
@@ -31,6 +33,7 @@ class BrandObserver
     public function deleted(Brand $brand): void
     {
         $this->safe(fn () => $this->seo->clearCache());
+        $this->safe(fn () => StorefrontCache::forgetNavigation());
         $this->safe(fn () => $this->indexNow->notify(route('brands.show', $brand)));
     }
 

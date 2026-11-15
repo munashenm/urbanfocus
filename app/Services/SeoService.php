@@ -18,11 +18,11 @@ class SeoService
 {
     public function sitemapXml(): string
     {
-        return $this->rememberSitemap('sitemap.index.v1', function () {
+        return $this->rememberSitemap('sitemap.index.v2', function () {
             $sitemaps = [
-                ['loc' => url('/sitemap-pages.xml')],
-                ['loc' => url('/sitemap-products.xml')],
-                ['loc' => url('/sitemap-images.xml')],
+                ['loc' => $this->canonicalLoc(url('/sitemap-pages.xml'))],
+                ['loc' => $this->canonicalLoc(url('/sitemap-products.xml'))],
+                ['loc' => $this->canonicalLoc(url('/sitemap-images.xml'))],
             ];
 
             $xml = '<?xml version="1.0" encoding="UTF-8"?>';
@@ -40,10 +40,15 @@ class SeoService
 
     public function pagesSitemapXml(): string
     {
-        return $this->rememberSitemap('sitemap.pages.v1', function () {
+        return $this->rememberSitemap('sitemap.pages.v2', function () {
             $urls = $this->baseUrls();
+            $selfRedirects = app(CategorySlugRedirectCleaner::class)->selfReferentialSlugs();
 
-            Category::where('is_active', true)->visibleInCatalog()->with('parent')->get()->each(function (Category $category) use (&$urls) {
+            Category::where('is_active', true)->visibleInCatalog()->with('parent')->get()->each(function (Category $category) use (&$urls, $selfRedirects) {
+                if (isset($selfRedirects[strtolower($category->slug)])) {
+                    return;
+                }
+
                 $urls[] = [
                     'loc' => $category->url(),
                     'lastmod' => $category->updated_at?->toAtomString(),
@@ -58,7 +63,7 @@ class SeoService
 
     public function productsSitemapXml(): string
     {
-        return $this->rememberSitemap('sitemap.products.v1', function () {
+        return $this->rememberSitemap('sitemap.products.v2', function () {
             $urls = [];
 
             Product::query()
@@ -87,7 +92,7 @@ class SeoService
 
     public function imageSitemapXml(): string
     {
-        return $this->rememberSitemap('sitemap.images.v3', function () {
+        return $this->rememberSitemap('sitemap.images.v4', function () {
             return $this->buildProductImageSitemap();
         });
     }
@@ -114,7 +119,7 @@ class SeoService
 
         $footer = [
             'Host: '.$host,
-            'Sitemap: '.url('/sitemap.xml'),
+            'Sitemap: '.$this->canonicalLoc(url('/sitemap.xml')),
         ];
 
         return implode("\n\n", $blocks)."\n\n".implode("\n", $footer)."\n";
@@ -288,7 +293,7 @@ class SeoService
             'image' => asset('images/logo-stacked.png'),
             'description' => config('seo.entity.description', config('seo.defaults.description')),
             'email' => config('business.email'),
-            'telephone' => '+'.ltrim((string) config('business.phone_tel'), '+'),
+            'telephone' => $this->schemaTelephone(),
             'address' => $this->postalAddress(),
             'areaServed' => [
                 '@type' => 'Country',
@@ -304,7 +309,7 @@ class SeoService
             ],
             'contactPoint' => [
                 '@type' => 'ContactPoint',
-                'telephone' => '+'.ltrim((string) config('business.phone_tel'), '+'),
+                'telephone' => $this->schemaTelephone(),
                 'email' => config('business.email'),
                 'contactType' => 'sales',
                 'areaServed' => 'ZA',
@@ -404,7 +409,7 @@ class SeoService
             'logo' => asset('images/logo-stacked.png'),
             'image' => asset('images/logo-stacked.png'),
             'email' => config('business.email'),
-            'telephone' => '+'.ltrim((string) config('business.phone_tel'), '+'),
+            'telephone' => $this->schemaTelephone(),
             'address' => $this->postalAddress(),
             'areaServed' => array_map(fn (string $city) => [
                 '@type' => 'City',
@@ -527,10 +532,14 @@ class SeoService
             'sitemap.main.v5',
             'sitemap.main.v6',
             'sitemap.index.v1',
+            'sitemap.index.v2',
             'sitemap.pages.v1',
+            'sitemap.pages.v2',
             'sitemap.products.v1',
+            'sitemap.products.v2',
             'sitemap.images.v2',
             'sitemap.images.v3',
+            'sitemap.images.v4',
         ] as $key) {
             Cache::forget($key);
         }
@@ -787,7 +796,7 @@ class SeoService
     protected function buildUrlXml(array $url, bool $includeImages = false): string
     {
         $xml = '<url>';
-        $xml .= '<loc>'.$this->xmlEscape((string) $url['loc']).'</loc>';
+        $xml .= '<loc>'.$this->xmlEscape($this->canonicalLoc((string) $url['loc'])).'</loc>';
 
         if (! empty($url['lastmod'])) {
             $xml .= '<lastmod>'.$url['lastmod'].'</lastmod>';
@@ -803,7 +812,7 @@ class SeoService
                 }
 
                 $xml .= '<image:image>';
-                $xml .= '<image:loc>'.$this->xmlEscape((string) $image['loc']).'</image:loc>';
+                $xml .= '<image:loc>'.$this->xmlEscape($this->canonicalLoc((string) $image['loc'])).'</image:loc>';
                 $xml .= '<image:title>'.$this->xmlEscape((string) ($image['title'] ?? '')).'</image:title>';
                 $xml .= '</image:image>';
             }
@@ -833,16 +842,55 @@ class SeoService
         return $xml;
     }
 
+    /**
+     * Rewrite site URLs onto APP_URL. External image hosts are left alone.
+     * This stops a request on mail.urbanfocus.co.za from poisoning a cached sitemap.
+     */
+    protected function canonicalLoc(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '' || ! function_exists('seo_canonical_url')) {
+            return $url;
+        }
+
+        $host = parse_url($url, PHP_URL_HOST);
+        if (is_string($host) && $host !== '' && function_exists('seo_is_site_host') && ! seo_is_site_host($host)) {
+            return $url;
+        }
+
+        return seo_canonical_url($url);
+    }
+
+    protected function schemaTelephone(): string
+    {
+        return business_phone_e164();
+    }
+
     /** @return array<string, string> */
     protected function postalAddress(): array
     {
-        return [
+        $address = [
             '@type' => 'PostalAddress',
-            'streetAddress' => trim(config('business.address.line1').' '.config('business.address.line2')),
             'addressLocality' => config('business.address.city'),
             'addressRegion' => config('business.address.province'),
-            'postalCode' => config('business.address.postal_code'),
             'addressCountry' => config('seo.defaults.country', 'ZA'),
         ];
+
+        $street = business_street_address();
+        if ($street !== '') {
+            $address['streetAddress'] = $street;
+        }
+
+        $park = trim((string) config('business.address.line2'));
+        if ($park !== '') {
+            $address['name'] = $park;
+        }
+
+        $postal = trim((string) config('business.address.postal_code'));
+        if ($postal !== '') {
+            $address['postalCode'] = $postal;
+        }
+
+        return $address;
     }
 }

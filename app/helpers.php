@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\SeoIndexPolicy;
 use Illuminate\Support\Str;
 
 if (! function_exists('public_asset_version')) {
@@ -185,8 +186,8 @@ if (! function_exists('seo_canonical_url')) {
                 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
                 'gclid', 'fbclid', 'msclkid', 'ttclid', 'mc_cid', 'mc_eid',
             ]),
-            class_exists(\App\Services\SeoIndexPolicy::class)
-                ? \App\Services\SeoIndexPolicy::JUNK_PARAM_KEYS
+            class_exists(SeoIndexPolicy::class)
+                ? SeoIndexPolicy::JUNK_PARAM_KEYS
                 : [],
         )), true);
 
@@ -316,5 +317,210 @@ if (! function_exists('clean_html')) {
         }
 
         return $out;
+    }
+}
+
+if (! function_exists('seo_plain')) {
+    /**
+     * Decode HTML entities that Blade sections already escaped, repeatedly,
+     * so a later {{ }} escapes the text exactly once.
+     */
+    function seo_plain(?string $value): string
+    {
+        $value = trim((string) $value);
+        $previous = null;
+        $guard = 0;
+
+        while ($value !== $previous && $guard < 5) {
+            $previous = $value;
+            $decoded = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($decoded === $value) {
+                break;
+            }
+            $value = $decoded;
+            $guard++;
+        }
+
+        return trim($value);
+    }
+}
+
+if (! function_exists('seo_public_token')) {
+    /**
+     * Return a configured analytics/verification token, or null when it is
+     * empty or an obvious placeholder (your-code, 123456789, XXXXXXXX, G-XXXX).
+     */
+    function seo_public_token(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        $lower = strtolower($value);
+        $placeholders = [
+            'your-code', 'your_code', 'yourcode', 'your-verification-code',
+            'your_verification_code', 'your-pixel-id', 'your_pixel_id',
+            'changeme', 'change-me', 'change_me', 'placeholder', 'insert-code',
+            'insert_code', 'todo', 'test', 'example', 'none', 'null', 'false',
+            'n/a', 'na', '123456789', '000000000', 'xxxxxxxx', 'xxxx',
+            'google-site-verification', 'msvalidate.01',
+        ];
+        if (in_array($lower, $placeholders, true)) {
+            return null;
+        }
+
+        if (preg_match('/^[xX*._\-]+$/', $value)) {
+            return null;
+        }
+
+        $alnum = preg_replace('/[^a-z0-9]/i', '', $value) ?? '';
+        if ($alnum !== '' && preg_match('/^x+$/i', $alnum)) {
+            return null;
+        }
+
+        if (preg_match('/^(?:g|ua|gtm|aw|gt)-x+(?:-x+)?$/i', $value)) {
+            return null;
+        }
+
+        return $value;
+    }
+}
+
+if (! function_exists('seo_is_site_host')) {
+    /** True when $host is the configured site or one of its subdomains (www, mail, apex). */
+    function seo_is_site_host(string $host): bool
+    {
+        $host = strtolower(trim($host));
+        $appHost = strtolower((string) (parse_url((string) config('app.url'), PHP_URL_HOST) ?: ''));
+
+        if ($host === '' || $appHost === '') {
+            return false;
+        }
+
+        if ($host === $appHost) {
+            return true;
+        }
+
+        $registrable = preg_replace('/^www\./', '', $appHost) ?? $appHost;
+        if ($registrable === '' || $registrable === 'localhost' || filter_var($registrable, FILTER_VALIDATE_IP)) {
+            return false;
+        }
+
+        return $host === $registrable || str_ends_with($host, '.'.$registrable);
+    }
+}
+
+if (! function_exists('business_phone_e164')) {
+    /**
+     * South African national numbers (087…) become E.164 (+2787…).
+     * Values that are already E.164 are kept. A leading +0 is treated as national.
+     */
+    function business_phone_e164(?string $number = null): string
+    {
+        $raw = trim((string) ($number ?? (config('business.phone_tel') ?: config('business.phone'))));
+        if ($raw === '') {
+            return '';
+        }
+
+        $hasPlus = str_starts_with($raw, '+');
+        $digits = preg_replace('/\D+/', '', $raw) ?? '';
+        if ($digits === '') {
+            return '';
+        }
+
+        if ($hasPlus && str_starts_with($digits, '0')) {
+            $hasPlus = false;
+        }
+
+        if ($hasPlus) {
+            return '+'.$digits;
+        }
+
+        if (str_starts_with($digits, '00')) {
+            return '+'.substr($digits, 2);
+        }
+
+        if (str_starts_with($digits, '27') && strlen($digits) >= 11) {
+            return '+'.$digits;
+        }
+
+        if (str_starts_with($digits, '0')) {
+            return '+27'.substr($digits, 1);
+        }
+
+        return '+'.$digits;
+    }
+}
+
+if (! function_exists('business_street_address')) {
+    /** Street line only. The known "17 Waterloo RD" spelling is normalised to "Rd". */
+    function business_street_address(): string
+    {
+        $line = trim((string) config('business.address.line1'));
+
+        if (preg_match('/^17\s+waterloo\s+rd$/i', $line)) {
+            return '17 Waterloo Rd';
+        }
+
+        return $line;
+    }
+}
+
+if (! function_exists('seo_google_review_profile')) {
+    /**
+     * Homepage Google review badge. Null unless a real rating, count and URL
+     * were explicitly enabled. Placeholder defaults are treated as unset.
+     *
+     * @return array{rating: string, count: string, url: string}|null
+     */
+    function seo_google_review_profile(): ?array
+    {
+        $reviews = config('trust.google_reviews', []);
+        if (! is_array($reviews) || ! filter_var($reviews['enabled'] ?? false, FILTER_VALIDATE_BOOL)) {
+            return null;
+        }
+
+        $rating = seo_public_token($reviews['rating'] ?? null);
+        $count = seo_public_token($reviews['count'] ?? null);
+        $url = seo_public_token($reviews['url'] ?? null);
+
+        if ($rating === null || $count === null || $url === null || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return null;
+        }
+
+        if (! is_numeric($rating) || (float) $rating <= 0 || (float) $rating > 5) {
+            return null;
+        }
+
+        if (! preg_match('/^\d+$/', $count) || (int) $count <= 0) {
+            return null;
+        }
+
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $path = rtrim((string) parse_url($url, PHP_URL_PATH), '/');
+        $normalised = strtolower(rtrim($url, '/'));
+        $placeholders = [
+            'https://google.com',
+            'http://google.com',
+            'https://www.google.com',
+            'http://www.google.com',
+            'https://g.page/r/urbanfocus/review',
+            'http://g.page/r/urbanfocus/review',
+        ];
+
+        if (in_array($normalised, $placeholders, true)) {
+            return null;
+        }
+
+        if (in_array($host, ['google.com', 'www.google.com'], true) && ($path === '' || $path === '/')) {
+            return null;
+        }
+
+        return [
+            'rating' => $rating,
+            'count' => $count,
+            'url' => $url,
+        ];
     }
 }

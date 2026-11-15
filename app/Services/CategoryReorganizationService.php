@@ -8,7 +8,7 @@ use App\Models\CategoryMigrationMapping;
 use App\Models\CategorySlugRedirect;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 
 class CategoryReorganizationService
 {
@@ -29,7 +29,7 @@ class CategoryReorganizationService
         Product::query()
             ->with('category.parent')
             ->orderBy('id')
-            ->chunkById(200, function ($products) use ($canonicalIds, &$moves, &$unchanged, &$uncategorized) {
+            ->chunkById(200, function ($products) use (&$moves, &$unchanged, &$uncategorized) {
                 foreach ($products as $product) {
                     if (! $product->category_id) {
                         $uncategorized++;
@@ -147,9 +147,9 @@ class CategoryReorganizationService
 
     public function migrationTablesReady(): bool
     {
-        return \Illuminate\Support\Facades\Schema::hasTable('category_slug_redirects')
-            && \Illuminate\Support\Facades\Schema::hasTable('category_migration_mappings')
-            && \Illuminate\Support\Facades\Schema::hasTable('category_migration_backups');
+        return Schema::hasTable('category_slug_redirects')
+            && Schema::hasTable('category_migration_mappings')
+            && Schema::hasTable('category_migration_backups');
     }
 
     /**
@@ -277,6 +277,17 @@ class CategoryReorganizationService
                     if ($canonicalChild) {
                         continue;
                     }
+                }
+
+                $ownPath = trim($category->urlPath(), '/');
+                if (strcasecmp($targetPath, $category->slug) === 0 || strcasecmp($targetPath, $ownPath) === 0) {
+                    $existingSelf = CategorySlugRedirect::where('old_slug', $category->slug)->first();
+                    if ($existingSelf && (strcasecmp(trim($existingSelf->target_path, '/'), $category->slug) === 0
+                        || strcasecmp(trim($existingSelf->target_path, '/'), $ownPath) === 0)) {
+                        $existingSelf->delete();
+                    }
+
+                    continue;
                 }
 
                 $existing = CategorySlugRedirect::where('old_slug', $category->slug)->first();

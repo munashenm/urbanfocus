@@ -82,8 +82,8 @@ class SeoController extends Controller
 
     public function bingSiteAuth(): Response
     {
-        $code = trim((string) config('seo.verification.bing', ''));
-        if ($code === '') {
+        $code = seo_public_token(config('seo.verification.bing'));
+        if ($code === null) {
             abort(404);
         }
 
@@ -99,7 +99,7 @@ class SeoController extends Controller
 
     public function googleHtmlVerification(string $googleFile): Response
     {
-        $expected = trim((string) config('seo.verification.google_html_file', ''));
+        $expected = seo_public_token(config('seo.verification.google_html_file')) ?? '';
         if (! $this->secureEquals($expected, $googleFile)) {
             abort(404);
         }

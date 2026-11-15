@@ -36,11 +36,15 @@ return [
         'body' => 'Urban Focus supplies genuine enterprise networking equipment with VAT-compliant invoicing, nationwide delivery and procurement support for businesses, ISPs, installers and public-sector organisations.',
     ],
 
+    /*
+    | Google review badge. Hidden unless GOOGLE_REVIEWS_ENABLED is true and
+    | rating, count and url are all real values. There is no fallback rating.
+    */
     'google_reviews' => [
-        'enabled' => env('GOOGLE_REVIEWS_ENABLED', false),
-        'place_id' => env('GOOGLE_PLACE_ID', ''),
-        'rating' => env('GOOGLE_RATING', '4.8'),
-        'count' => env('GOOGLE_REVIEW_COUNT', '50'),
-        'url' => env('GOOGLE_REVIEWS_URL', 'https://g.page/r/urbanfocus/review'),
+        'enabled' => filter_var(env('GOOGLE_REVIEWS_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'place_id' => env('GOOGLE_PLACE_ID'),
+        'rating' => env('GOOGLE_RATING'),
+        'count' => env('GOOGLE_REVIEW_COUNT'),
+        'url' => env('GOOGLE_REVIEWS_URL'),
     ],
 ];

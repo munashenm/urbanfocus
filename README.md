@@ -107,8 +107,10 @@ PAYSTACK_PUBLIC_KEY=your-paystack-public-key
 PAYSTACK_SECRET_KEY=your-paystack-secret-key
 PAYSTACK_CURRENCY=ZAR
 
-GOOGLE_SITE_VERIFICATION=your_verification_code
+GOOGLE_SITE_VERIFICATION=
 ```
+
+`APP_URL` is the canonical host. In production the app 301-redirects every other hostname (for example `https://urbanfocus.co.za` and `https://mail.urbanfocus.co.za`) to that URL, keeping the path and query string. The rule lives in `App\Http\Middleware\CanonicalHost` and only runs when `APP_ENV=production`, so `php artisan serve` is unaffected. `/admin` is not redirected, so a temporary hostname can still open the dashboard. `/checkout/paystack/*` is not redirected, so the Paystack browser callback and webhook are not turned into a 301. Leave `APP_URL` as `https://www.urbanfocus.co.za` on the live site. Do not point it at `mail.urbanfocus.co.za`.
 
 Generate app key via SSH:
 

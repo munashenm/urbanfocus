@@ -4,8 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', config('app.name'))</title>
-    <meta name="description" content="@yield('meta_description', config('seo.defaults.description'))">
+    @php
+        $pageTitle = seo_plain($__env->yieldContent('title', config('app.name')));
+        $pageDescription = seo_plain($__env->yieldContent('meta_description', config('seo.defaults.description')));
+        $ogTitle = seo_plain($__env->yieldContent('og_title'));
+        if ($ogTitle === '') {
+            $ogTitle = $pageTitle;
+        }
+        $ogDescription = seo_plain($__env->yieldContent('og_description'));
+        if ($ogDescription === '') {
+            $ogDescription = $pageDescription;
+        }
+        $googleVerification = seo_public_token(config('seo.verification.google'));
+        $bingVerification = seo_public_token(config('seo.verification.bing'));
+    @endphp
+    <title>{{ $pageTitle }}</title>
+    <meta name="description" content="{{ $pageDescription }}">
     @php $seoRobots = app(\App\Services\SeoIndexPolicy::class)->robotsDirective(request()); @endphp
     @hasSection('meta_robots')
         <meta name="robots" content="@yield('meta_robots')">
@@ -19,16 +33,16 @@
     @else
         <meta name="keywords" content="{{ config('seo.defaults.keywords') }}">
     @endif
-    @if(config('seo.verification.google'))
-        <meta name="google-site-verification" content="{{ config('seo.verification.google') }}">
+    @if($googleVerification)
+        <meta name="google-site-verification" content="{{ $googleVerification }}">
     @endif
-    @if(config('seo.verification.bing'))
-        <meta name="msvalidate.01" content="{{ config('seo.verification.bing') }}">
+    @if($bingVerification)
+        <meta name="msvalidate.01" content="{{ $bingVerification }}">
     @endif
     <link rel="canonical" href="{{ seo_canonical_url(trim($__env->yieldContent('canonical')) ?: null) }}">
     <meta property="og:site_name" content="{{ config('app.name') }}">
-    <meta property="og:title" content="@yield('og_title', trim($__env->yieldContent('title')))">
-    <meta property="og:description" content="@yield('og_description', trim($__env->yieldContent('meta_description')))">
+    <meta property="og:title" content="{{ $ogTitle }}">
+    <meta property="og:description" content="{{ $ogDescription }}">
     <meta property="og:url" content="{{ seo_canonical_url(trim($__env->yieldContent('canonical')) ?: null) }}">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:locale" content="{{ config('seo.defaults.locale', 'en_ZA') }}">
@@ -45,8 +59,8 @@
         <meta property="og:image" content="{{ asset('images/logo-stacked.png') }}">
     @endif
     <meta name="twitter:card" content="@yield('twitter_card', 'summary')">
-    <meta name="twitter:title" content="@yield('og_title', trim($__env->yieldContent('title')))">
-    <meta name="twitter:description" content="@yield('og_description', trim($__env->yieldContent('meta_description')))">
+    <meta name="twitter:title" content="{{ $ogTitle }}">
+    <meta name="twitter:description" content="{{ $ogDescription }}">
     @hasSection('og_image')
         <meta name="twitter:image" content="@yield('og_image')">
         @hasSection('og_image_alt')
