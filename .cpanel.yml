@@ -6,5 +6,5 @@
 # No migrate and no composer.
 deployment:
   tasks:
-    - /opt/cpanel/ea-php83/root/usr/bin/php artisan optimize:clear
-    - /opt/cpanel/ea-php83/root/usr/bin/php artisan view:cache
+    - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php artisan optimize:clear
+    - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php artisan view:cache
