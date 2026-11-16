@@ -41,3 +41,4 @@ yarn-error.log
 # Product catalogue photos, if ever stored here. Do not ignore public/images/
 # generally: logos, blog and brand art are tracked. Never delete images.
 /public/images/products/
+/storage/framework/public-asset-sync.stamp
