@@ -372,7 +372,10 @@ class ProductController extends Controller
             'short_description' => 'nullable|string',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
+            'sale_price' => 'nullable|numeric|gt:0|lt:price',
+            'sale_starts_at' => 'nullable|date',
+            'sale_ends_at' => 'nullable|date|after:sale_starts_at',
+            'promo_label' => 'nullable|string|max:80',
             'cost_price' => 'nullable|numeric|min:0',
             'stock_quantity' => 'required|integer|min:0',
             'manage_stock' => 'boolean',
@@ -422,6 +425,22 @@ class ProductController extends Controller
         }
 
         unset($data['image_urls'], $data['remove_image_ids'], $data['parent_category_id']);
+
+        foreach (['sale_starts_at', 'sale_ends_at'] as $field) {
+            if (! array_key_exists($field, $data) || $data[$field] === null || $data[$field] === '') {
+                $data[$field] = null;
+                continue;
+            }
+            $data[$field] = \Carbon\Carbon::parse($data[$field], 'Africa/Johannesburg');
+        }
+
+        $data['promo_label'] = trim((string) ($data['promo_label'] ?? '')) ?: null;
+        if (empty($data['sale_price'])) {
+            $data['sale_price'] = null;
+            $data['sale_starts_at'] = null;
+            $data['sale_ends_at'] = null;
+            $data['promo_label'] = null;
+        }
 
         $sanitizer = app(InternalPricingCopySanitizer::class);
         if (isset($data['short_description'])) {

@@ -27,7 +27,7 @@ class ShippingService
             ];
         }
 
-        if ($subtotal >= $freeThreshold) {
+        if ($subtotal > $freeThreshold) {
             return [
                 'method' => 'free',
                 'label' => config('shipping.methods.free'),

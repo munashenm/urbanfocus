@@ -207,11 +207,14 @@ class FeedService
         $this->writeGoogleElement($writer, 'condition', config('google-merchant.condition', 'new'));
         $this->writeGoogleElement($writer, 'brand', $product->brand ?: 'Urban Focus');
 
-        if ($product->is_on_sale) {
-            $this->writeGoogleElement($writer, 'price', $this->formatPrice((float) $product->price));
+        $this->writeGoogleElement($writer, 'price', $this->formatPrice((float) $product->price));
+
+        if ($product->hasMerchantSale()) {
             $this->writeGoogleElement($writer, 'sale_price', $this->formatPrice((float) $product->sale_price));
-        } else {
-            $this->writeGoogleElement($writer, 'price', $this->formatPrice((float) $product->price));
+            $effective = $product->salePriceEffectiveDate();
+            if ($effective) {
+                $this->writeGoogleElement($writer, 'sale_price_effective_date', $effective);
+            }
         }
 
         if ($category = $product->googleProductCategory()) {

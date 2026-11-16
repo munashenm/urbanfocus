@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\B2bController;
+use App\Http\Controllers\BlackFridayController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CartController;
@@ -50,6 +51,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/black-friday', [BlackFridayController::class, 'index'])->name('black-friday');
 Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');
 Route::get('/brands/{brand:slug}', [BrandController::class, 'show'])->name('brands.show');
 Route::get('/brand/{brand:slug}', fn (Brand $brand) => redirect()->route('brands.show', $brand, 301));

@@ -32,6 +32,9 @@ class Product extends Model
         'description',
         'price',
         'sale_price',
+        'sale_starts_at',
+        'sale_ends_at',
+        'promo_label',
         'cost_price',
         'supplier_cost_price',
         'stock_quantity',
@@ -70,6 +73,8 @@ class Product extends Model
         return [
             'price' => 'decimal:2',
             'sale_price' => 'decimal:2',
+            'sale_starts_at' => 'datetime',
+            'sale_ends_at' => 'datetime',
             'cost_price' => 'decimal:2',
             'supplier_cost_price' => 'decimal:2',
             'weight' => 'decimal:2',
@@ -137,18 +142,106 @@ class Product extends Model
         return 'slug';
     }
 
-    public function getEffectivePriceAttribute(): float
+    public function activeSalePrice(): ?float
     {
-        if ($this->sale_price && $this->sale_price > 0 && $this->sale_price < $this->price) {
-            return (float) $this->sale_price;
+        if (! $this->salePriceIsLower() || ! $this->saleWindowIsOpen()) {
+            return null;
         }
 
-        return (float) $this->price;
+        return round((float) $this->sale_price, 2);
+    }
+
+    public function isOnSale(): bool
+    {
+        return $this->activeSalePrice() !== null;
+    }
+
+    public function promoLabel(): string
+    {
+        $label = trim((string) $this->promo_label);
+
+        return $label !== '' ? $label : 'Black Friday';
+    }
+
+    /**
+     * A lower sale price that is running now or starts in the future.
+     * Expired windows are omitted from the merchant feed.
+     */
+    public function hasMerchantSale(): bool
+    {
+        if (! $this->salePriceIsLower()) {
+            return false;
+        }
+
+        return $this->sale_ends_at === null || now()->lte($this->sale_ends_at);
+    }
+
+    public function salePriceEffectiveDate(): ?string
+    {
+        if (! $this->hasMerchantSale()) {
+            return null;
+        }
+
+        $start = ($this->sale_starts_at ?? now())->copy()->timezone('Africa/Johannesburg');
+        $end = ($this->sale_ends_at ?? $start->copy()->addYear())->copy()->timezone('Africa/Johannesburg');
+
+        return $start->format('Y-m-d\TH:i:sP').'/'.$end->format('Y-m-d\TH:i:sP');
+    }
+
+    public function getEffectivePriceAttribute(): float
+    {
+        return $this->activeSalePrice() ?? (float) $this->price;
     }
 
     public function getIsOnSaleAttribute(): bool
     {
-        return $this->sale_price && $this->sale_price > 0 && $this->sale_price < $this->price;
+        return $this->isOnSale();
+    }
+
+    public function scopeOnSale($query)
+    {
+        $now = now();
+
+        return $query
+            ->whereNotNull('sale_price')
+            ->where('sale_price', '>', 0)
+            ->whereColumn('sale_price', '<', 'price')
+            ->where(function ($window) use ($now) {
+                $window->whereNull('sale_starts_at')->orWhere('sale_starts_at', '<=', $now);
+            })
+            ->where(function ($window) use ($now) {
+                $window->whereNull('sale_ends_at')->orWhere('sale_ends_at', '>=', $now);
+            });
+    }
+
+    public static function effectivePriceSql(): string
+    {
+        return 'CASE WHEN sale_price IS NOT NULL AND sale_price > 0 AND sale_price < price'
+            .' AND (sale_starts_at IS NULL OR sale_starts_at <= ?)'
+            .' AND (sale_ends_at IS NULL OR sale_ends_at >= ?)'
+            .' THEN sale_price ELSE price END';
+    }
+
+    protected function salePriceIsLower(): bool
+    {
+        return $this->sale_price !== null
+            && (float) $this->sale_price > 0
+            && (float) $this->sale_price < (float) $this->price;
+    }
+
+    protected function saleWindowIsOpen(): bool
+    {
+        $now = now();
+
+        if ($this->sale_starts_at !== null && $now->lt($this->sale_starts_at)) {
+            return false;
+        }
+
+        if ($this->sale_ends_at !== null && $now->gt($this->sale_ends_at)) {
+            return false;
+        }
+
+        return true;
     }
 
     public function discountPercent(): ?int

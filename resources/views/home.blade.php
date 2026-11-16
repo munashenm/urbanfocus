@@ -10,6 +10,13 @@
 @endif
 
 @section('content')
+@if(!empty($blackFridayActive))
+    <section class="bf-banner" aria-label="Black Friday">
+        <div class="container">
+            <a href="{{ route('black-friday') }}">Black Friday specials are on. View the sale prices.</a>
+        </div>
+    </section>
+@endif
 {{-- Hero carousel --}}
 <section class="hero-carousel">
     <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">

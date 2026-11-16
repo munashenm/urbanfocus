@@ -60,6 +60,9 @@
         <div class="collapse navbar-collapse site-header-nav" id="mainNav">
             <ul class="navbar-nav ms-xl-auto align-items-xl-center gap-xl-1">
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Home</a></li>
+                @if(!empty($blackFridayActive))
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('black-friday') ? 'active' : '' }}" href="{{ route('black-friday') }}">Black Friday</a></li>
+                @endif
                 <li class="nav-item dropdown mega-dropdown">
                     <a class="nav-link dropdown-toggle {{ request()->routeIs('shop.*') || request()->routeIs('categories.*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside">Shop</a>
                     <div class="dropdown-menu mega-menu shadow border-0 p-0">
