@@ -6,12 +6,32 @@ class PublicAssetSync
 {
     public static function syncIfNeeded(): void
     {
-        $publicPath = env('PUBLIC_PATH');
+        $publicPath = config('app.public_path');
 
         if (! $publicPath || ! is_dir($publicPath)) {
             return;
         }
 
+        // Stat-and-copy of public/ into public_html on every request dominates
+        // TTFB on shared hosting. Recheck at most once every two minutes.
+        $stamp = storage_path('framework/public-asset-sync.stamp');
+        if (is_file($stamp) && (time() - (int) filemtime($stamp)) < 120) {
+            return;
+        }
+
+        try {
+            self::syncPublicAssets((string) $publicPath);
+        } finally {
+            $directory = dirname($stamp);
+            if (! is_dir($directory)) {
+                @mkdir($directory, 0755, true);
+            }
+            @touch($stamp);
+        }
+    }
+
+    public static function syncPublicAssets(string $publicPath): void
+    {
         $sourceRoot = base_path('public');
 
         if (! is_dir($sourceRoot)) {

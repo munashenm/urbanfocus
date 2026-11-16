@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Support\CategoryTree;
 use Illuminate\Support\Str;
 
 class CategoryMapperService
@@ -304,14 +305,15 @@ class CategoryMapperService
 
         $this->ensureCanonicalTree();
 
-        $parent = Category::where('slug', $parentSlug)->whereNull('parent_id')->first();
+        $tree = CategoryTree::current();
+        $parent = $tree->findBySlug($parentSlug, null);
 
-        if (! $parent) {
+        if (! $parent || $parent->parent_id !== null) {
             return null;
         }
 
         if ($childSlug) {
-            $child = Category::where('slug', $childSlug)->where('parent_id', $parent->id)->first();
+            $child = $tree->findBySlug($childSlug, (int) $parent->id);
 
             return $child?->id ?? $parent->id;
         }
@@ -321,13 +323,34 @@ class CategoryMapperService
 
     public function ensureCanonicalTree(): void
     {
-        if ($this->canonicalTreeEnsured && Category::query()->whereNull('parent_id')->where('slug', 'computing-office')->exists()) {
+        if ($this->canonicalTreeEnsured) {
             return;
         }
 
         $this->canonicalTreeEnsured = true;
 
-        foreach (config('category_tree.tree', config('category_map.tree', [])) as $order => $parentData) {
+        $treeConfig = config('category_tree.tree', config('category_map.tree', []));
+        $fingerprint = md5((string) json_encode($treeConfig));
+
+        // Production storefront requests must not rewrite the tree (156 slug
+        // updateOrCreate queries) on every page. Rebuild only when the config
+        // fingerprint changes or the sentinel root is missing. Tests still
+        // seed the tree on every run.
+        if (! app()->runningUnitTests()) {
+            $cached = null;
+            try {
+                $cached = \Illuminate\Support\Facades\Cache::store('file')->get('category_tree.fingerprint');
+            } catch (\Throwable) {
+                $cached = null;
+            }
+
+            $sentinel = CategoryTree::current()->findBySlug('computing-office', null);
+            if ($cached === $fingerprint && $sentinel && $sentinel->parent_id === null) {
+                return;
+            }
+        }
+
+        foreach ($treeConfig as $order => $parentData) {
             $parent = Category::updateOrCreate(
                 ['slug' => $parentData['slug']],
                 [
@@ -354,6 +377,16 @@ class CategoryMapperService
                         'is_active' => true,
                     ]
                 );
+            }
+        }
+
+        CategoryTree::forget();
+
+        if (! app()->runningUnitTests()) {
+            try {
+                \Illuminate\Support\Facades\Cache::store('file')->put('category_tree.fingerprint', $fingerprint, 86400);
+            } catch (\Throwable) {
+                // Rebuilding once per request is still cheaper than 156 writes.
             }
         }
     }
@@ -514,10 +547,10 @@ class CategoryMapperService
         $categoryId = $this->resolveCategoryIdFromPath($slug);
 
         if ($categoryId) {
-            return Category::find($categoryId);
+            return CategoryTree::current()->find((int) $categoryId);
         }
 
-        return Category::where('slug', $slug)->where('is_active', true)->first();
+        return CategoryTree::current()->findActiveBySlug($slug);
     }
 
     public function categoryUrlForPath(string $path): ?string

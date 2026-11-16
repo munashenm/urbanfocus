@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Product;
 use Illuminate\Support\Collection;
+use App\Support\SafeCache;
 use Illuminate\Support\Facades\Cache;
 
 class CatalogDeduper
@@ -20,7 +21,7 @@ class CatalogDeduper
 
     public function clearCache(): void
     {
-        Cache::forget(self::CACHE_KEY);
+        SafeCache::forget(self::CACHE_KEY);
     }
 
     /**
@@ -95,7 +96,7 @@ class CatalogDeduper
      */
     protected function snapshot(): array
     {
-        return Cache::remember(self::CACHE_KEY, 600, fn () => $this->scanSnapshot());
+        return SafeCache::remember(self::CACHE_KEY, 600, fn () => $this->scanSnapshot(), 'file');
     }
 
     /**

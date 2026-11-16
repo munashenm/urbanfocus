@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\CategoryTree;
+use App\Support\StorefrontCache;
 use Illuminate\Support\Collection;
 
 class CatalogFilterService
@@ -111,10 +113,6 @@ class CatalogFilterService
             }
 
             $seen[] = $current->id;
-
-            if (! $current->relationLoaded('parent')) {
-                $current->load('parent');
-            }
 
             $current = $current->parent;
 
@@ -282,10 +280,6 @@ class CatalogFilterService
                 return true;
             }
 
-            if (! $current->relationLoaded('parent') && $current->parent_id) {
-                $current->load('parent');
-            }
-
             $current = $current->parent;
         }
 
@@ -356,20 +350,22 @@ class CatalogFilterService
     /** @return list<int> */
     public function collectExcludedCategoryIds(): array
     {
-        return Category::query()
-            ->get()
-            ->filter(fn (Category $category) => $this->isCategoryExcluded($category))
-            ->pluck('id')
-            ->values()
-            ->all();
+        return StorefrontCache::remember(StorefrontCache::EXCLUDED_CATEGORIES, function () {
+            return CategoryTree::current()->all()
+                ->filter(fn (Category $category) => $this->isCategoryExcluded($category))
+                ->pluck('id')
+                ->values()
+                ->all();
+        });
     }
 
     /** @return Collection<int, Category> */
     public function collectExcludedCategories(): Collection
     {
-        return Category::query()
-            ->get()
-            ->filter(fn (Category $category) => $this->isCategoryExcluded($category))
+        $excluded = array_flip($this->excludedCategoryIds());
+
+        return CategoryTree::current()->all()
+            ->filter(fn (Category $category) => isset($excluded[$category->id]))
             ->values();
     }
 

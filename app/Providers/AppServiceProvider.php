@@ -11,6 +11,8 @@ use App\Observers\BrandObserver;
 use App\Observers\CategoryObserver;
 use App\Observers\ProductObserver;
 use App\Services\CartService;
+use App\Services\CatalogFilterService;
+use App\Services\CategoryMapperService;
 use App\Services\IndexNowService;
 use App\Support\PublicAssetSync;
 use App\View\Composers\LayoutComposer;
@@ -27,12 +29,15 @@ class AppServiceProvider extends ServiceProvider
     {
         require_once app_path('helpers.php');
 
-        if ($publicPath = env('PUBLIC_PATH')) {
+        $publicPath = config('app.public_path');
+        if (is_string($publicPath) && $publicPath !== '') {
             $this->app->usePublicPath($publicPath);
         }
 
         $this->app->singleton(CartService::class);
         $this->app->singleton(IndexNowService::class);
+        $this->app->singleton(CatalogFilterService::class);
+        $this->app->singleton(CategoryMapperService::class);
     }
 
     public function boot(): void

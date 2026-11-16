@@ -4,6 +4,7 @@ namespace App\Services\Blog;
 
 use App\Models\Article;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Schema;
 
 class BlogSchema
@@ -78,9 +79,10 @@ class BlogSchema
         return $missing;
     }
 
-    /** @param Builder<\App\Models\Article> $query */
-    public static function withOptionalRelations(Builder $query): Builder
+    /** @param Builder<\App\Models\Article>|Relation $query */
+    public static function withOptionalRelations(Builder|Relation $query): Builder
     {
+        $builder = $query instanceof Relation ? $query->getQuery() : $query;
         $with = [];
 
         if (self::hasAuthors()) {
@@ -91,7 +93,7 @@ class BlogSchema
             $with[] = 'tags';
         }
 
-        return $with === [] ? $query : $query->with($with);
+        return $with === [] ? $builder : $builder->with($with);
     }
 
     /** @param array<string, mixed> $data */

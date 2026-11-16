@@ -10,6 +10,7 @@ use App\Services\CatalogBrowseService;
 use App\Services\CatalogFilterService;
 use App\Services\CategoryMapperService;
 use App\Services\SeoService;
+use App\Support\StorefrontCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -158,12 +159,19 @@ class CategoryController extends Controller
 
         $products = $query->paginate(24)->withQueryString();
 
-        $brands = Product::whereIn('category_id', $categoryIds)
-            ->where('is_active', true)
-            ->whereNotNull('brand')
-            ->distinct()
-            ->orderBy('brand')
-            ->pluck('brand');
+        $brands = collect(StorefrontCache::remember(
+            StorefrontCache::categoryBrandsKey((int) $category->id),
+            function () use ($categoryIds) {
+                return Product::whereIn('category_id', $categoryIds)
+                    ->where('is_active', true)
+                    ->whereNotNull('brand')
+                    ->where('brand', '!=', '')
+                    ->distinct()
+                    ->orderBy('brand')
+                    ->pluck('brand')
+                    ->all();
+            }
+        ));
 
         $relatedBrandModels = $brands->isNotEmpty()
             ? Brand::query()->where('is_active', true)->whereIn('name', $brands)->orderBy('name')->get()
