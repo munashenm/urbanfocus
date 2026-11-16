@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Article;
 use App\Models\Product;
 use App\Support\ShippingQuote;
+use App\Support\SafeCache;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use SimpleXMLElement;
@@ -17,7 +18,7 @@ class FeedService
      */
     public function blogRssXml(): string
     {
-        return Cache::remember('feeds.blog-rss.xml', $this->feedCacheTtl(), function () {
+        return SafeCache::remember('feeds.blog-rss.xml', $this->feedCacheTtl(), function () {
             $articles = Article::published()
                 ->with('author')
                 ->orderByDesc('published_at')
@@ -51,7 +52,7 @@ class FeedService
      */
     public function facebookCatalogXml(): string
     {
-        return Cache::remember('feeds.facebook-catalog.xml', $this->feedCacheTtl(), function () {
+        return SafeCache::remember('feeds.facebook-catalog.xml', $this->feedCacheTtl(), function () {
             $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"></rss>');
             $channel = $xml->addChild('channel');
             $channel->addChild('title', $this->xmlEscape('Urban Focus Facebook Catalog'));
@@ -147,6 +148,7 @@ class FeedService
 
             file_put_contents($path, $xml);
             Cache::forget($legacyCacheKey);
+            \App\Support\SafeCache::forget($legacyCacheKey);
 
             return $xml;
         } finally {
@@ -342,7 +344,7 @@ class FeedService
 
     public function priceCheckCsv(): string
     {
-        return Cache::remember('feeds.pricecheck.csv', $this->feedCacheTtl(), function () {
+        return SafeCache::remember('feeds.pricecheck.csv', $this->feedCacheTtl(), function () {
             $lines = ['SKU,Product Name,Brand,Price,Stock,URL,Category'];
 
             Product::query()
@@ -372,7 +374,7 @@ class FeedService
      */
     public function bobShopBulkloadCsv(): string
     {
-        return Cache::remember('feeds.bobshop.bulkload.csv', $this->feedCacheTtl(), function () {
+        return SafeCache::remember('feeds.bobshop.bulkload.csv', $this->feedCacheTtl(), function () {
             $handle = fopen('php://temp', 'r+');
 
             if ($handle === false) {
@@ -511,7 +513,7 @@ class FeedService
      */
     public function bobShopXml(): string
     {
-        return Cache::remember('feeds.bobshop.xml', $this->feedCacheTtl(), function () {
+        return SafeCache::remember('feeds.bobshop.xml', $this->feedCacheTtl(), function () {
             $doc = new \DOMDocument('1.0', 'UTF-8');
             $doc->formatOutput = false;
 

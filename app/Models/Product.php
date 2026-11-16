@@ -492,6 +492,17 @@ class Product extends Model
         });
     }
 
+    public static function hasOosListableColumn(): bool
+    {
+        static $hasColumn = null;
+
+        if ($hasColumn === null) {
+            $hasColumn = \Illuminate\Support\Facades\Schema::hasColumn((new static)->getTable(), 'is_oos_listable');
+        }
+
+        return $hasColumn;
+    }
+
     public function scopeAvailableOrListableOos($query)
     {
         return $query->where(function ($q) {
@@ -500,6 +511,11 @@ class Product extends Model
             })->orWhere(function ($inner) {
                 $inner->where('manage_stock', false)->where('in_stock', true);
             })->orWhere(function ($inner) {
+                if (! static::hasOosListableColumn()) {
+                    $inner->whereRaw('0 = 1');
+
+                    return;
+                }
                 $inner->where('is_oos_listable', true)
                     ->where(function ($oos) {
                         $oos->where(function ($i) {
@@ -1419,7 +1435,6 @@ class Product extends Model
         ];
 
         if ($this->category) {
-            $this->category->loadMissing('parent');
             $position = 2;
 
             if ($this->category->parent) {

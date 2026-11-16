@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Tag;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Support\SafeCache;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
@@ -760,8 +761,9 @@ class SeoService
         $xml = null;
 
         try {
-            $xml = Cache::remember($key, $ttl, $callback);
+            $xml = SafeCache::remember($key, $ttl, $callback, 'file');
         } catch (\Throwable $e) {
+            SafeCache::forget($key);
             report($e);
         }
 

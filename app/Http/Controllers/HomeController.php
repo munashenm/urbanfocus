@@ -10,7 +10,8 @@ use App\Models\Product;
 use App\Services\CatalogDeduper;
 use App\Services\CategoryMapperService;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
+use App\Support\SafeCache;
+use App\Support\StorefrontCache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -61,7 +62,9 @@ class HomeController extends Controller
         $categoryIcons = config('homepage.category_icons', []);
         $sectionBrands = $this->remember('home.section_brands', fn () => $this->sectionBrands());
 
-        $blackFridayActive = Product::query()->where('is_active', true)->onSale()->exists();
+        $blackFridayActive = StorefrontCache::remember(StorefrontCache::BLACK_FRIDAY_ACTIVE, function () {
+            return Product::query()->where('is_active', true)->onSale()->exists();
+        }, 60);
         $blackFridayProducts = $this->blackFridaySpecials();
 
         return view('home', compact(
@@ -657,10 +660,6 @@ class HomeController extends Controller
 
     protected function remember(string $key, callable $callback, int $minutes = 10): mixed
     {
-        try {
-            return Cache::remember($key, $minutes * 60, $callback);
-        } catch (\Throwable) {
-            return $callback();
-        }
+        return SafeCache::remember($key, $minutes * 60, $callback, 'file');
     }
 }

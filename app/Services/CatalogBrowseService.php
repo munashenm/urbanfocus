@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\StorefrontCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -117,19 +118,21 @@ class CatalogBrowseService
     /** @return list<int> */
     protected function priorityCategoryIds(): array
     {
-        $ids = [];
+        return StorefrontCache::remember(StorefrontCache::PRIORITY_CATEGORY_IDS, function () {
+            $ids = [];
 
-        foreach (config('catalog.priority_category_paths', []) as $path) {
-            $category = $this->categories->resolveCategoryForFilter((string) $path);
-            if (! $category) {
-                continue;
+            foreach (config('catalog.priority_category_paths', []) as $path) {
+                $category = $this->categories->resolveCategoryForFilter((string) $path);
+                if (! $category) {
+                    continue;
+                }
+
+                foreach (Category::descendantIds($category->id) as $id) {
+                    $ids[] = $id;
+                }
             }
 
-            foreach (Category::descendantIds($category->id) as $id) {
-                $ids[] = $id;
-            }
-        }
-
-        return array_values(array_unique($ids));
+            return array_values(array_unique($ids));
+        });
     }
 }

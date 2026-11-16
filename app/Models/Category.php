@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\CategoryTree;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -74,8 +75,6 @@ class Category extends Model
 
     public function url(): string
     {
-        $this->loadMissing('parent');
-
         if ($this->parent_id && $this->parent) {
             return route('categories.show.child', [
                 'parent' => $this->parent->slug,
@@ -134,21 +133,29 @@ class Category extends Model
     /** @return array<int> */
     public static function descendantIds(int $categoryId): array
     {
-        $all = static::where('is_active', true)->get(['id', 'parent_id']);
-        $ids = [$categoryId];
-        $changed = true;
+        return CategoryTree::current()->descendantIds($categoryId);
+    }
 
-        while ($changed) {
-            $changed = false;
-            foreach ($all as $cat) {
-                if ($cat->parent_id && in_array($cat->parent_id, $ids, true) && ! in_array($cat->id, $ids, true)) {
-                    $ids[] = $cat->id;
-                    $changed = true;
-                }
+    /**
+     * Prefer the in-memory category tree for parent lookups so storefront
+     * pages do not run one query per category or product.
+     */
+    public function getRelationValue($key)
+    {
+        if ($key === 'parent' && ! $this->relationLoaded('parent')) {
+            if (! $this->parent_id) {
+                $this->setRelation('parent', null);
+
+                return null;
             }
+
+            $parent = CategoryTree::current()->find((int) $this->parent_id);
+            $this->setRelation('parent', $parent);
+
+            return $parent;
         }
 
-        return $ids;
+        return parent::getRelationValue($key);
     }
 
     public function seoTitle(): string
