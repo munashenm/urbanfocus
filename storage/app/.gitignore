@@ -1,0 +1,6 @@
+# Ignore generated exports and scratch files in storage/app.
+# Keep Laravel subdirectories that have their own gitignores.
+*
+!.gitignore
+!public/
+!sitemaps/
