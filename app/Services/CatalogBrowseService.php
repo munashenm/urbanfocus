@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -41,14 +42,20 @@ class CatalogBrowseService
         $query->reorder();
 
         match ($sort) {
-            'price_asc' => $query->orderByRaw('COALESCE(sale_price, price) ASC'),
-            'price_desc' => $query->orderByRaw('COALESCE(sale_price, price) DESC'),
+            'price_asc' => $this->orderByEffectivePrice($query, 'ASC'),
+            'price_desc' => $this->orderByEffectivePrice($query, 'DESC'),
             'name' => $query->orderBy('name'),
             'popular' => $query->orderByDesc('views')->orderByDesc('created_at'),
             'newest' => $query->latest(),
             'relevance' => $this->search->applyRelevanceOrder($query, (string) $search),
             default => $this->applyRecommendedOrder($query),
         };
+    }
+
+    protected function orderByEffectivePrice(Builder $query, string $direction): void
+    {
+        $now = now()->toDateTimeString();
+        $query->orderByRaw(Product::effectivePriceSql().' '.$direction, [$now, $now]);
     }
 
     public function applyRecommendedOrder(Builder $query): void

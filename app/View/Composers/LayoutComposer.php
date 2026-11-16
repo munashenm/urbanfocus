@@ -4,13 +4,24 @@ namespace App\View\Composers;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Product;
 use App\Services\SearchService;
 use App\Support\StorefrontCache;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class LayoutComposer
 {
     public function __construct(protected SearchService $search) {}
+
+    protected function blackFridayActive(): bool
+    {
+        if (! Schema::hasTable('products') || ! Schema::hasColumn('products', 'sale_starts_at')) {
+            return false;
+        }
+
+        return Product::query()->where('is_active', true)->onSale()->exists();
+    }
 
     public function compose(View $view): void
     {
@@ -36,10 +47,12 @@ class LayoutComposer
             });
 
             $view->with($data);
+            $view->with('blackFridayActive', $this->blackFridayActive());
         } catch (\Throwable) {
             $view->with('navCategories', collect());
             $view->with('megaMenuCategories', []);
             $view->with('navBrands', collect());
+            $view->with('blackFridayActive', false);
         }
     }
 }

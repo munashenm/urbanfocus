@@ -50,8 +50,20 @@
                                 <input type="number" step="0.01" name="price" class="form-control" value="{{ old('price', $product->price) }}" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Sale price</label>
-                                <input type="number" step="0.01" name="sale_price" class="form-control" value="{{ old('sale_price', $product->sale_price) }}">
+                                <label class="form-label" for="sale_price">Sale price (incl. VAT)</label>
+                                <input id="sale_price" type="number" step="0.01" min="0.01" name="sale_price" class="form-control" value="{{ old('sale_price', $product->sale_price) }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="promo_label">Promo label</label>
+                                <input id="promo_label" type="text" name="promo_label" class="form-control" maxlength="80" value="{{ old('promo_label', $product->promo_label) }}" placeholder="Black Friday">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="sale_starts_at">Sale starts</label>
+                                <input id="sale_starts_at" type="datetime-local" name="sale_starts_at" class="form-control" value="{{ old('sale_starts_at', optional($product->sale_starts_at)->timezone('Africa/Johannesburg')->format('Y-m-d\TH:i')) }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="sale_ends_at">Sale ends</label>
+                                <input id="sale_ends_at" type="datetime-local" name="sale_ends_at" class="form-control" value="{{ old('sale_ends_at', optional($product->sale_ends_at)->timezone('Africa/Johannesburg')->format('Y-m-d\TH:i')) }}">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Cost price</label>

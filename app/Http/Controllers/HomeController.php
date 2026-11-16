@@ -61,10 +61,12 @@ class HomeController extends Controller
         $categoryIcons = config('homepage.category_icons', []);
         $sectionBrands = $this->remember('home.section_brands', fn () => $this->sectionBrands());
 
+        $blackFridayActive = Product::query()->where('is_active', true)->onSale()->exists();
+
         return view('home', compact(
             'featuredProducts', 'popularProducts', 'topSellers', 'networkingProducts',
             'laptopProducts', 'securityProducts', 'specialistProducts', 'categories', 'brands', 'banners',
-            'articles', 'featuredArticle', 'heroSlides', 'categoryIcons', 'sectionBrands'
+            'articles', 'featuredArticle', 'heroSlides', 'categoryIcons', 'sectionBrands', 'blackFridayActive'
         ));
     }
 

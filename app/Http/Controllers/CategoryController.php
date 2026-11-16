@@ -145,12 +145,13 @@ class CategoryController extends Controller
             $query->where('brand', $brand);
         }
 
+        $now = now();
         if ($min = $request->get('price_min')) {
-            $query->whereRaw('COALESCE(sale_price, price) >= ?', [(float) $min]);
+            $query->whereRaw(Product::effectivePriceSql().' >= ?', [$now, $now, (float) $min]);
         }
 
         if ($max = $request->get('price_max')) {
-            $query->whereRaw('COALESCE(sale_price, price) <= ?', [(float) $max]);
+            $query->whereRaw(Product::effectivePriceSql().' <= ?', [$now, $now, (float) $max]);
         }
 
         $sort = $this->browse->requestedSort($request);

@@ -79,14 +79,12 @@
             @endphp
 
             <div class="my-3">
-                @if($product->is_on_sale)
-                    <span class="price-old h5">R {{ number_format($product->price, 2) }}</span>
+                @if($product->isOnSale())
+                    <span class="badge-black-friday badge-black-friday-inline">{{ $product->promoLabel() }}@if($discount) · {{ $discount }}% off @endif</span>
+                    <span class="price-old h5">Was R {{ number_format($product->price, 2) }}</span>
                 @endif
                 <span class="price-current h3">R {{ number_format($product->effective_price, 2) }}</span>
                 <span class="text-muted small"> incl. VAT</span>
-                @if($discount)
-                    <span class="badge-sale-inline">Save {{ $discount }}%</span>
-                @endif
             </div>
 
             <div class="product-meta-cards mb-4">
