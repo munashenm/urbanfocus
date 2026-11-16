@@ -45,7 +45,7 @@
                 </form>
             @else
                 <div class="product-card-action">
-                    <button type="button" class="btn btn-outline-secondary w-100 btn-sm" disabled>Out of Stock</button>
+                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary w-100 btn-sm" data-analytics-event="request_quote_oos">{{ \App\Services\CatalogOosPolicy::ctaLabel() }}</a>
                 </div>
             @endif
         </div>

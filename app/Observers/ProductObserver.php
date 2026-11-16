@@ -10,7 +10,7 @@ use App\Services\Marketing\MakeWebhookService;
 use App\Services\SeoService;
 use App\Services\Social\SocialPostingService;
 use App\Services\StockAlertService;
-use App\Support\StorefrontCache;
+use App\Services\CatalogOosPolicy;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 
@@ -24,6 +24,11 @@ class ProductObserver
         protected IndexNowService $indexNow,
     ) {}
 
+    public function saving(Product $product): void
+    {
+        $this->applyOosListingState($product);
+    }
+
     public function saved(Product $product): void
     {
         $this->safe(fn () => $this->handleSocialQueue($product));
@@ -31,7 +36,6 @@ class ProductObserver
         $this->safe(fn () => $this->handleStockAlerts($product));
         $this->safe(fn () => $this->handleSearchIndex($product));
         $this->safe(fn () => app(CatalogDeduper::class)->clearCache());
-        $this->safe(fn () => $this->forgetStorefrontBrandLists($product));
     }
 
     public function deleted(Product $product): void
@@ -115,13 +119,6 @@ class ProductObserver
         }
     }
 
-    protected function forgetStorefrontBrandLists(Product $product): void
-    {
-        if ($product->wasRecentlyCreated || $product->wasChanged(['brand', 'is_active', 'category_id'])) {
-            StorefrontCache::bumpBrandLists();
-        }
-    }
-
     protected function isSearchRelevantChange(Product $product): bool
     {
         if ($product->wasRecentlyCreated) {
@@ -161,6 +158,37 @@ class ProductObserver
         }
 
         Mail::to($email)->send(new LowStockAlert($product));
+    }
+
+    protected function applyOosListingState(Product $product): void
+    {
+        if (Schema::hasColumn('products', 'is_oos_listable')) {
+            try {
+                $product->is_oos_listable = CatalogOosPolicy::isEligible($product);
+            } catch (\Throwable) {
+                // Image relation or helpers may be unavailable mid-import.
+            }
+        }
+
+        $nowInStock = $product->manage_stock
+            ? (int) $product->stock_quantity > 0
+            : (bool) $product->in_stock;
+        $wasInStock = $product->exists
+            ? ($product->manage_stock
+                ? (int) $product->getOriginal('stock_quantity') > 0
+                : (bool) $product->getOriginal('in_stock'))
+            : false;
+
+        if ($nowInStock && Schema::hasColumn('products', 'last_in_stock_at')) {
+            if ($product->last_in_stock_at === null || ! $wasInStock) {
+                $product->last_in_stock_at = now();
+            }
+        }
+
+        if ($nowInStock && Schema::hasColumn('products', 'oos_hidden_at') && $product->oos_hidden_at) {
+            $product->is_active = true;
+            $product->oos_hidden_at = null;
+        }
     }
 
     protected function safe(callable $callback): void

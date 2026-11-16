@@ -17,7 +17,7 @@
                 <tr><td style="color:#666">Phone</td><td>{{ $quote->phone }}</td></tr>
             @endif
             @if($quote->product)
-                <tr><td style="color:#666">Product</td><td>{{ $quote->product->name }}</td></tr>
+                <tr><td style="color:#666">Product</td><td>{{ $quote->product->name }}@if($quote->product->sku) (SKU {{ $quote->product->sku }})@endif</td></tr>
             @endif
         </table>
 

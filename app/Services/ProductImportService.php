@@ -47,6 +47,10 @@ class ProductImportService
         'costprice' => 'cost_price',
         'wholesale price' => 'cost_price',
         'sale price' => 'sale_price',
+        // Opt-in fixed selling price (incl VAT), stored as-is with no markup/fee/rounding
+        'selling price' => 'selling_price',
+        'selling price incl vat' => 'selling_price',
+        'selling_price' => 'selling_price',
         'stock' => 'stock',
         'stock quantity' => 'stock',
         'availableqty' => 'stock',
@@ -400,6 +404,12 @@ class ProductImportService
         ];
         $storedCost = $this->pricing->importCostPrice($costPrice, $importSource);
         $retailPrice = $this->pricing->retailPriceForImport($costPrice, $importSource, $pricingContext);
+        // Opt-in: a supplied "Selling Price" (incl VAT) overrides the computed retail price.
+        // Missing/empty/zero column => behaviour unchanged.
+        $suppliedPrice = $this->resolveSuppliedSellingPrice($data);
+        if ($suppliedPrice > 0) {
+            $retailPrice = $suppliedPrice;
+        }
         if ($retailPrice <= 0) {
             return ['action' => 'skip', 'reason' => 'no_price', 'name' => $name];
         }
@@ -508,6 +518,12 @@ class ProductImportService
         }
 
         return $existing ? 'updated' : 'created';
+    }
+
+    /** Supplied selling price incl VAT, exactly as given (2dp). 0.0 when absent. */
+    protected function resolveSuppliedSellingPrice(array $data): float
+    {
+        return round($this->parsePrice((string) ($data['selling_price'] ?? '')), 2);
     }
 
     protected function resolveCostPrice(array $data): float

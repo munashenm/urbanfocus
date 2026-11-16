@@ -120,6 +120,36 @@
                     </form>
                     <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg" data-analytics-event="request_quote">Request Bulk Quote</a>
                 @else
+                    <div class="checkout-card w-100" id="oos-quote">
+                        <p class="mb-3">{{ \App\Services\CatalogOosPolicy::customerMessage() }}</p>
+                        <h2 class="h6 fw-bold mb-2">{{ \App\Services\CatalogOosPolicy::ctaLabel() }}</h2>
+                        <form action="{{ route('b2b.store') }}" method="POST" class="row g-2 align-items-end" data-analytics-submit="request_quote_oos">
+                            @csrf
+                            <input type="hidden" name="type" value="eta">
+                            <input type="hidden" name="product_id" value="{{ $product->id }}">
+                            <input type="hidden" name="message" value="{{ \App\Services\CatalogOosPolicy::quotePrefillMessage($product, 1) }}">
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1" for="oos-quote-name">Name</label>
+                                <input id="oos-quote-name" type="text" name="name" class="form-control form-control-sm" value="{{ old('name', auth()->user()?->name) }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1" for="oos-quote-email">Email</label>
+                                <input id="oos-quote-email" type="email" name="email" class="form-control form-control-sm" value="{{ old('email', auth()->user()?->email) }}" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1" for="oos-quote-phone">Phone</label>
+                                <input id="oos-quote-phone" type="text" name="phone" class="form-control form-control-sm" value="{{ old('phone') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1" for="oos-quote-qty">Quantity</label>
+                                <input id="oos-quote-qty" type="number" name="quantity" min="1" max="9999" class="form-control form-control-sm" value="{{ old('quantity', 1) }}">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">Send</button>
+                            </div>
+                        </form>
+                        <p class="small text-muted mt-2 mb-0">SKU: <strong>{{ $product->sku }}</strong> — {{ $product->name }}. We’ll email <a href="mailto:sales@urbanfocus.co.za">sales@urbanfocus.co.za</a> on your behalf. You can also <a href="{{ route('b2b.quote', ['product' => $product->id]) }}">open the full quote form</a> or <a href="{{ \App\Services\CatalogOosPolicy::mailtoHref($product) }}">email us directly</a>.</p>
+                    </div>
                     <div class="checkout-card w-100">
                         <h2 class="h6 fw-bold mb-2">Notify me when back in stock</h2>
                         <form action="{{ route('products.stock-alert', $product) }}" method="POST" class="row g-2 align-items-end">
@@ -137,7 +167,6 @@
                             </div>
                         </form>
                     </div>
-                    <a href="{{ route('b2b.quote', ['product' => $product->id]) }}" class="btn btn-outline-primary btn-lg" data-analytics-event="request_quote">Request Bulk Quote</a>
                 @endif
             </div>
 

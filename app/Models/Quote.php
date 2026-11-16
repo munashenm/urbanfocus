@@ -24,6 +24,7 @@ class Quote extends Model
             'bulk' => 'Bulk Order',
             'source' => 'Product Sourcing',
             'procurement' => 'Corporate Procurement',
+            'eta' => 'ETA / stock enquiry',
             default => 'Quote Request',
         };
     }

@@ -204,7 +204,7 @@ class SearchService
         $dbCategories = Category::where('is_active', true)
             ->whereNull('parent_id')
             ->visibleInCatalog()
-            ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')->with('parent')])
+            ->with(['children' => fn ($q) => $q->where('is_active', true)->visibleInCatalog()->orderBy('sort_order')])
             ->get()
             ->keyBy('slug');
 

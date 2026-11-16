@@ -30,7 +30,7 @@
             </div>
             <div class="checkout-card mb-4">
                 <h2 class="h5 fw-bold">Returns &amp; warranty</h2>
-                <p>Defective or incorrect items may be returned within 7 days of delivery. Products must be unused and in original packaging. Software licenses and opened consumables may not be returnable — contact us for guidance.</p>
+                <p>Defective or incorrect items may be returned within 14 days of delivery. Products must be unused and in original packaging. Software licenses and opened consumables may not be returnable — contact us for guidance.</p>
                 <p class="mb-0">Manufacturer warranties apply where applicable. For assistance, email <a href="mailto:sales@urbanfocus.co.za">sales@urbanfocus.co.za</a> or call <a href="tel:0875501813">087 550 1813</a>.</p>
             </div>
             <a href="{{ route('shop.index') }}" class="btn btn-primary">Continue Shopping</a>

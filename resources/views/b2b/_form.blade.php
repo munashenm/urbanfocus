@@ -15,6 +15,15 @@
                     @if(!empty($productId))
                         <input type="hidden" name="product_id" value="{{ $productId }}">
                     @endif
+                    @if(!empty($product))
+                        <div class="alert alert-light border mb-0">
+                            <div class="small text-muted">Product</div>
+                            <strong>{{ $product->name }}</strong>
+                            @if($product->sku)
+                                <div class="small text-muted">SKU: {{ $product->sku }}</div>
+                            @endif
+                        </div>
+                    @endif
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Full Name *</label>
@@ -42,9 +51,13 @@
                             @error('rfq_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         @endif
+                        <div class="col-md-4">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" name="quantity" min="1" max="9999" class="form-control" value="{{ old('quantity', $quantity ?? 1) }}">
+                        </div>
                         <div class="col-12">
-                            <label class="form-label">{{ $messageLabel ?? 'Message' }} *</label>
-                            <textarea name="message" class="form-control @error('message') is-invalid @enderror" rows="5" required>{{ old('message') }}</textarea>
+                            <label class="form-label">{{ $messageLabel ?? 'Message' }}@if($requireMessage ?? true) *@endif</label>
+                            <textarea name="message" class="form-control @error('message') is-invalid @enderror" rows="5" @if($requireMessage ?? true) required @endif>{{ old('message', $prefill ?? '') }}</textarea>
                             @error('message')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Mail\NewQuoteNotification;
+use App\Models\Product;
 use App\Models\Quote;
+use App\Services\CatalogOosPolicy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -13,7 +15,22 @@ class B2bController extends Controller
 {
     public function quote(): View
     {
-        return view('b2b.quote');
+        $product = null;
+        $productId = request('product');
+        if ($productId) {
+            $product = Product::query()->whereKey($productId)->orWhere('sku', $productId)->first();
+        }
+
+        $quantity = max(1, (int) request('quantity', 1));
+        $prefill = $product ? CatalogOosPolicy::quotePrefillMessage($product, $quantity) : '';
+        $oos = $product && CatalogOosPolicy::isOutOfStock($product);
+
+        return view('b2b.quote', [
+            'product' => $product,
+            'quantity' => $quantity,
+            'prefill' => $prefill,
+            'isOosEnquiry' => $oos,
+        ]);
     }
 
     public function rfq(): View
@@ -34,7 +51,7 @@ class B2bController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'type' => 'required|in:quote,rfq,bulk,source,procurement',
+            'type' => 'required|in:quote,rfq,bulk,source,procurement,eta',
             'name' => 'required|string|max:100',
             'company' => 'nullable|string|max:150',
             'email' => 'required|email|max:255',
