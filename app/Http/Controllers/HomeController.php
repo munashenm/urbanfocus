@@ -62,12 +62,33 @@ class HomeController extends Controller
         $sectionBrands = $this->remember('home.section_brands', fn () => $this->sectionBrands());
 
         $blackFridayActive = Product::query()->where('is_active', true)->onSale()->exists();
+        $blackFridayProducts = $this->blackFridaySpecials();
 
         return view('home', compact(
             'featuredProducts', 'popularProducts', 'topSellers', 'networkingProducts',
             'laptopProducts', 'securityProducts', 'specialistProducts', 'categories', 'brands', 'banners',
-            'articles', 'featuredArticle', 'heroSlides', 'categoryIcons', 'sectionBrands', 'blackFridayActive'
+            'articles', 'featuredArticle', 'heroSlides', 'categoryIcons', 'sectionBrands', 'blackFridayActive',
+            'blackFridayProducts'
         ));
+    }
+
+    /**
+     * In-stock sale products for the homepage strip. Featured products are the
+     * homepage hero picks, then the largest discount. Queried live so the
+     * section disappears when the sale window closes.
+     */
+    protected function blackFridaySpecials(int $limit = 8): Collection
+    {
+        return Product::query()
+            ->with(['images', 'category'])
+            ->where('is_active', true)
+            ->onSale()
+            ->availableInStock()
+            ->withoutDuplicateListings()
+            ->orderByDesc('is_featured')
+            ->orderByRaw('((price - sale_price) / NULLIF(price, 0)) DESC')
+            ->limit($limit)
+            ->get();
     }
 
     /**
