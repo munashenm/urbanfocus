@@ -246,6 +246,30 @@ body {
     font-weight: 700;
     padding: 0.75rem 0;
 }
+.bf-home-row {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+}
+.bf-home-item {
+    flex: 0 0 46%;
+    max-width: 46%;
+    scroll-snap-align: start;
+}
+@media (min-width: 768px) {
+    .bf-home-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        overflow: visible;
+        scroll-snap-type: none;
+    }
+    .bf-home-item {
+        max-width: none;
+    }
+}
 
 .product-card-body {
     padding: 1rem;

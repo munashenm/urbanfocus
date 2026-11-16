@@ -58,6 +58,27 @@
     </div>
 </section>
 
+@if(($blackFridayProducts ?? collect())->isNotEmpty())
+<section class="bf-home-specials py-5" aria-labelledby="bf-home-heading">
+    <div class="container">
+        <div class="section-header d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+            <div>
+                <h2 id="bf-home-heading" class="section-title mb-0">Black Friday Specials</h2>
+                <p class="section-subtitle text-muted mb-0 mt-1">Deals end 30 November</p>
+            </div>
+            <a href="{{ route('black-friday') }}" class="btn btn-primary">View all specials</a>
+        </div>
+        <div class="bf-home-row">
+            @foreach($blackFridayProducts as $product)
+                <div class="bf-home-item">
+                    @include('partials.product-card', ['product' => $product])
+                </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
 @if($banners->count())
 <section class="promo-banners py-4">
     <div class="container">
