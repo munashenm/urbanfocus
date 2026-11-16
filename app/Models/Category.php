@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Services\CatalogFilterService;
-use App\Support\StorefrontCache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -124,7 +122,7 @@ class Category extends Model
 
     public function scopeVisibleInCatalog($query)
     {
-        $excluded = app(CatalogFilterService::class)->excludedCategoryIds();
+        $excluded = app(\App\Services\CatalogFilterService::class)->excludedCategoryIds();
 
         if ($excluded !== []) {
             $query->whereNotIn('id', $excluded);
@@ -136,56 +134,21 @@ class Category extends Model
     /** @return array<int> */
     public static function descendantIds(int $categoryId): array
     {
-        $children = [];
-        foreach (static::activeParentRows() as $row) {
-            if ($row['parent_id']) {
-                $children[$row['parent_id']][] = $row['id'];
-            }
-        }
-
+        $all = static::where('is_active', true)->get(['id', 'parent_id']);
         $ids = [$categoryId];
-        $stack = [$categoryId];
+        $changed = true;
 
-        while ($stack !== []) {
-            $id = array_pop($stack);
-            foreach ($children[$id] ?? [] as $childId) {
-                if (! in_array($childId, $ids, true)) {
-                    $ids[] = $childId;
-                    $stack[] = $childId;
+        while ($changed) {
+            $changed = false;
+            foreach ($all as $cat) {
+                if ($cat->parent_id && in_array($cat->parent_id, $ids, true) && ! in_array($cat->id, $ids, true)) {
+                    $ids[] = $cat->id;
+                    $changed = true;
                 }
             }
         }
 
         return $ids;
-    }
-
-    /**
-     * Active category parent map, loaded once per request.
-     *
-     * @return list<array{id: int, parent_id: int|null}>
-     */
-    public static function activeParentRows(): array
-    {
-        $key = StorefrontCache::PARENT_ROWS;
-        if (app()->bound($key)) {
-            $cached = app($key);
-            if (is_array($cached)) {
-                return $cached;
-            }
-        }
-
-        $rows = static::query()
-            ->where('is_active', true)
-            ->get(['id', 'parent_id'])
-            ->map(fn (self $category) => [
-                'id' => (int) $category->id,
-                'parent_id' => $category->parent_id ? (int) $category->parent_id : null,
-            ])
-            ->all();
-
-        app()->instance($key, $rows);
-
-        return $rows;
     }
 
     public function seoTitle(): string

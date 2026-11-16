@@ -1,7 +1,7 @@
 @php
     $addr = config('business.address');
     $lines = array_filter([
-        business_street_address(),
+        $addr['line1'] ?? '',
         $addr['line2'] ?? '',
         trim(($addr['city'] ?? '').(! empty($addr['province']) ? ', '.$addr['province'] : '')),
     ]);

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Article;
 use App\Models\Product;
+use App\Support\ShippingQuote;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use SimpleXMLElement;
@@ -83,7 +84,8 @@ class FeedService
         return $this->rememberFeed('google-merchant.xml', function () {
             return $this->buildMerchantCenterRss(
                 'Urban Focus Products',
-                'IT products from Urban Focus South Africa'
+                'IT products from Urban Focus South Africa',
+                true
             );
         });
     }
@@ -152,7 +154,7 @@ class FeedService
         }
     }
 
-    protected function buildMerchantCenterRss(string $channelTitle, string $channelDescription): string
+    protected function buildMerchantCenterRss(string $channelTitle, string $channelDescription, bool $applyGoogleExcludes = false): string
     {
         $writer = new XMLWriter;
         $writer->openMemory();
@@ -165,13 +167,19 @@ class FeedService
         $writer->writeElement('link', url('/'));
         $writer->writeElement('description', $channelDescription);
 
+        $excluded = $applyGoogleExcludes ? $this->googleFeedExcludedSkus() : [];
+
         Product::query()
             ->where('is_active', true)
             ->with(['images', 'category'])
             ->orderBy('id')
-            ->chunkById(200, function ($products) use ($writer) {
+            ->chunkById(200, function ($products) use ($writer, $excluded) {
                 foreach ($products as $product) {
                     if (! $product->isGoogleMerchantEligible()) {
+                        continue;
+                    }
+
+                    if ($excluded !== [] && isset($excluded[strtoupper(trim((string) $product->sku))])) {
                         continue;
                     }
 
@@ -204,6 +212,10 @@ class FeedService
         }
 
         $this->writeGoogleElement($writer, 'availability', $product->googleFeedAvailability());
+
+        if ($availabilityDate = $product->googleFeedAvailabilityDate()) {
+            $this->writeGoogleElement($writer, 'availability_date', $availabilityDate);
+        }
         $this->writeGoogleElement($writer, 'condition', config('google-merchant.condition', 'new'));
         $this->writeGoogleElement($writer, 'brand', $product->brand ?: 'Urban Focus');
 
@@ -254,9 +266,40 @@ class FeedService
             $this->writeGoogleElement($writer, 'shipping_weight', number_format((float) $product->weight, 2, '.', '').' kg');
         }
 
-        $this->writeGoogleShipping($writer);
+        $this->writeGoogleShipping($writer, $product);
         $this->writeGoogleReturnPolicy($writer);
         $writer->endElement();
+    }
+
+    /**
+     * SKUs left out of the Google Merchant feed only (still on the website, PriceCheck and other feeds):
+     * config('google-merchant.exclude_skus') plus, if present, one SKU per line in
+     * storage/app/google_feed_exclude.txt (lines starting with # are ignored).
+     *
+     * @return array<string, true>
+     */
+    public function googleFeedExcludedSkus(): array
+    {
+        $skus = [];
+        foreach ((array) config('google-merchant.exclude_skus', []) as $sku) {
+            $sku = strtoupper(trim((string) $sku));
+            if ($sku !== '') {
+                $skus[$sku] = true;
+            }
+        }
+
+        $path = storage_path('app/'.ltrim((string) config('google-merchant.exclude_file', 'google_feed_exclude.txt'), '/'));
+        if (is_file($path)) {
+            foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+                $line = trim($line);
+                if ($line === '' || str_starts_with($line, '#')) {
+                    continue;
+                }
+                $skus[strtoupper($line)] = true;
+            }
+        }
+
+        return $skus;
     }
 
     protected function writeGoogleElement(XMLWriter $writer, string $name, string $value): void
@@ -274,10 +317,12 @@ class FeedService
         return trim($value);
     }
 
-    protected function writeGoogleShipping(XMLWriter $writer): void
+    protected function writeGoogleShipping(XMLWriter $writer, Product $product): void
     {
         $shipping = config('google-merchant.shipping') ?? [];
-        $price = $shipping['price'] ?? config('shipping.flat_rate', 0);
+        // Per-item charge: R0 above the free threshold, paid flat rate at or under it.
+        // Does not read the old blanket GOOGLE_MERCHANT_SHIPPING_PRICE / shipping.price.
+        $price = ShippingQuote::charge((float) $product->effective_price);
 
         $writer->startElementNS('g', 'shipping', 'http://base.google.com/ns/1.0');
         $this->writeGoogleElement($writer, 'country', $shipping['country'] ?? 'ZA');
@@ -642,8 +687,12 @@ class FeedService
         $this->addGoogleChild($item, 'condition', config('google-merchant.condition', 'new'), $ns);
         $this->addGoogleChild($item, 'price', $this->formatPrice((float) $product->price), $ns);
 
-        if ($product->is_on_sale) {
+        if ($product->hasMerchantSale()) {
             $this->addGoogleChild($item, 'sale_price', $this->formatPrice((float) $product->sale_price), $ns);
+            $effective = $product->salePriceEffectiveDate();
+            if ($effective) {
+                $this->addGoogleChild($item, 'sale_price_effective_date', $effective, $ns);
+            }
         }
 
         $this->addGoogleChild($item, 'brand', $product->brand ?: 'Urban Focus', $ns);

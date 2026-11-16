@@ -5,7 +5,6 @@ namespace App\Observers;
 use App\Models\Category;
 use App\Services\IndexNowService;
 use App\Services\SeoService;
-use App\Support\StorefrontCache;
 
 class CategoryObserver
 {
@@ -21,7 +20,6 @@ class CategoryObserver
         }
 
         $this->safe(fn () => $this->seo->clearCache());
-        $this->safe(fn () => StorefrontCache::forgetNavigation());
 
         $this->safe(function () use ($category) {
             $this->indexNow->notify($category->url());
@@ -34,7 +32,6 @@ class CategoryObserver
     public function deleted(Category $category): void
     {
         $this->safe(fn () => $this->seo->clearCache());
-        $this->safe(fn () => StorefrontCache::forgetNavigation());
         $this->safe(fn () => $this->indexNow->notify($category->url()));
     }
 

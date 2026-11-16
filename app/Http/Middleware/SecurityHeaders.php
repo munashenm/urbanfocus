@@ -12,9 +12,6 @@ class SecurityHeaders
     {
         $response = $next($request);
 
-        header_remove('X-Powered-By');
-        $response->headers->remove('X-Powered-By');
-
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -50,7 +47,7 @@ class SecurityHeaders
             "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net",
             "img-src 'self' data: https:",
             "connect-src 'self' https:",
-            'frame-src https:',
+            "frame-src https:",
             "object-src 'none'",
             "base-uri 'self'",
             // Paystack hosts are required so a checkout form POST can follow the

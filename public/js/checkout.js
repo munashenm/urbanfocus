@@ -36,7 +36,7 @@
             return 0;
         }
 
-        return discountedSubtotal >= freeThreshold ? 0 : flatRate;
+        return discountedSubtotal > freeThreshold ? 0 : flatRate;
     }
 
     function calculateTaxAndTotal(discountedSubtotal, ship) {

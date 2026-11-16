@@ -3,6 +3,12 @@
 return [
     'hide_out_of_stock' => filter_var(env('CATALOG_HIDE_OUT_OF_STOCK', true), FILTER_VALIDATE_BOOL),
     'deprioritize_out_of_stock' => filter_var(env('CATALOG_DEPRIORITIZE_OUT_OF_STOCK', true), FILTER_VALIDATE_BOOL),
+    // When hide_out_of_stock is true, still list published OOS products that
+    // meet the quality bar (name, 200+ char description, picture, cost).
+    'list_eligible_out_of_stock' => filter_var(env('CATALOG_LIST_ELIGIBLE_OOS', true), FILTER_VALIDATE_BOOL),
+    'stale_oos_days' => (int) env('CATALOG_STALE_OOS_DAYS', 90),
+    // 1 (default), 2 or 3 — see CatalogOosPolicy::WORDING. Never name suppliers.
+    'oos_wording_option' => (int) env('CATALOG_OOS_WORDING_OPTION', 1),
 
     /*
     | Default /shop sort when the buyer has not chosen one.

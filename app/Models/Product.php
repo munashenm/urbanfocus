@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\CatalogDeduper;
 use App\Services\InternalPricingCopySanitizer;
+use App\Support\WarrantyCopy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -64,6 +65,9 @@ class Product extends Model
         'is_deal',
         'deal_label',
         'is_active',
+        'is_oos_listable',
+        'last_in_stock_at',
+        'oos_hidden_at',
         'views',
         'woocommerce_id',
     ];
@@ -83,8 +87,11 @@ class Product extends Model
             'is_featured' => 'boolean',
             'is_deal' => 'boolean',
             'is_active' => 'boolean',
+            'is_oos_listable' => 'boolean',
             'specifications' => 'array',
             'last_synced_at' => 'datetime',
+            'last_in_stock_at' => 'datetime',
+            'oos_hidden_at' => 'datetime',
         ];
     }
 
@@ -485,6 +492,26 @@ class Product extends Model
         });
     }
 
+    public function scopeAvailableOrListableOos($query)
+    {
+        return $query->where(function ($q) {
+            $q->where(function ($inner) {
+                $inner->where('manage_stock', true)->where('stock_quantity', '>', 0);
+            })->orWhere(function ($inner) {
+                $inner->where('manage_stock', false)->where('in_stock', true);
+            })->orWhere(function ($inner) {
+                $inner->where('is_oos_listable', true)
+                    ->where(function ($oos) {
+                        $oos->where(function ($i) {
+                            $i->where('manage_stock', true)->where('stock_quantity', '<=', 0);
+                        })->orWhere(function ($i) {
+                            $i->where('manage_stock', false)->where('in_stock', false);
+                        });
+                    });
+            });
+        });
+    }
+
     public function scopeForStorefront($query, ?bool $includeOutOfStock = null)
     {
         $query->where('is_active', true);
@@ -492,12 +519,21 @@ class Product extends Model
 
         $includeOutOfStock ??= ! config('catalog.hide_out_of_stock', true);
 
-        if (! $includeOutOfStock) {
+        if ($includeOutOfStock) {
+            if (config('catalog.deprioritize_out_of_stock', true)) {
+                $query->orderByRaw(
+                    'CASE WHEN (manage_stock = 1 AND stock_quantity > 0) OR (manage_stock = 0 AND in_stock = 1) THEN 0 ELSE 1 END'
+                );
+            }
+        } elseif (config('catalog.list_eligible_out_of_stock', true)) {
+            $query->availableOrListableOos();
+            if (config('catalog.deprioritize_out_of_stock', true)) {
+                $query->orderByRaw(
+                    'CASE WHEN (manage_stock = 1 AND stock_quantity > 0) OR (manage_stock = 0 AND in_stock = 1) THEN 0 ELSE 1 END'
+                );
+            }
+        } else {
             $query->availableInStock();
-        } elseif (config('catalog.deprioritize_out_of_stock', true)) {
-            $query->orderByRaw(
-                'CASE WHEN (manage_stock = 1 AND stock_quantity > 0) OR (manage_stock = 0 AND in_stock = 1) THEN 0 ELSE 1 END'
-            );
         }
 
         return $query;
@@ -519,12 +555,21 @@ class Product extends Model
         $query->withoutDuplicateListings();
 
         if (config('catalog.hide_out_of_stock', true)) {
-            if (! $request?->boolean('include_out_of_stock')) {
+            if ($request?->boolean('include_out_of_stock')) {
+                if (config('catalog.deprioritize_out_of_stock', true)) {
+                    $query->orderByRaw(
+                        'CASE WHEN (manage_stock = 1 AND stock_quantity > 0) OR (manage_stock = 0 AND in_stock = 1) THEN 0 ELSE 1 END'
+                    );
+                }
+            } elseif (config('catalog.list_eligible_out_of_stock', true)) {
+                $query->availableOrListableOos();
+                if (config('catalog.deprioritize_out_of_stock', true)) {
+                    $query->orderByRaw(
+                        'CASE WHEN (manage_stock = 1 AND stock_quantity > 0) OR (manage_stock = 0 AND in_stock = 1) THEN 0 ELSE 1 END'
+                    );
+                }
+            } else {
                 $query->availableInStock();
-            } elseif (config('catalog.deprioritize_out_of_stock', true)) {
-                $query->orderByRaw(
-                    'CASE WHEN (manage_stock = 1 AND stock_quantity > 0) OR (manage_stock = 0 AND in_stock = 1) THEN 0 ELSE 1 END'
-                );
             }
 
             return;
@@ -542,9 +587,51 @@ class Product extends Model
 
     public function googleFeedTitle(): string
     {
-        $parts = array_filter([$this->brand, $this->sku, $this->name]);
+        $max = (int) config('google-merchant.title_max_length', 150);
 
-        return Str::limit(implode(' ', $parts), config('google-merchant.title_max_length', 150), '');
+        if (config('google-merchant.title_format', 'clean') === 'legacy') {
+            $parts = array_filter([$this->brand, $this->sku, $this->name]);
+
+            return Str::limit(implode(' ', $parts), $max, '');
+        }
+
+        // Clean format: "Brand Name SKU" without repeating the brand or SKU when the name already has them.
+        // _BIN_ duplicate SKUs are never shown in the title.
+        $name = self::fixMojibake(trim((string) $this->name));
+        $brand = trim((string) $this->brand);
+        $sku = trim((string) $this->sku);
+        $norm = static fn (string $v): string => preg_replace('/[^a-z0-9]+/', '', mb_strtolower($v)) ?? '';
+
+        $parts = [];
+        if ($brand !== '' && preg_match('/^'.preg_quote(mb_strtolower($brand), '/').'(?![a-z0-9])/u', mb_strtolower($name)) !== 1) {
+            $parts[] = $brand;
+        }
+        if ($name !== '') {
+            $parts[] = $name;
+        }
+        if ($sku !== '' && ! str_contains(strtoupper($sku), '_BIN_') && ($norm($sku) === '' || ! str_contains($norm($name), $norm($sku)))) {
+            $parts[] = $sku;
+        }
+
+        return Str::limit(trim(implode(' ', $parts)), $max, '');
+    }
+
+    /**
+     * Repairs text that was saved as UTF-8 read as Windows-1252 (e.g. "Â°C" -> "°C", "â€“" -> "–").
+     * Leaves the text unchanged unless the repaired version is valid UTF-8 and the markers are gone.
+     */
+    public static function fixMojibake(string $text): string
+    {
+        if ($text === '' || preg_match('/Ã.|Â|â€/u', $text) !== 1) {
+            return $text;
+        }
+
+        $fixed = @mb_convert_encoding($text, 'Windows-1252', 'UTF-8');
+        if (is_string($fixed) && $fixed !== '' && mb_check_encoding($fixed, 'UTF-8') && preg_match('/Ã.|Â|â€/u', $fixed) !== 1) {
+            return $fixed;
+        }
+
+        return strtr($text, ['Â°' => '°', 'Â±' => '±', 'Â®' => '®', 'Â©' => '©', 'Âµ' => 'µ', 'Â ' => ' ', 'â€“' => '–', 'â€”' => '—', 'â€™' => '’', 'â€˜' => '‘', 'â€œ' => '“', 'â€¢' => '•', 'â„¢' => '™']);
     }
 
     public function googleFeedMpn(): ?string
@@ -574,7 +661,15 @@ class Product extends Model
             return (string) $meta['label'];
         }
 
-        return $this->isAvailable() ? 'In Stock' : 'Out of Stock';
+        if ($this->isAvailable()) {
+            return 'In Stock';
+        }
+
+        if (class_exists(\App\Services\CatalogOosPolicy::class)) {
+            return \App\Services\CatalogOosPolicy::customerLabel();
+        }
+
+        return 'Out of Stock';
     }
 
     public function isQuoteOnly(): bool
@@ -646,19 +741,78 @@ class Product extends Model
         return $this->in_stock ? 'in_stock' : 'out_of_stock';
     }
 
+    /**
+     * Google requires availability_date for backorder and preorder items.
+     * Date = today + lead time: GOOGLE_MERCHANT_BACKORDER_DAYS if set, otherwise the larger of the
+     * availability key's days (config/specialist.php) and the product's delivery_days, else the default.
+     * Format: ISO 8601 (YYYY-MM-DDThh:mm+hhmm). Returns null for any other availability.
+     */
+    public function googleFeedAvailabilityDate(): ?string
+    {
+        if (! in_array($this->googleFeedAvailability(), ['backorder', 'preorder'], true)) {
+            return null;
+        }
+
+        $override = config('google-merchant.backorder_lead_days');
+        if ($override !== null && $override !== '' && (int) $override > 0) {
+            $days = (int) $override;
+        } else {
+            $meta = $this->availabilityMeta() ?? [];
+            $days = max((int) ($meta['days'] ?? 0), (int) ($this->delivery_days ?? 0));
+            if ($days <= 0) {
+                $days = (int) config('google-merchant.backorder_default_days', 21);
+            }
+        }
+
+        $days = max(1, min($days, 360));
+
+        return now()->startOfDay()->addDays($days)->format('Y-m-d\TH:iO');
+    }
+
     public function googleFeedDescription(): string
     {
         $sanitizer = app(InternalPricingCopySanitizer::class);
-        $text = $sanitizer->sanitizePlain((string) $this->short_description);
-        if ($text === '') {
-            $text = $sanitizer->sanitizePlain(strip_tags((string) $this->description));
-        }
-        if ($text === '') {
-            $text = (string) $this->name;
-        }
-        $text = preg_replace('/\s+/', ' ', trim($text)) ?? '';
+        $short = $this->plainGoogleFeedText((string) $this->short_description, $sanitizer);
+        $long = $this->plainGoogleFeedText((string) $this->description, $sanitizer);
 
-        return Str::limit($text, config('google-merchant.description_max_length', 5000), '');
+        // Prefer the long HTML description (stripped to plain text) when it is longer
+        // than short_description. Otherwise keep the existing fallback: short, then
+        // long, then the product name. Capped at Google's 5,000-character limit.
+        if ($long !== '' && mb_strlen($long) > mb_strlen($short)) {
+            $text = $long;
+        } elseif ($short !== '') {
+            $text = $short;
+        } elseif ($long !== '') {
+            $text = $long;
+        } else {
+            $text = $this->plainGoogleFeedText((string) $this->name, $sanitizer);
+            if ($text === '') {
+                $text = trim((string) $this->name);
+            }
+        }
+
+        return Str::limit($text, (int) config('google-merchant.description_max_length', 5000), '');
+    }
+
+    /**
+     * Strip HTML to plain text, decode entities, run the pricing-copy sanitizer,
+     * repair mojibake and collapse whitespace. Used only for the Google feed.
+     */
+    private function plainGoogleFeedText(string $raw, InternalPricingCopySanitizer $sanitizer): string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return '';
+        }
+
+        $text = preg_replace('/<\s*(br|\/p|\/div|\/li|\/ul|\/ol|\/h[1-6]|\/tr|\/dt|\/dd)\b[^>]*>/i', ' ', $raw) ?? $raw;
+        $text = strip_tags($text);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = $sanitizer->sanitizePlain($text);
+        $text = self::fixMojibake($text);
+        $text = preg_replace('/\s+/u', ' ', trim($text)) ?? '';
+
+        return $text;
     }
 
     public function googleProductCategory(): ?string
@@ -845,9 +999,7 @@ class Product extends Model
 
     public function bobShopWarrantyType(): string
     {
-        $months = (int) ($this->warranty_months ?? config('shipping.default_warranty_months', 12));
-
-        return $months > 0 ? 'MANUFACTURER' : 'NOT_OFFERED';
+        return WarrantyCopy::bobShopType($this->warranty_months);
     }
 
     public function bobShopWarrantyRemarks(): string
@@ -1048,11 +1200,7 @@ class Product extends Model
 
     public function warrantyLabel(): string
     {
-        $months = $this->warranty_months ?? config('shipping.default_warranty_months', 12);
-
-        return $months >= 12
-            ? (int) ($months / 12).' year manufacturer warranty'
-            : $months.' month manufacturer warranty';
+        return WarrantyCopy::label($this->warranty_months);
     }
 
     public function specificationsList(): array
@@ -1091,7 +1239,7 @@ class Product extends Model
             unset($specs["FAQ {$i} question"], $specs["FAQ {$i} answer"]);
         }
 
-        return $specs;
+        return WarrantyCopy::sanitizeSpecs($specs, $this->warranty_months);
     }
 
     /**
@@ -1208,6 +1356,7 @@ class Product extends Model
                 'value' => $text,
             ];
         }
+        $properties = WarrantyCopy::withSchemaProperty($properties, $this->warranty_months);
         if ($properties !== []) {
             $schema['additionalProperty'] = $properties;
         }

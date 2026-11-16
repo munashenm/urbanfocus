@@ -27,7 +27,7 @@
 <p>Software products and licence keys are generally not returnable once activated. Support is provided according to the publisher's terms.</p>
 
 <h2 class="h5 fw-bold mt-4">Dead on arrival (DOA)</h2>
-<p>Products that are faulty on arrival must be reported within 7 days of delivery. We will arrange replacement or refund subject to stock availability and verification.</p>
+<p>Products that are faulty on arrival must be reported within 14 days of delivery. We will arrange replacement or refund subject to stock availability and verification.</p>
 
 <h2 class="h5 fw-bold mt-4">Contact</h2>
 <p><a href="mailto:{{ config('business.email') }}">{{ config('business.email') }}</a> · <a href="tel:{{ config('business.phone_tel') }}">{{ config('business.phone') }}</a></p>

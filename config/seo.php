@@ -161,7 +161,7 @@ return [
         [
             'group' => 'Returns & Warranty',
             'question' => 'What is your returns policy?',
-            'answer' => 'Defective, damaged or incorrectly supplied items may be returned within 7 calendar days of delivery, subject to our returns policy. Products must be unused and in original packaging where applicable. See our Returns page for full details.',
+            'answer' => 'Defective, damaged or incorrectly supplied items may be returned within 14 calendar days of delivery, subject to our returns policy. Products must be unused and in original packaging where applicable. See our Returns page for full details.',
         ],
         [
             'group' => 'Returns & Warranty',

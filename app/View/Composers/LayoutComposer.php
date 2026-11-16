@@ -6,7 +6,6 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\SearchService;
-use App\Support\StorefrontCache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
@@ -26,27 +25,19 @@ class LayoutComposer
     public function compose(View $view): void
     {
         try {
-            $data = StorefrontCache::remember(StorefrontCache::NAV, function () {
-                $brands = collect();
-                try {
-                    $brands = Brand::where('is_active', true)->orderBy('sort_order')->take(12)->get();
-                } catch (\Throwable) {
-                    $brands = collect();
-                }
+            $view->with('navCategories', Category::where('is_active', true)
+                ->whereNull('parent_id')
+                ->visibleInCatalog()
+                ->orderBy('sort_order')
+                ->take(12)
+                ->get());
 
-                return [
-                    'navCategories' => Category::where('is_active', true)
-                        ->whereNull('parent_id')
-                        ->visibleInCatalog()
-                        ->orderBy('sort_order')
-                        ->take(12)
-                        ->get(),
-                    'megaMenuCategories' => $this->search->megaMenuCategories(),
-                    'navBrands' => $brands,
-                ];
-            });
+            $view->with('megaMenuCategories', $this->search->megaMenuCategories());
 
-            $view->with($data);
+            $view->with('navBrands', Schema::hasTable('brands')
+                ? Brand::where('is_active', true)->orderBy('sort_order')->take(12)->get()
+                : collect());
+
             $view->with('blackFridayActive', $this->blackFridayActive());
         } catch (\Throwable) {
             $view->with('navCategories', collect());

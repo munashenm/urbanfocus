@@ -16,7 +16,7 @@
         <div class="col-lg-8 legal-content">
             <div class="checkout-card mb-4">
                 <h2 class="h5 fw-bold">Return eligibility</h2>
-                <p>Defective, damaged or incorrectly supplied items may be returned within <strong>7 calendar days</strong> of delivery, subject to the conditions below.</p>
+                <p>Defective, damaged or incorrectly supplied items may be returned within <strong>14 calendar days</strong> of delivery, subject to the conditions below.</p>
                 <ul>
                     <li>Product must be unused and in original packaging with all accessories</li>
                     <li>Proof of purchase (order number or invoice) is required</li>
