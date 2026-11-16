@@ -1,0 +1,10 @@
+---
+# In-place cPanel Git deploy: this checkout IS the live app, so do not copy files.
+# route:cache is omitted because routes/web.php uses Closures (Laravel cannot cache them).
+# config:cache is omitted because AppServiceProvider and PublicAssetSync call env('PUBLIC_PATH')
+# outside config files; a cached config would make that env() call return null.
+# No migrate and no composer.
+deployment:
+  tasks:
+    - /opt/cpanel/ea-php83/root/usr/bin/php artisan optimize:clear
+    - /opt/cpanel/ea-php83/root/usr/bin/php artisan view:cache

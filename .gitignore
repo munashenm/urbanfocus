@@ -18,3 +18,26 @@ yarn-error.log
 /auth.json
 /storage/app/backups
 /storage/app/feeds
+
+# Server / cPanel working-tree junk (must not block git pull)
+*.bak_*
+/BEFORE_AFTER.txt
+/RISKY_ITEMS.txt
+/*.zip
+/deploy/*_old.php
+
+# Generated catalogue reports (untracked after git rm --cached)
+/reports/*.csv
+
+# storage/app root exports (CSV/JSON/JSONL). Subdirs keep their own gitignores.
+/storage/app/*.csv
+/storage/app/*.jsonl
+/storage/app/*.json
+/storage/app/*.xml
+/storage/app/*.xlsx
+/storage/logs/*
+!/storage/logs/.gitignore
+
+# Product catalogue photos, if ever stored here. Do not ignore public/images/
+# generally: logos, blog and brand art are tracked. Never delete images.
+/public/images/products/
