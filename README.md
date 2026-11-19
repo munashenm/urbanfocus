@@ -39,7 +39,7 @@ php artisan storage:link
 php artisan serve
 ```
 
-**Default admin:** `admin@urbanfocus.co.za` / `ChangeMe123!` — change immediately after first login.
+The seeder creates `admin@urbanfocus.co.za` only if that user does not exist, with a random password that is not stored in this repository. Set the password yourself before signing in. Running the seeder again does not change an existing password.
 
 ## cPanel Deployment Guide
 

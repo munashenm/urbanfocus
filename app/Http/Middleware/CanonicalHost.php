@@ -45,7 +45,14 @@ class CanonicalHost
             return $next($request);
         }
 
-        if ($requestHost === $canonicalHost) {
+        // Any non-canonical host (apex, mail., and so on) goes to APP_URL.
+        // The public www/apex hosts also upgrade plain HTTP to HTTPS. A request
+        // that Cloudflare already marked as HTTPS is left alone, so the origin
+        // does not redirect in a loop.
+        $needsCanonicalHost = $requestHost !== $canonicalHost;
+        $needsHttps = ! $request->secure() && $this->isPublicHost($requestHost);
+
+        if (! $needsHttps && ! $needsCanonicalHost) {
             return $next($request);
         }
 
@@ -54,7 +61,12 @@ class CanonicalHost
             $uri = '/'.$uri;
         }
 
-        return redirect()->away($canonical.$uri, 301);
+        return redirect()->away('https://'.$canonicalHost.$uri, 301);
+    }
+
+    protected function isPublicHost(string $host): bool
+    {
+        return in_array($host, ['urbanfocus.co.za', 'www.urbanfocus.co.za'], true);
     }
 
     protected function shouldBypass(Request $request): bool

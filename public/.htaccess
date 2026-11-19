@@ -5,9 +5,26 @@
 
     RewriteEngine On
 
-    # Force HTTPS
-    RewriteCond %{HTTPS} !=on
-    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    # Cloudflare often connects to the origin over HTTP even when the visitor
+    # used HTTPS. %{HTTPS} is then "off", and a blind redirect loops until
+    # Cloudflare answers with a blank 500. Treat the edge scheme as HTTPS when
+    # any of these say so.
+    RewriteCond %{HTTPS} =on [OR]
+    RewriteCond %{HTTP:X-Forwarded-Proto} https [OR]
+    RewriteCond %{HTTP:CF-Visitor} https
+    RewriteRule ^ - [E=UF_HTTPS:1]
+
+    # Public site only: HTTP -> HTTPS, and apex -> www, in one hop.
+    # Other hostnames (cPanel previews, mail.) are left for Laravel.
+    # Paystack's webhook must not be turned into a redirect.
+    RewriteCond %{REQUEST_URI} !^/checkout/paystack
+    RewriteCond %{HTTP_HOST} ^(www\.)?urbanfocus\.co\.za$ [NC]
+    RewriteCond %{ENV:UF_HTTPS} !=1 [OR]
+    RewriteCond %{HTTP_HOST} ^urbanfocus\.co\.za$ [NC]
+    RewriteRule ^ https://www.urbanfocus.co.za%{REQUEST_URI} [L,R=301]
+
+    # Never serve README.md, composer.json, composer.lock, package.json, artisan, .env, or .git.
+    RewriteRule (?i)(^|/)(\.env|\.git|\.gitignore|\.gitattributes|\.htpasswd|composer\.(json|lock)|package(-lock)?\.json|artisan|readme\.md|.*\.md)$ - [F,L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
@@ -25,6 +42,13 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+# Deny direct requests for dotfiles, markdown, and dependency manifests.
+<IfModule mod_authz_core.c>
+    <FilesMatch "(?i)^(\..+|README\.md|composer\.(json|lock)|package(-lock)?\.json|artisan|.*\.md)$">
+        Require all denied
+    </FilesMatch>
 </IfModule>
 
 # Security headers

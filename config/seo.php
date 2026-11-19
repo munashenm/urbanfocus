@@ -29,7 +29,7 @@ return [
         'ga4_id' => env('GA4_MEASUREMENT_ID'),
         'gtm_id' => env('GTM_CONTAINER_ID'),
         'google_ads_id' => env('GOOGLE_ADS_ID'),
-        'meta_pixel_id' => env('META_PIXEL_ID'),
+        'meta_pixel_id' => env('FACEBOOK_PIXEL_ID') ?: env('META_PIXEL_ID'),
         'tiktok_pixel_id' => env('TIKTOK_PIXEL_ID'),
     ],
 
