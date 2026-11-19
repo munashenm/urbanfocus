@@ -127,13 +127,22 @@ class CatalogueFacts
             return $matches;
         }
 
+        $distinctive = array_values(array_filter(
+            $terms,
+            fn (string $term) => strlen($term) >= 4 || in_array($term, ['hp', 'lg'], true)
+        ));
+        if ($distinctive === []) {
+            return collect();
+        }
+
         return (clone $base)
-            ->where(function ($query) use ($terms) {
-                foreach ($terms as $term) {
+            ->where(function ($query) use ($distinctive) {
+                foreach ($distinctive as $term) {
                     $like = '%'.$term.'%';
                     $query->orWhere('name', 'like', $like)
                         ->orWhere('sku', 'like', $like)
-                        ->orWhere('brand', 'like', $like);
+                        ->orWhere('brand', 'like', $like)
+                        ->orWhere('model_number', 'like', $like);
                 }
             })
             ->limit($limit)
@@ -153,7 +162,9 @@ class CatalogueFacts
             'please', 'what', 'which', 'how', 'much', 'does', 'do', 'is', 'are', 'of', 'to', 'in', 'on',
             'our', 'your', 'me', 'my', 'you', 'urban', 'focus', 'product', 'products', 'between', 'than',
             'better', 'difference', 'cost', 'costs', 'have', 'has', 'about', 'tell', 'show', 'can', 'i',
-            'we', 'it', 'this', 'that', 'current', 'warranty',
+            'we', 'it', 'this', 'that', 'current', 'warranty', 'offer', 'offers', 'offering', 'service',
+            'services', 'information', 'info', 'provide', 'provides', 'provided', 'company', 'business',
+            'help', 'please', 'assist', 'assistance', 'catalogue', 'catalog', 'sell', 'sells', 'selling',
         ]);
 
         $terms = [];

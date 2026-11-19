@@ -7,8 +7,11 @@ This document describes the customer chat in this repository. It is not a statem
 - A chat panel on the storefront. One row of actions: search, quote, track an order, and talk to the team. Returns and warranty stay as text links.
 - Availability based on the published hours (Monday to Friday, 08:00–17:00, Africa/Johannesburg). The header shows a short line (`Open until 17:00` or `Back Monday 08:00`). Outside those hours a message asks for a name and email, then confirms when the team will be back. Phone and email stay on the panel.
 - Staff read and reply under Admin → Customer chat. Support, sales and admin roles that can view orders, customers or RFQs can open the inbox. A reply needs permission to edit orders, customers or RFQs.
-- Product answers use the current catalogue (name, SKU, price, availability, warranty and published specifications). The OpenAI call, when it is turned on, runs on the server. The browser never receives the API key.
-- If OpenAI is disabled, the key is missing, the request fails, or the model adds a price, discount, stock claim or date that is not in the catalogue, the customer sees the catalogue text instead.
+- Product answers use the current catalogue (name, SKU, price, availability, warranty and published specifications). Product cards are attached only when the question is about a product. Service, policy and greeting questions do not get cards.
+- Questions about the company, services, quotes, delivery, payment and policies are answered from `config/chat_knowledge.php`, plus the live phone, email, hours and address in `config/business.php`, shipping rates in `config/shipping.php`, and the published FAQ in `config/seo.php`. The model may rephrase those lines. If it adds a price, a date, a stock claim or anything outside that text, the customer sees the knowledge text instead.
+- Anything outside Urban Focus (general knowledge, coding, other companies, news, or an instruction to ignore the rules) is refused and pointed back to Urban Focus or Talk to the team. The refusal is decided in the app, before a model call.
+- The OpenAI call, when it is turned on, runs on the server. The browser never receives the API key.
+- If OpenAI is disabled, the key is missing, the request fails, or the model adds a price, discount, stock claim or date that is not in the catalogue, a product question shows the catalogue text instead.
 - Returns, warranty and support forms store a request for staff with status `submitted`. The chat does not approve a return, refund or warranty claim.
 - Order tracking in the chat needs the order number and the checkout email. A wrong pair gets the same message as an unknown order. The lookup result is not sent to OpenAI.
 
@@ -37,6 +40,8 @@ OPENAI_MODEL=gpt-4o-mini
 With `CHAT_OPENAI_ENABLED=false`, or an empty key, product answers stay on the catalogue text. The rest of the chat still works.
 
 Published hours shown to customers come from `BUSINESS_HOURS`. The open/closed flag uses Monday–Friday 08:00–17:00 in `config/chat.php`. If the published hours change, update both.
+
+The assistant's business facts live in `config/chat_knowledge.php`. Edit that file to change what the bot may say about the company, services, quotes, delivery wording, payment, brands and the other topics listed there. Phone, email, hours and the street address stay in `config/business.php`. Courier fee and the free-shipping threshold stay in `config/shipping.php`. FAQ answers stay in `config/seo.php`. After the change is on `main`, cPanel needs **Update from Remote** and then **Deploy HEAD Commit** so the cached config is rebuilt. Do not edit these files on the server.
 
 ## Deploy on the server
 

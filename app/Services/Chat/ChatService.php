@@ -19,6 +19,8 @@ class ChatService
         protected ChatPolicyGuide $policies,
         protected CatalogueFacts $catalogue,
         protected ChatAssistant $assistant,
+        protected ChatScope $scope,
+        protected BusinessKnowledge $knowledge,
     ) {}
 
     public function current(): ?ChatConversation
@@ -93,14 +95,39 @@ class ChatService
         }
 
         if ($this->isWarrantyQuestion($body)) {
-            $facts = $this->catalogue->forQuestion($body);
+            $facts = $this->scope->isProduct($body) ? $this->catalogue->forQuestion($body) : [];
             $conversation->update(['topic' => 'warranty']);
             $text = $this->policies->warrantySummary();
             if ($facts !== []) {
                 $text .= "\n\n".$this->assistant->template($facts);
             }
             $text .= "\nUse the Warranty form in this chat to send a claim to the team. A claim is not approved from this chat.";
-            $this->add($conversation, 'assistant', 'message', $text, $this->assistant->cards($facts));
+            $this->add($conversation, 'assistant', 'message', $text, $facts === [] ? [] : $this->assistant->cards($facts));
+            $this->notifyIfOffline($conversation, $visitor);
+
+            return $conversation->fresh();
+        }
+
+        $classification = $this->scope->classify($body);
+
+        if ($classification === ChatScope::OFF_TOPIC) {
+            $this->add($conversation, 'assistant', 'message', $this->scope->refusal());
+            $this->notifyIfOffline($conversation, $visitor);
+
+            return $conversation->fresh();
+        }
+
+        if ($classification === ChatScope::GREETING) {
+            $this->add($conversation, 'assistant', 'message', $this->scope->greeting());
+            $this->notifyIfOffline($conversation, $visitor);
+
+            return $conversation->fresh();
+        }
+
+        if ($classification === ChatScope::BUSINESS) {
+            $answer = $this->assistant->answerBusiness($this->redact($body), $this->knowledge->forQuestion($body));
+            $conversation->update(['topic' => 'general']);
+            $this->add($conversation, 'assistant', 'message', $answer['body'], []);
             $this->notifyIfOffline($conversation, $visitor);
 
             return $conversation->fresh();
