@@ -4,8 +4,8 @@ This document describes the customer chat in this repository. It is not a statem
 
 ## What is implemented
 
-- A chat panel on the storefront, with quick links to product search, quotes, order tracking and contact details.
-- Availability based on the published hours (Monday to Friday, 08:00–17:00, Africa/Johannesburg). Outside those hours the panel says the team is offline and still offers the phone number and email address.
+- A chat panel on the storefront. One row of actions: search, quote, track an order, and talk to the team. Returns and warranty stay as text links.
+- Availability based on the published hours (Monday to Friday, 08:00–17:00, Africa/Johannesburg). The header shows a short line (`Open until 17:00` or `Back Monday 08:00`). Outside those hours a message asks for a name and email, then confirms when the team will be back. Phone and email stay on the panel.
 - Staff read and reply under Admin → Customer chat. Support, sales and admin roles that can view orders, customers or RFQs can open the inbox. A reply needs permission to edit orders, customers or RFQs.
 - Product answers use the current catalogue (name, SKU, price, availability, warranty and published specifications). The OpenAI call, when it is turned on, runs on the server. The browser never receives the API key.
 - If OpenAI is disabled, the key is missing, the request fails, or the model adds a price, discount, stock claim or date that is not in the catalogue, the customer sees the catalogue text instead.
@@ -20,7 +20,7 @@ This environment has no server `.env` and no `OPENAI_API_KEY`. The OpenAI path w
 
 ## What is not done
 
-The feature is not deployed. Nothing in this work was verified on https://www.urbanfocus.co.za. GitHub does not update the server by itself. cPanel has to deploy the checkout, which is when `.cpanel.yml` migrates and copies the public assets.
+The first version of the panel is on https://www.urbanfocus.co.za, and sending a message there returned HTTP 500. That save failure is fixed in this tree by storing the conversation token as `CHAR(36)` instead of MariaDB's native UUID type, and by a follow-up migration that converts an existing UUID column. It is not fixed on the website until cPanel deploys this checkout and `php artisan migrate --force` runs. Do not treat chat as working on the live site until a message sent on urbanfocus.co.za appears in Admin → Customer chat.
 
 ## Turn the assistant on
 

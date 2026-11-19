@@ -5,23 +5,35 @@
     var panel = document.getElementById('uf-chat-panel');
     var launcher = root.querySelector('.uf-chat-launcher');
     var closer = root.querySelector('.uf-chat-close');
+    var minimiser = root.querySelector('.uf-chat-min');
     var log = root.querySelector('[data-chat-log]');
     var compose = root.querySelector('[data-chat-compose]');
+    var field = compose.querySelector('textarea');
     var availability = root.querySelector('[data-chat-availability]');
     var token = document.querySelector('meta[name="csrf-token"]');
     var poll = null;
+    var unsent = [];
+    var troubleText = '';
+    var latest = null;
 
     function csrf() {
         return token ? token.getAttribute('content') : '';
     }
 
+    function troubleLine() {
+        return root.getAttribute('data-trouble') || 'Sorry, chat is having trouble. Email sales@urbanfocus.co.za or call 087 550 1813.';
+    }
+
     function setOpen(open) {
         panel.hidden = !open;
+        if (open) {
+            panel.classList.remove('is-min');
+            if (minimiser) minimiser.setAttribute('aria-label', 'Minimise chat');
+        }
         launcher.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) {
             refresh();
-            poll = window.setInterval(refresh, 8000);
-            var field = compose.querySelector('textarea');
+            if (!poll) poll = window.setInterval(refresh, 8000);
             if (field) field.focus();
         } else if (poll) {
             window.clearInterval(poll);
@@ -29,8 +41,19 @@
         }
     }
 
-    launcher.addEventListener('click', function () { setOpen(panel.hidden); });
+    function setMinimised(min) {
+        panel.classList.toggle('is-min', min);
+        if (minimiser) minimiser.setAttribute('aria-label', min ? 'Restore chat' : 'Minimise chat');
+        if (!min && field) field.focus();
+    }
+
+    launcher.addEventListener('click', function () { setOpen(panel.hidden || panel.classList.contains('is-min')); });
     closer.addEventListener('click', function () { setOpen(false); });
+    if (minimiser) {
+        minimiser.addEventListener('click', function () {
+            setMinimised(!panel.classList.contains('is-min'));
+        });
+    }
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && !panel.hidden) setOpen(false);
     });
@@ -41,17 +64,36 @@
 
     var handover = root.querySelector('[data-chat-handover]');
     handover.addEventListener('click', function () {
+        if (!contactReady()) return;
         showView('messages');
-        send(root.getAttribute('data-handover-url'), {});
+        var data = contactPayload();
+        data.page_url = window.location.pathname;
+        send(root.getAttribute('data-handover-url'), data);
+    });
+
+    field.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            if (typeof compose.requestSubmit === 'function') {
+                compose.requestSubmit();
+            } else {
+                compose.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            }
+        }
     });
 
     compose.addEventListener('submit', function (event) {
         event.preventDefault();
-        var field = compose.querySelector('textarea');
         var body = field.value.trim();
-        if (!body) return;
+        if (!body || !contactReady()) return;
         field.value = '';
-        send(root.getAttribute('data-message-url'), { body: body, page_url: window.location.pathname });
+        unsent.push(body);
+        troubleText = '';
+        paint();
+        var data = contactPayload();
+        data.body = body;
+        data.page_url = window.location.pathname;
+        send(root.getAttribute('data-message-url'), data);
     });
 
     root.querySelectorAll('[data-chat-form]').forEach(function (form) {
@@ -83,6 +125,43 @@
         });
     }
 
+    function contactBox() {
+        return root.querySelector('[data-chat-contact]');
+    }
+
+    function setContactVisible(show) {
+        var box = contactBox();
+        if (!box) return;
+        box.hidden = !show;
+        box.querySelectorAll('input').forEach(function (input) {
+            input.required = !!show;
+        });
+    }
+
+    function contactPayload() {
+        var box = contactBox();
+        var data = {};
+        if (!box || box.hidden) return data;
+        var name = box.querySelector('[name="name"]');
+        var email = box.querySelector('[name="email"]');
+        if (name && name.value.trim()) data.name = name.value.trim();
+        if (email && email.value.trim()) data.email = email.value.trim();
+        return data;
+    }
+
+    function contactReady() {
+        var box = contactBox();
+        if (!box || box.hidden) return true;
+        var name = box.querySelector('[name="name"]');
+        var email = box.querySelector('[name="email"]');
+        if (name && name.value.trim() && email && email.value.trim()) return true;
+        troubleText = 'Please leave your name and email so we can reply.';
+        paint();
+        if (name && !name.value.trim()) name.focus();
+        else if (email) email.focus();
+        return false;
+    }
+
     function formData(form) {
         var data = {};
         new FormData(form).forEach(function (value, key) { data[key] = value; });
@@ -102,7 +181,13 @@
             body: JSON.stringify(data)
         }).then(function (response) {
             if (response.status === 419) {
-                note('Your session expired. Refresh the page and try again.');
+                troubleText = 'Your session expired. Refresh the page and try again.';
+                paint();
+                return false;
+            }
+            if (response.status >= 500) {
+                troubleText = troubleLine();
+                paint();
                 return false;
             }
             return response.json().then(function (payload) {
@@ -111,14 +196,25 @@
                     if (payload && payload.errors) {
                         message = Object.values(payload.errors)[0][0] || message;
                     }
-                    note(message);
+                    if (message === 'Server Error') message = troubleLine();
+                    troubleText = message;
+                    paint();
                     return false;
                 }
+                if (data && data.body) {
+                    unsent = unsent.filter(function (item) { return item !== data.body; });
+                }
+                troubleText = '';
                 render(payload);
                 return true;
+            }).catch(function () {
+                troubleText = troubleLine();
+                paint();
+                return false;
             });
         }).catch(function () {
-            note('We could not send that. You can email or call us using the details above.');
+            troubleText = troubleLine();
+            paint();
             return false;
         });
     }
@@ -136,28 +232,56 @@
     }
 
     function render(payload) {
-        if (payload.availability && availability) {
-            availability.textContent = payload.availability.label + '. ' + payload.availability.message;
+        latest = payload;
+        if (payload.availability) {
+            if (availability) availability.textContent = payload.availability.message || '';
             root.setAttribute('data-open', payload.availability.open ? '1' : '0');
         }
+        if (typeof payload.needs_contact === 'boolean') {
+            setContactVisible(payload.needs_contact);
+        }
+        paint();
+    }
+
+    function paint() {
+        var messages = (latest && latest.messages) || [];
         log.replaceChildren();
-        (payload.messages || []).forEach(function (message) {
+        log.appendChild(greetingNode());
+        messages.forEach(function (message) {
             log.appendChild(messageNode(message));
         });
+        unsent.forEach(function (body) {
+            log.appendChild(messageNode({ sender: 'visitor', body: body }));
+        });
+        if (troubleText) {
+            var item = document.createElement('p');
+            item.className = 'uf-chat-note';
+            item.textContent = troubleText;
+            log.appendChild(item);
+        }
         log.scrollTop = log.scrollHeight;
+    }
+
+    function greetingNode() {
+        var item = document.createElement('p');
+        item.className = 'uf-chat-greeting';
+        item.textContent = 'Hi! Looking for a product or a quote? Ask away.';
+        return item;
     }
 
     function messageNode(message) {
         var item = document.createElement('article');
         item.className = 'uf-chat-message uf-chat-message-' + (message.sender || 'assistant');
+        var bubble = document.createElement('div');
+        bubble.className = 'uf-chat-bubble';
         var who = document.createElement('p');
         who.className = 'uf-chat-who';
         who.textContent = message.sender === 'visitor' ? 'You' : (message.sender === 'staff' ? 'Urban Focus team' : 'Urban Focus');
         var body = document.createElement('p');
         body.className = 'uf-chat-text';
         body.textContent = message.body || '';
-        item.appendChild(who);
-        item.appendChild(body);
+        bubble.appendChild(who);
+        bubble.appendChild(body);
         (message.cards || []).forEach(function (card) {
             if (!card || !card.url) return;
             var safeUrl = card.url.charAt(0) === '/' || /^https?:\/\//.test(card.url);
@@ -165,21 +289,15 @@
             var link = document.createElement('a');
             link.href = card.url;
             link.textContent = (card.name || 'Product') + ' — ' + (card.price_label || '') + ' — ' + (card.availability || '');
-            item.appendChild(link);
+            bubble.appendChild(link);
         });
         if (message.review_status) {
             var status = document.createElement('p');
             status.className = 'uf-chat-status';
             status.textContent = 'Request status: ' + String(message.review_status).replace('_', ' ') + '. This is not an approval.';
-            item.appendChild(status);
+            bubble.appendChild(status);
         }
+        item.appendChild(bubble);
         return item;
-    }
-
-    function note(text) {
-        var item = document.createElement('p');
-        item.className = 'uf-chat-note';
-        item.textContent = text;
-        log.appendChild(item);
     }
 })();

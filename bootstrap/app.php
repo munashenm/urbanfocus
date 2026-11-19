@@ -12,6 +12,8 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -49,5 +51,24 @@ return Application::configure(basePath: dirname(__DIR__))
                 return redirect()->route('cart.index')
                     ->with('error', 'Your session expired before we could place the order. Your cart is still saved — please go to checkout and try again.');
             }
+        });
+
+        $exceptions->render(function (Throwable $e, Request $request) {
+            if (config('app.debug') || ! $request->is('chat', 'chat/*')) {
+                return null;
+            }
+            if ($e instanceof ValidationException || $e instanceof TokenMismatchException) {
+                return null;
+            }
+            if ($e instanceof HttpExceptionInterface && $e->getStatusCode() < 500) {
+                return null;
+            }
+
+            $email = (string) config('business.email', 'sales@urbanfocus.co.za');
+            $phone = (string) config('business.phone', '087 550 1813');
+
+            return response()->json([
+                'message' => 'Sorry, chat is having trouble. Email '.$email.' or call '.$phone.'.',
+            ], 500);
         });
     })->create();

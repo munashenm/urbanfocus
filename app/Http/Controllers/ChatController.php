@@ -30,12 +30,16 @@ class ChatController extends Controller
             'body' => 'required|string|max:2000',
             'intent' => 'nullable|in:handover,product',
             'page_url' => 'nullable|string|max:500',
+            'name' => 'nullable|string|max:120',
+            'email' => 'nullable|email|max:255',
         ]);
 
         $conversation = $this->chat->handleMessage(
             $validated['body'],
             $validated['intent'] ?? null,
             $validated['page_url'] ?? null,
+            $validated['name'] ?? null,
+            $validated['email'] ?? null,
         );
 
         return $this->payload($conversation);
@@ -45,9 +49,15 @@ class ChatController extends Controller
     {
         $validated = $request->validate([
             'page_url' => 'nullable|string|max:500',
+            'name' => 'nullable|string|max:120',
+            'email' => 'nullable|email|max:255',
         ]);
 
-        return $this->payload($this->chat->handover($validated['page_url'] ?? null));
+        return $this->payload($this->chat->handover(
+            $validated['page_url'] ?? null,
+            $validated['name'] ?? null,
+            $validated['email'] ?? null,
+        ));
     }
 
     public function track(Request $request): JsonResponse
@@ -84,8 +94,15 @@ class ChatController extends Controller
             ? $conversation->messages()->orderBy('id')->get()->map->toPublicArray()->values()
             : collect();
 
+        $open = $this->availability->isOpen();
+
         return response()->json([
             'availability' => $this->availability->snapshot(),
+            'needs_contact' => ! $open && (
+                ! $conversation
+                || blank($conversation->visitor_name)
+                || blank($conversation->visitor_email)
+            ),
             'quick_help' => $this->quickHelp(),
             'policies' => [
                 'returns' => $this->policies->returnsSummary(),
