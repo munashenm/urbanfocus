@@ -1,4 +1,16 @@
-@php $user = auth()->user(); @endphp
+@php
+    $user = auth()->user();
+    $chatUnread = 0;
+    if ($user && \Illuminate\Support\Facades\Schema::hasTable('chat_conversations') && $user->hasAnyPermission(['orders.view', 'customers.view', 'rfqs.view'])) {
+        $chatUnread = \App\Models\ChatConversation::query()
+            ->where('status', '!=', 'closed')
+            ->whereNotNull('last_message_at')
+            ->where(function ($query) {
+                $query->whereNull('staff_read_at')->orWhereColumn('last_message_at', '>', 'staff_read_at');
+            })
+            ->count();
+    }
+@endphp
 <nav class="admin-sidebar-nav">
     <a class="admin-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
         <span class="admin-nav-icon">📊</span> Dashboard
@@ -21,6 +33,11 @@
         @permission('orders.view')
             <a class="admin-nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}"><span class="admin-nav-icon">🛒</span> Orders</a>
         @endpermission
+        @anypermission('orders.view', 'customers.view', 'rfqs.view')
+            @if(Route::has('admin.chat.index'))
+                <a class="admin-nav-link {{ request()->routeIs('admin.chat.*') ? 'active' : '' }}" href="{{ route('admin.chat.index') }}"><span class="admin-nav-icon">💬</span> Customer chat{{ $chatUnread > 0 ? ' ('.$chatUnread.')' : '' }}</a>
+            @endif
+        @endanypermission
         @permission('customers.view')
             <a class="admin-nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" href="{{ route('admin.customers.index') }}"><span class="admin-nav-icon">👥</span> Customers</a>
         @endpermission
