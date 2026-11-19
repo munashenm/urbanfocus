@@ -686,6 +686,151 @@ class CustomerChatTest extends TestCase
         $this->assertStringContainsString('R 8,499.00', $answer['body']);
     }
 
+    public function test_model_json_is_unwrapped_and_never_shown_raw(): void
+    {
+        Http::fake([
+            'https://api.openai.com/*' => Http::sequence()
+                ->push(['choices' => [[
+                    'message' => ['content' => '{"response":"Urban Focus supplies networking equipment, business laptops, VAT invoices and procurement support."}'],
+                ]]])
+                ->push(['choices' => [[
+                    'message' => ['content' => "```json\n{\"answer\":\"Urban Focus supplies networking equipment, business laptops, VAT invoices and procurement support.\"}\n```"],
+                ]]])
+                ->push(['choices' => [[
+                    'message' => ['content' => '{ "response": "broken'],
+                ]]]),
+        ]);
+        config([
+            'chat.openai.enabled' => true,
+            'chat.openai.api_key' => 'sk-test-not-a-real-key',
+            'chat.openai.base_url' => 'https://api.openai.com/v1',
+        ]);
+
+        $object = $this->postJson(route('chat.messages'), [
+            'body' => 'what services do you offer?',
+        ])->assertOk();
+        $answer = $this->assistantMessage($object);
+        $this->assertSame([], $answer['cards']);
+        $this->assertStringContainsString('Urban Focus supplies networking equipment, business laptops, VAT invoices and procurement support.', $answer['body']);
+        $this->assertStringNotContainsString('{"response"', $answer['body']);
+        $this->assertStringNotContainsString('{', $answer['body']);
+
+        $this->flushSession();
+
+        $fenced = $this->postJson(route('chat.messages'), [
+            'body' => 'what services do you offer?',
+        ])->assertOk();
+        $fencedAnswer = $this->assistantMessage($fenced);
+        $this->assertStringContainsString('Urban Focus supplies networking equipment, business laptops, VAT invoices and procurement support.', $fencedAnswer['body']);
+        $this->assertStringNotContainsString('```', $fencedAnswer['body']);
+        $this->assertStringNotContainsString('{"answer"', $fencedAnswer['body']);
+
+        $this->flushSession();
+
+        $broken = $this->postJson(route('chat.messages'), [
+            'body' => 'what services do you offer?',
+        ])->assertOk();
+        $brokenAnswer = $this->assistantMessage($broken);
+        $this->assertStringContainsString('R Murulana Holdings', $brokenAnswer['body']);
+        $this->assertStringNotContainsString('{', $brokenAnswer['body']);
+        $this->assertStringNotContainsString('broken', $brokenAnswer['body']);
+    }
+
+    public function test_hp_laptops_with_16gb_ram_are_notebooks_not_usb_drives(): void
+    {
+        Http::fake();
+        $this->seedHpLaptopCatalogue();
+
+        $response = $this->postJson(route('chat.messages'), [
+            'body' => 'Do you have HP laptops with 16GB RAM?',
+        ])->assertOk();
+
+        $answer = $this->assistantMessage($response);
+        $skus = array_column($answer['cards'], 'sku');
+        $this->assertEqualsCanonicalizing(['HP-ELITE-16', 'HP-PROBOOK-16'], $skus);
+        $this->assertStringContainsString('HP Elitebook 6 G1i', $answer['body']);
+        $this->assertStringContainsString('ProBook 4 G1a', $answer['body']);
+        $this->assertStringNotContainsString('Cruzer', $answer['body']);
+        $this->assertStringNotContainsString('SDXC', $answer['body']);
+        $this->assertStringNotContainsString('MicroSDHC', $answer['body']);
+        $this->assertStringNotContainsString('backpack', strtolower($answer['body']));
+        $this->assertStringNotContainsString("couldn't find", strtolower($answer['body']));
+    }
+
+    public function test_reply_that_denies_products_is_replaced_when_cards_exist(): void
+    {
+        Http::fake([
+            'https://api.openai.com/*' => Http::response([
+                'choices' => [[
+                    'message' => ['content' => '{"response":"I couldn\'t find any HP laptops with 16GB RAM in our catalogue."}'],
+                ]],
+            ], 200),
+        ]);
+        config([
+            'chat.openai.enabled' => true,
+            'chat.openai.api_key' => 'sk-test-not-a-real-key',
+            'chat.openai.base_url' => 'https://api.openai.com/v1',
+        ]);
+        $this->seedHpLaptopCatalogue();
+
+        $response = $this->postJson(route('chat.messages'), [
+            'body' => 'Do you have HP laptops with 16GB RAM?',
+        ])->assertOk();
+
+        $answer = $this->assistantMessage($response);
+        $this->assertEqualsCanonicalizing(['HP-ELITE-16', 'HP-PROBOOK-16'], array_column($answer['cards'], 'sku'));
+        $this->assertStringContainsString('HP Elitebook 6 G1i', $answer['body']);
+        $this->assertStringContainsString('ProBook 4 G1a', $answer['body']);
+        $this->assertStringNotContainsString("couldn't find", strtolower($answer['body']));
+        $this->assertStringNotContainsString('{', $answer['body']);
+    }
+
+    private function seedHpLaptopCatalogue(): void
+    {
+        Product::factory()->create([
+            'name' => 'SanDisk Cruzer Blade 16GB USB flash drive',
+            'sku' => 'SD-CRUZER-16',
+            'brand' => 'SanDisk',
+            'price' => 89,
+            'short_description' => 'USB flash drive.',
+        ]);
+        Product::factory()->create([
+            'name' => 'SanDisk Ultra 16GB SDXC card',
+            'sku' => 'SD-SDXC-16',
+            'brand' => 'SanDisk',
+            'price' => 129,
+            'short_description' => 'SDXC memory card.',
+        ]);
+        Product::factory()->create([
+            'name' => 'SanDisk Ultra 16GB MicroSDHC',
+            'sku' => 'SD-MICRO-16',
+            'brand' => 'SanDisk',
+            'price' => 99,
+            'short_description' => 'MicroSDHC card.',
+        ]);
+        Product::factory()->create([
+            'name' => 'HP Renew Travel backpack',
+            'sku' => 'HP-BACKPACK',
+            'brand' => 'HP',
+            'price' => 499,
+            'short_description' => 'Laptop backpack.',
+        ]);
+        Product::factory()->create([
+            'name' => 'HP Elitebook 6 G1i 14" AI Core U7-255U 16GB 512GB Win 11 Pro Notebook',
+            'sku' => 'HP-ELITE-16',
+            'brand' => 'HP',
+            'price' => 18999,
+            'short_description' => 'Business notebook.',
+        ]);
+        Product::factory()->create([
+            'name' => 'ProBook 4 G1a 14" AI Ryzen 5-230 16GB 512GB Win 11 Pro Notebook',
+            'sku' => 'HP-PROBOOK-16',
+            'brand' => 'HP',
+            'price' => 14999,
+            'short_description' => 'Business notebook.',
+        ]);
+    }
+
     private function seedCatalogueDecoys(): void
     {
         Product::factory()->create([
