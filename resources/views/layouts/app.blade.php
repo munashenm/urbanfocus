@@ -19,11 +19,11 @@
     @else
         <meta name="keywords" content="{{ config('seo.defaults.keywords') }}">
     @endif
-    @if(config('seo.verification.google'))
-        <meta name="google-site-verification" content="{{ config('seo.verification.google') }}">
+    @if($googleVerification = seo_public_token(config('seo.verification.google')))
+        <meta name="google-site-verification" content="{{ $googleVerification }}">
     @endif
-    @if(config('seo.verification.bing'))
-        <meta name="msvalidate.01" content="{{ config('seo.verification.bing') }}">
+    @if($bingVerification = seo_public_token(config('seo.verification.bing')))
+        <meta name="msvalidate.01" content="{{ $bingVerification }}">
     @endif
     <link rel="canonical" href="{{ seo_canonical_url(trim($__env->yieldContent('canonical')) ?: null) }}">
     <meta property="og:site_name" content="{{ config('app.name') }}">

@@ -4,25 +4,30 @@ namespace Database\Seeders;
 
 use App\Models\Article;
 use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::firstOrCreate(
-            ['email' => 'admin@urbanfocus.co.za'],
-            [
+        // Create the admin only when missing. Never overwrite an existing
+        // password: deploy and role seeding must not reset a live login.
+        if (! User::where('email', 'admin@urbanfocus.co.za')->exists()) {
+            User::create([
                 'name' => 'Super Admin',
-                'password' => Hash::make('ChangeMe123!'),
+                'email' => 'admin@urbanfocus.co.za',
+                'password' => Hash::make(Str::random(40)),
                 'is_admin' => true,
                 'is_active' => true,
-            ]
-        );
+            ]);
+        }
 
         $this->call(RolePermissionSeeder::class);
         $this->call(CategorySeeder::class);
@@ -38,13 +43,13 @@ class DatabaseSeeder extends Seeder
             ];
 
             foreach ($sampleProducts as $index => $item) {
-                $category = \App\Models\Category::where('slug', $item['category'])->first();
+                $category = Category::where('slug', $item['category'])->first();
 
                 Product::create([
                     'category_id' => $category?->id,
                     'sku' => $item['sku'],
                     'name' => $item['name'],
-                    'slug' => \Illuminate\Support\Str::slug($item['name']),
+                    'slug' => Str::slug($item['name']),
                     'short_description' => 'Professional IT product supplied by Urban Focus.',
                     'description' => '<p>Reliable '.$item['name'].' for business and home office use. Backed by Urban Focus support.</p>',
                     'price' => $item['price'],
@@ -58,7 +63,7 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        Setting::set('api_key', 'uf_'.\Illuminate\Support\Str::random(32), 'api');
+        Setting::set('api_key', 'uf_'.Str::random(32), 'api');
 
         foreach (config('partners.default_brands', []) as $i => $brand) {
             Brand::firstOrCreate(
@@ -72,7 +77,7 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        if (\Illuminate\Support\Facades\Schema::hasTable('articles') && Article::count() === 0) {
+        if (Schema::hasTable('articles') && Article::count() === 0) {
             Article::create([
                 'title' => 'How to Choose a Business Laptop in 2026',
                 'slug' => 'choose-business-laptop-2026',

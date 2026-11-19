@@ -71,6 +71,7 @@ class BusinessKnowledge
                 'Do not describe IT Guy Solutions or Cyber Developers beyond the names in the company lines.',
                 'Do not approve a return, refund or warranty claim.',
                 'Do not invent a price, a discount, a stock level, a bank account or a delivery date.',
+                'Do not state a company registration number or a VAT number.',
                 'If the detail is not in these lines, say so and tell the customer to use Talk to the team.',
             ],
         ];

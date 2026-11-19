@@ -42,12 +42,12 @@ class SecurityHeaders
     {
         $directives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://analytics.tiktok.com https://cdn.jsdelivr.net",
+            "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://analytics.tiktok.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com https://cloudflareinsights.com",
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
             "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net",
             "img-src 'self' data: https:",
             "connect-src 'self' https:",
-            "frame-src https:",
+            'frame-src https:',
             "object-src 'none'",
             "base-uri 'self'",
             // Paystack hosts are required so a checkout form POST can follow the

@@ -28,6 +28,16 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Cloudflare terminates TLS. Trust its forwarded scheme so Laravel
+        // sees HTTPS, sets HSTS, and does not bounce the visitor in a loop.
+        $middleware->trustProxies(
+            at: '*',
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+                | Request::HEADER_X_FORWARDED_AWS_ELB,
+        );
         $middleware->web(prepend: [
             CanonicalHost::class,
         ]);

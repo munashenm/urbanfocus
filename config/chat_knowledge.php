@@ -13,8 +13,8 @@
 | from config/shipping.php. Published FAQ answers are read from config/seo.php.
 | Returns and warranty wording is read from the published policy text.
 |
-| Company registration, B-BBEE level and sister-brand names below were supplied
-| by the owner. They are not on the About page. Change them here if they change.
+| B-BBEE level and sister-brand names below were supplied by the owner.
+| Do not add a company registration number or a VAT number to this file.
 */
 
 return [
@@ -28,11 +28,11 @@ return [
             'triggers' => [
                 'who are you', 'who is urban', 'about you', 'about urban', 'your company',
                 'the company', 'what is urban', 'holdings', 'bbbee', 'b-bbee', 'bbee',
-                'sister brand', 'it guy', 'cyber developers', 'registration', 'pty',
+                'sister brand', 'it guy', 'cyber developers', 'pty',
             ],
             'lines' => [
                 'Urban Focus (www.urbanfocus.co.za) is a South African IT hardware, electronics and technology supplier. The About page says it operates from Centurion, Gauteng, and delivers nationwide across South Africa.',
-                'Urban Focus is a brand of R Murulana Holdings (Pty) Ltd, registration 2024/736593/07. The About page shows the trading name Urban Focus.',
+                'Urban Focus is a brand of R Murulana Holdings (Pty) Ltd. The About page shows the trading name Urban Focus.',
                 'B-BBEE Level 1 (EME).',
                 'Sister brands: IT Guy Solutions and Cyber Developers. No other published detail about those brands is available in this chat.',
                 'The About page says typical customers are corporates, systems integrators, ISPs, schools, resellers and public-sector buyers. The focus is business and enterprise infrastructure, not general consumer electronics.',

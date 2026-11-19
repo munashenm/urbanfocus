@@ -250,11 +250,9 @@ Repeat for **`urbanfocus/bootstrap/cache`** → **775**
 | https://www.urbanfocus.co.za/login | Login |
 
 **Admin login:**
-- Email: `admin@urbanfocus.co.za`
-- Password: `ChangeMe123!`
+- Use the admin account that already exists on the server.
+- Do not look for a default password in this repository. There isn't one.
 - Admin: https://www.urbanfocus.co.za/admin
-
-**Change the admin password right away.**
 
 ---
 

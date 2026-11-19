@@ -48,6 +48,8 @@ function cpanel_sync_public_assets(string $laravelRoot, string $publicHtml): int
         $copied++;
     }
 
+    cpanel_remove_public_strays($publicHtml);
+
     $staleRobots = $publicHtml.'/robots.txt';
     if (is_file($staleRobots) && @unlink($staleRobots)) {
         echo "Removed leftover static robots.txt so Laravel can serve crawler rules.\n";
@@ -63,6 +65,35 @@ function cpanel_sync_public_assets(string $laravelRoot, string $publicHtml): int
     echo $copied > 0 ? "✓ Synced {$copied} asset file(s).\n\n" : "No asset files copied.\n\n";
 
     return $copied;
+}
+
+/**
+ * Delete repo files that must not be downloadable from the web root.
+ * index.php is the live front controller and is never removed.
+ */
+function cpanel_remove_public_strays(string $publicHtml): void
+{
+    $names = [
+        'README.md',
+        'readme.md',
+        'README.txt',
+        'composer.json',
+        'composer.lock',
+        'package.json',
+        'package-lock.json',
+        'artisan',
+        '.env',
+        '.env.example',
+        '.gitignore',
+        '.gitattributes',
+    ];
+
+    foreach ($names as $name) {
+        $path = $publicHtml.'/'.$name;
+        if (is_file($path) && @unlink($path)) {
+            echo "Removed stray web file: {$name}\n";
+        }
+    }
 }
 
 /**
