@@ -20,48 +20,44 @@ This environment has no server `.env` and no `OPENAI_API_KEY`. The OpenAI path w
 
 ## What is not done
 
-The feature is not deployed. Nothing in this work was verified on https://www.urbanfocus.co.za. cPanel's git deploy hook does not run migrations.
+The feature is not deployed. Nothing in this work was verified on https://www.urbanfocus.co.za. GitHub does not update the server by itself. cPanel has to deploy the checkout, which is when `.cpanel.yml` migrates and copies the public assets.
 
 ## Turn the assistant on
 
-Customer chat reads the same variables as blog automation. Do not add a second secret and do not commit a real key.
+Customer chat uses the existing `OPENAI_API_KEY`, `OPENAI_BASE_URL` and `OPENAI_MODEL`. Do not add a second secret and do not commit a real key. `OPENAI_ENABLED` controls blog captions only. The product assistant stays off until `CHAT_OPENAI_ENABLED=true`, and only after that key is confirmed on the server.
 
 ```
-OPENAI_ENABLED=true
+CHAT_ENABLED=true
+CHAT_OPENAI_ENABLED=false
 OPENAI_API_KEY=the existing server key
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4o-mini
-CHAT_ENABLED=true
 ```
 
-`OPENAI_ENABLED=false`, or an empty key, keeps product answers on the catalogue text. The rest of the chat still works.
+With `CHAT_OPENAI_ENABLED=false`, or an empty key, product answers stay on the catalogue text. The rest of the chat still works.
 
 Published hours shown to customers come from `BUSINESS_HOURS`. The open/closed flag uses Monday–Friday 08:00–17:00 in `config/chat.php`. If the published hours change, update both.
 
 ## Deploy on the server
 
-After the code is on the server, and only then:
+`.cpanel.yml` clears caches, runs `php artisan migrate --force`, rebuilds the config and view caches, and copies `public/css`, `public/js` (including `chat.js`) and `public/images` into `public_html`. That runs when cPanel deploys the git checkout. It does not run from GitHub alone.
 
-1. Confirm `OPENAI_API_KEY` is already in the server `.env` if the model should be used. Leave `OPENAI_ENABLED=false` until you want that.
-2. Run the migration so `chat_conversations` and `chat_messages` exist:
+Leave `CHAT_OPENAI_ENABLED` unset or `false` until the existing server key is confirmed. Do not print that key.
+
+If the hook does not run, after the code is on the server:
 
 ```
 cd /home/urbanzdc/urbanfocus
+/opt/cpanel/ea-php83/root/usr/bin/php artisan optimize:clear
 /opt/cpanel/ea-php83/root/usr/bin/php artisan migrate --force
+/opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache
+/opt/cpanel/ea-php83/root/usr/bin/php artisan view:cache
+/opt/cpanel/ea-php83/root/usr/bin/php -r 'require "deploy/cpanel-asset-sync.php"; cpanel_sync_public_assets("/home/urbanzdc/urbanfocus", "/home/urbanzdc/public_html");'
 ```
 
 The checked-in `deploy/migrate.php` helper can run pending migrations if there is no shell. Set its secret, upload it, visit it once, then delete it. Do not leave it in `public_html`.
 
-3. Rebuild the config cache so the chat settings are loaded:
-
-```
-/opt/cpanel/ea-php83/root/usr/bin/php artisan optimize:clear
-/opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache
-/opt/cpanel/ea-php83/root/usr/bin/php artisan view:cache
-```
-
-4. Confirm `public_html/js/chat.js` and `public_html/css/app.css` updated. A normal page view copies `js/chat.js` when `PUBLIC_PATH` points at `public_html`. If the file is missing, open any storefront page once or run the existing public asset sync.
-5. On https://www.urbanfocus.co.za, open the chat, send a message, reply from Admin → Customer chat, and try tracking with a real order number plus the wrong email. Only after those checks should the feature be treated as live.
+Confirm `public_html/js/chat.js` and `public_html/css/app.css` updated. On https://www.urbanfocus.co.za, open the chat, send a message, reply from Admin → Customer chat, and try tracking with a real order number plus the wrong email. Only after those checks should the feature be treated as live.
 
 No new queue worker is required. Staff email uses the existing mailer during the request. If mail fails, the message still stays in the inbox.
 

@@ -69,6 +69,12 @@ class CustomerChatTest extends TestCase
         $this->assertStringContainsString('@media (max-width: 640px)', $css);
         $this->assertStringContainsString('.uf-chat-panel', $css);
         $this->assertStringNotContainsString('SEO', file_get_contents(resource_path('views/partials/chat-widget.blade.php')));
+
+        $chatConfig = file_get_contents(config_path('chat.php'));
+        $this->assertIsString($chatConfig);
+        $this->assertStringContainsString("env('CHAT_OPENAI_ENABLED', false)", $chatConfig);
+        $this->assertStringContainsString("env('OPENAI_API_KEY')", $chatConfig);
+        $this->assertStringNotContainsString("env('OPENAI_ENABLED'", $chatConfig);
     }
 
     public function test_offline_hours_keep_a_direct_contact_option_and_alert_staff(): void
