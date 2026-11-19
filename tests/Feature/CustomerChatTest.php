@@ -13,8 +13,10 @@ use App\Services\Chat\ChatService;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class CustomerChatTest extends TestCase
@@ -525,5 +527,53 @@ class CustomerChatTest extends TestCase
         $redacted = app(ChatService::class)->redact('secret@example.com 99 Hidden Road');
         $this->assertStringNotContainsString('secret@example.com', $redacted);
         $this->assertStringNotContainsString('99 Hidden Road', $redacted);
+    }
+
+    public function test_chat_migrations_keep_existing_rows_when_run_again(): void
+    {
+        $conversation = ChatConversation::query()->create([
+            'public_token' => '11111111-1111-4111-8111-111111111111',
+            'status' => 'open',
+            'topic' => 'general',
+        ]);
+        ChatMessage::query()->create([
+            'conversation_id' => $conversation->id,
+            'sender' => 'visitor',
+            'kind' => 'message',
+            'body' => 'keep me',
+        ]);
+
+        $this->forgetChatMigrations();
+
+        $this->artisan('migrate', ['--force' => true])->assertExitCode(0);
+
+        $this->assertSame('11111111-1111-4111-8111-111111111111', ChatConversation::query()->value('public_token'));
+        $this->assertSame('keep me', ChatMessage::query()->value('body'));
+    }
+
+    public function test_chat_migration_creates_a_missing_messages_table_without_dropping_conversations(): void
+    {
+        $conversation = ChatConversation::query()->create([
+            'public_token' => '22222222-2222-4222-8222-222222222222',
+            'status' => 'open',
+            'topic' => 'general',
+        ]);
+        Schema::drop('chat_messages');
+        $this->forgetChatMigrations();
+
+        $this->artisan('migrate', ['--force' => true])->assertExitCode(0);
+
+        $this->assertTrue(Schema::hasTable('chat_messages'));
+        $this->assertTrue(Schema::hasTable('chat_conversations'));
+        $this->assertSame($conversation->id, ChatConversation::query()->value('id'));
+        $this->assertSame(0, ChatMessage::query()->count());
+    }
+
+    private function forgetChatMigrations(): void
+    {
+        DB::table('migrations')->whereIn('migration', [
+            '2026_11_19_120000_create_chat_tables',
+            '2026_11_19_190000_make_chat_token_storable',
+        ])->delete();
     }
 }

@@ -40,24 +40,22 @@ Published hours shown to customers come from `BUSINESS_HOURS`. The open/closed f
 
 ## Deploy on the server
 
-`.cpanel.yml` clears caches, runs `php artisan migrate --force`, rebuilds the config and view caches, and copies `public/css`, `public/js` (including `chat.js`) and `public/images` into `public_html`. That runs when cPanel deploys the git checkout. It does not run from GitHub alone.
+GitHub does not update the live site by itself. The app code is the git checkout at `~/urbanfocus`. `public_html/index.php` only boots that checkout.
+
+In cPanel → Git Version Control → the `urbanfocus` repository:
+
+1. Click **Update from Remote** and wait until it finishes. That updates the checkout. It does not run migrations.
+2. Click **Deploy HEAD Commit** and wait until it finishes. That runs `.cpanel.yml`.
+
+`.cpanel.yml` calls `deploy/cpanel-deploy.sh`. The script picks a PHP 8.2+ binary (the domain handler in `public_html/.htaccess` when it names `ea-php` or `alt-php`, otherwise `/usr/local/bin/php`, `/usr/bin/php`, or EasyApache / CloudLinux PHP 8.2–8.4). It then clears cached config, runs `php artisan migrate --force` (pending migrations only, including the chat tables), rebuilds the config, route, and view caches, and copies `public/css`, `public/js` (including `chat.js`), `public/images`, favicons, and `.htaccess` into `public_html`.
+
+It does not copy `public_html/index.php`, run Composer, or drop data. A cPanel PHP handler already present in `public_html/.htaccess` is kept when that file is updated.
+
+The deployment log in cPanel should include `Migrations finished.` and `Deploy finished successfully.` The same text is appended to `urbanfocus/storage/logs/cpanel-deploy.log` (File Manager). If the log says migrations finished but a later step failed, the tables are already there; Deploy HEAD Commit again after the cause is fixed.
 
 Leave `CHAT_OPENAI_ENABLED` unset or `false` until the existing server key is confirmed. Do not print that key.
 
-If the hook does not run, after the code is on the server:
-
-```
-cd /home/urbanzdc/urbanfocus
-/opt/cpanel/ea-php83/root/usr/bin/php artisan optimize:clear
-/opt/cpanel/ea-php83/root/usr/bin/php artisan migrate --force
-/opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache
-/opt/cpanel/ea-php83/root/usr/bin/php artisan view:cache
-/opt/cpanel/ea-php83/root/usr/bin/php -r 'require "deploy/cpanel-asset-sync.php"; cpanel_sync_public_assets("/home/urbanzdc/urbanfocus", "/home/urbanzdc/public_html");'
-```
-
-The checked-in `deploy/migrate.php` helper can run pending migrations if there is no shell. Set its secret, upload it, visit it once, then delete it. Do not leave it in `public_html`.
-
-Confirm `public_html/js/chat.js` and `public_html/css/app.css` updated. On https://www.urbanfocus.co.za, open the chat, send a message, reply from Admin → Customer chat, and try tracking with a real order number plus the wrong email. Only after those checks should the feature be treated as live.
+Confirm `public_html/js/chat.js` and `public_html/css/app.css` updated. On https://www.urbanfocus.co.za, open the chat, send a message, and open Admin → Customer chat. The message should appear without an HTTP 500. Only after that should the feature be treated as live.
 
 No new queue worker is required. Staff email uses the existing mailer during the request. If mail fails, the message still stays in the inbox.
 
