@@ -16,14 +16,18 @@ class ChatConversation extends Model
         'visitor_email',
         'visitor_phone',
         'page_url',
+        'quote_draft',
         'staff_read_at',
+        'handover_alerted_at',
         'last_message_at',
     ];
 
     protected function casts(): array
     {
         return [
+            'quote_draft' => 'array',
             'staff_read_at' => 'datetime',
+            'handover_alerted_at' => 'datetime',
             'last_message_at' => 'datetime',
         ];
     }
@@ -46,6 +50,7 @@ class ChatConversation extends Model
             'support' => 'Support',
             'tracking' => 'Order tracking',
             'product' => 'Product',
+            'quote' => 'Quote',
             default => 'General',
         };
     }

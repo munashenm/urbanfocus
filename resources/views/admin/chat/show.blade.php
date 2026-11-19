@@ -11,12 +11,21 @@
             @if($conversation->visitor_phone) · {{ $conversation->visitor_phone }} @endif
         </p>
     </div>
-    @if($conversation->status !== 'closed')
-        <form method="post" action="{{ route('admin.chat.close', $conversation) }}">
-            @csrf
-            <button class="btn btn-outline-secondary btn-sm" type="submit">Close conversation</button>
-        </form>
-    @endif
+    <div class="d-flex gap-2">
+        @if($conversation->status !== 'closed')
+            <form method="post" action="{{ route('admin.chat.close', $conversation) }}">
+                @csrf
+                <button class="btn btn-outline-secondary btn-sm" type="submit">Close conversation</button>
+            </form>
+        @endif
+        @anypermission('orders.edit', 'customers.edit', 'rfqs.edit')
+            <form method="post" action="{{ route('admin.chat.destroy', $conversation) }}" onsubmit="return confirm('Delete this conversation and its messages? This cannot be undone.')">
+                @csrf
+                @method('DELETE')
+                <button class="btn btn-outline-danger btn-sm" type="submit">Delete conversation</button>
+            </form>
+        @endanypermission
+    </div>
 </div>
 
 <div class="card mb-3"><div class="card-body admin-chat-thread">

@@ -58,6 +58,15 @@ class ChatController extends Controller
         return back()->with('success', 'Conversation closed. A new customer message will open it again.');
     }
 
+    public function destroy(ChatConversation $conversation): RedirectResponse
+    {
+        $conversation->delete();
+
+        return redirect()
+            ->route('admin.chat.index')
+            ->with('success', 'Conversation deleted.');
+    }
+
     public function updateRequest(Request $request, ChatConversation $conversation, ChatMessage $message): RedirectResponse
     {
         abort_unless($message->conversation_id === $conversation->id, 404);
