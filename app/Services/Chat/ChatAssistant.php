@@ -21,7 +21,7 @@ class ChatAssistant
         }
 
         $generated = $this->complete($question, $this->businessSystemPrompt(), 'BUSINESS_JSON', $sections);
-        if ($generated !== null && $this->acceptsBusinessReply($generated, $sections)) {
+        if ($generated !== null && $this->acceptsBusinessReply($generated, $sections) && ! $this->looksLikeRawJson($generated)) {
             return ['body' => $generated, 'cards' => [], 'source' => 'openai'];
         }
 
@@ -59,7 +59,7 @@ class ChatAssistant
         }, $facts);
 
         $generated = $this->complete($question, $this->systemPrompt(), 'CATALOGUE_JSON', $catalogue);
-        if ($generated !== null && $this->isFaithful($generated, $facts)) {
+        if ($generated !== null && $this->isFaithful($generated, $facts) && $this->agreesWithProducts($generated, $facts) && ! $this->looksLikeRawJson($generated)) {
             return ['body' => $generated, 'cards' => $cards, 'source' => 'openai'];
         }
 
@@ -336,7 +336,112 @@ class ChatAssistant
 
         $content = trim((string) $response->json('choices.0.message.content', ''));
 
-        return $content !== '' ? $content : null;
+        return $content === '' ? null : $this->unwrapReply($content);
+    }
+
+    /**
+     * Turn a model reply into plain sentences. Accepts plain text, a JSON
+     * object ({"response": "..."} and the usual key names), or a code fence
+     * around either. Raw JSON is never returned.
+     */
+    public function unwrapReply(string $content, int $depth = 0): ?string
+    {
+        $content = trim($content);
+        if ($content === '' || $depth > 4) {
+            return null;
+        }
+
+        if (preg_match('/```(?:json|text)?\s*([\s\S]*?)```/iu', $content, $fenced)) {
+            $inner = $this->unwrapReply($fenced[1], $depth + 1);
+            if ($inner !== null) {
+                return $inner;
+            }
+        }
+
+        $fromJson = $this->textFromJson($content);
+        if (is_string($fromJson) && trim($fromJson) !== '' && trim($fromJson) !== $content) {
+            return $this->unwrapReply($fromJson, $depth + 1);
+        }
+
+        if ($this->looksLikeRawJson($content)) {
+            return null;
+        }
+
+        return $content;
+    }
+
+    public function looksLikeRawJson(string $text): bool
+    {
+        $text = trim($text);
+
+        return $text !== '' && (str_starts_with($text, '{') || str_starts_with($text, '['));
+    }
+
+    protected function textFromJson(string $content): ?string
+    {
+        $content = trim($content);
+        if ($content === '' || (! str_starts_with($content, '{') && ! str_starts_with($content, '['))) {
+            return null;
+        }
+
+        try {
+            $data = json_decode($content, true, 8, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return null;
+        }
+
+        if (! is_array($data)) {
+            return null;
+        }
+
+        if (array_is_list($data)) {
+            $strings = array_values(array_filter($data, fn ($value) => is_string($value) && trim($value) !== ''));
+
+            return count($strings) === 1 ? trim($strings[0]) : null;
+        }
+
+        foreach (['response', 'answer', 'message', 'text', 'content', 'reply', 'body'] as $key) {
+            if (isset($data[$key]) && is_string($data[$key]) && trim($data[$key]) !== '') {
+                return trim($data[$key]);
+            }
+        }
+
+        $strings = [];
+        foreach ($data as $value) {
+            if (is_string($value) && trim($value) !== '') {
+                $strings[] = trim($value);
+            }
+        }
+
+        return count($strings) === 1 ? $strings[0] : null;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $facts
+     */
+    public function agreesWithProducts(string $reply, array $facts): bool
+    {
+        if ($facts === []) {
+            return true;
+        }
+
+        $denies = preg_match('/couldn\'?t find|could not find|cannot find|can\'?t find|no matching|none found|not in (our |the )?(current )?catalogue|do not have any|don\'?t have any/i', $reply);
+        if (! $denies) {
+            return true;
+        }
+
+        foreach ($facts as $fact) {
+            $name = (string) ($fact['name'] ?? '');
+            $sku = (string) ($fact['sku'] ?? '');
+            if ($name !== '' && mb_stripos($reply, $name) !== false) {
+                return true;
+            }
+            if ($sku !== '' && mb_stripos($reply, $sku) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function systemPrompt(): string
@@ -348,6 +453,8 @@ class ChatAssistant
             .'Quote availability only with the supplied availability text. '
             .'delivery_guidance is catalogue guidance, not a promised date. Do not add a calendar date. '
             .'If the catalogue does not contain the answer, say so and tell the customer to use Talk to the team. '
+            .'If CATALOGUE_JSON lists products, those are the matches. Describe them and do not say you could not find them. '
+            .'Reply in plain sentences only. Do not use JSON, markdown, or code fences. '
             .'Do not ask for or repeat personal information, order numbers, email addresses or phone numbers. '
             .'Keep the reply under 120 words.';
     }
@@ -359,6 +466,7 @@ class ChatAssistant
             .'If a fact is not in BUSINESS_JSON, say you do not have that detail and tell the customer to use Talk to the team. '
             .'You may repeat the published Urban Focus phone number and email from BUSINESS_JSON. Do not repeat a customer\'s own contact details. '
             .'Do not say that the catalogue lacks this information. '
+            .'Reply in plain sentences only. Do not use JSON, markdown, or code fences. '
             .'Keep the reply under 140 words.';
     }
 
