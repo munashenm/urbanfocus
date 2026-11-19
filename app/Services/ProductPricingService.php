@@ -146,6 +146,10 @@ class ProductPricingService
             return false;
         }
 
+        if (app(BlackFridaySpecialService::class)->preservesSellingPrice($product)) {
+            return false;
+        }
+
         $product->loadMissing('category.parent');
         $newPrice = $this->retailPrice($cost, $product);
         if ($newPrice <= 0) {

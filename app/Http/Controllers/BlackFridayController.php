@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\BlackFridaySpecialService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -19,12 +20,13 @@ class BlackFridayController extends Controller
         $products = Product::query()
             ->with(['images', 'category'])
             ->forStorefront(true)
-            ->onSale()
+            ->tap(fn ($query) => app(BlackFridaySpecialService::class)->constrainToSpecials($query))
             ->when($category, function ($query) use ($category) {
                 $query->whereIn('category_id', Category::descendantIds($category->id));
             })
             ->reorder()
             ->orderByRaw('CASE WHEN (manage_stock = 1 AND stock_quantity > 0) OR (manage_stock = 0 AND in_stock = 1) THEN 0 ELSE 1 END')
+            ->tap(fn ($query) => app(BlackFridaySpecialService::class)->orderPinnedFirst($query))
             ->tap(function ($query) use ($request) {
                 $now = now()->toDateTimeString();
                 $sort = (string) $request->query('sort', 'saving');
@@ -41,7 +43,7 @@ class BlackFridayController extends Controller
 
         $categories = Category::query()
             ->where('is_active', true)
-            ->whereIn('id', Product::query()->where('is_active', true)->onSale()->whereNotNull('category_id')->distinct()->pluck('category_id'))
+            ->whereIn('id', Product::query()->where('is_active', true)->tap(fn ($query) => app(BlackFridaySpecialService::class)->constrainToSpecials($query))->whereNotNull('category_id')->distinct()->pluck('category_id'))
             ->orderBy('name')
             ->get();
 

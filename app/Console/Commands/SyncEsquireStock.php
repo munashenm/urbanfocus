@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Product;
+use App\Services\BlackFridaySpecialService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -131,20 +132,29 @@ class SyncEsquireStock extends Command
                         $cost = $f['price'];
                         $price = $this->floorPrice($cost, $f['tier']);
                         $old = (float) $p->price;
-                        $big = $old > 0 && abs($price - $old) / $old > $cfg['max_price_change'];
-                        if ($big && ! $this->option('force-prices')) {
-                            $s['price_held']++;
-                            $held[] = sprintf('%s R%s -> R%s', $p->sku, $old, $price);
-                        } elseif (abs($price - $old) >= 0.01 || abs((float) $p->cost_price - $cost) >= 0.01) {
-                            $upd['cost_price'] = $cost;
-                            if ($hasSupplierCost) {
-                                $upd['supplier_cost_price'] = $cost;
+                        if ($this->salePriceIsProtected($p)) {
+                            if (abs((float) $p->cost_price - $cost) >= 0.01) {
+                                $upd['cost_price'] = $cost;
+                                if ($hasSupplierCost) {
+                                    $upd['supplier_cost_price'] = $cost;
+                                }
                             }
-                            if (abs($price - $old) >= 0.01) {
-                                $upd['price'] = $price;
-                                $s[$price > $old ? 'price_up' : 'price_down']++;
-                                if ($p->sale_price && (float) $p->sale_price >= $price) {
-                                    $upd['sale_price'] = null;
+                        } else {
+                            $big = $old > 0 && abs($price - $old) / $old > $cfg['max_price_change'];
+                            if ($big && ! $this->option('force-prices')) {
+                                $s['price_held']++;
+                                $held[] = sprintf('%s R%s -> R%s', $p->sku, $old, $price);
+                            } elseif (abs($price - $old) >= 0.01 || abs((float) $p->cost_price - $cost) >= 0.01) {
+                                $upd['cost_price'] = $cost;
+                                if ($hasSupplierCost) {
+                                    $upd['supplier_cost_price'] = $cost;
+                                }
+                                if (abs($price - $old) >= 0.01) {
+                                    $upd['price'] = $price;
+                                    $s[$price > $old ? 'price_up' : 'price_down']++;
+                                    if ($p->sale_price && (float) $p->sale_price >= $price) {
+                                        $upd['sale_price'] = null;
+                                    }
                                 }
                             }
                         }
@@ -213,6 +223,14 @@ class SyncEsquireStock extends Command
         return 0.30;
     }
 
+    /**
+     * Black Friday specials keep the price the customer pays. Stock and cost still sync.
+     */
+    protected function salePriceIsProtected(Product $product): bool
+    {
+        return app(BlackFridaySpecialService::class)->preservesSellingPrice($product);
+    }
+
     protected function norm(?string $s): string
     {
         return preg_replace('/[^A-Z0-9]/', '', strtoupper((string) $s));
@@ -275,7 +293,7 @@ class SyncEsquireStock extends Command
     {
         $out = [];
         $total = 0;
-        $r = new XMLReader();
+        $r = new XMLReader;
         if (! $r->open($path, null, LIBXML_NONET | LIBXML_COMPACT)) {
             throw new \RuntimeException('cannot open feed');
         }

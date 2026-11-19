@@ -54,6 +54,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 Route::get('/black-friday', [BlackFridayController::class, 'index'])->name('black-friday');
+Route::redirect('/specials', '/black-friday', 301);
 Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');
 Route::get('/brands/{brand:slug}', [BrandController::class, 'show'])->name('brands.show');
 Route::get('/brand/{brand:slug}', fn (Brand $brand) => redirect()->route('brands.show', $brand, 301));

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Services\BlackFridaySpecialService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -208,10 +209,15 @@ class StoreSyncController extends Controller
             'currency' => ['nullable', 'string', 'max:3'],
         ]);
 
-        $product->forceFill([
-            'price' => $this->rands($data['unitPriceCents']),
-            'sale_price' => null,
-        ])->save();
+        $fill = ['price' => $this->rands($data['unitPriceCents'])];
+        if (! app(BlackFridaySpecialService::class)->preservesSellingPrice($product)) {
+            $fill['sale_price'] = null;
+        } else {
+            unset($fill['price']);
+        }
+        if ($fill !== []) {
+            $product->forceFill($fill)->save();
+        }
 
         return response()->json(['sku' => $product->sku]);
     }
