@@ -1,12 +1,11 @@
 ---
-# In-place cPanel Git deploy: this checkout IS the live app, so do not copy files.
-# config:cache is safe: PUBLIC_PATH is read only from config/app.php.
-# route:cache is omitted because routes/web.php uses Closures (Laravel cannot cache them).
-# migrate applies pending migrations only (chat tables included). No composer.
+# In-place cPanel Git deploy. This checkout IS the live app.
+# Do not copy the repository onto public_html. public_html/index.php already
+# boots ~/urbanfocus and must not be replaced.
+# Update from Remote only updates this checkout. Deploy HEAD Commit runs the
+# task below (pending migrations, including chat tables). No composer.
+# Route actions are controller methods, so route:cache is safe. Group
+# closures are not stored in the route cache.
 deployment:
   tasks:
-    - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php artisan optimize:clear
-    - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php artisan migrate --force
-    - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache
-    - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php artisan view:cache
-    - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php -r 'require "deploy/cpanel-asset-sync.php"; cpanel_sync_public_assets("/home/urbanzdc/urbanfocus", "/home/urbanzdc/public_html");'
+    - /bin/bash -c 'for d in "$HOME/urbanfocus" /home/urbanzdc/urbanfocus "$PWD"; do if [ -f "$d/deploy/cpanel-deploy.sh" ]; then exec /bin/bash "$d/deploy/cpanel-deploy.sh"; fi; done; echo "cpanel-deploy.sh not found"; exit 1'

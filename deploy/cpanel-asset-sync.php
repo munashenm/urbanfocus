@@ -28,7 +28,9 @@ function cpanel_sync_public_assets(string $laravelRoot, string $publicHtml): int
         $copied += cpanel_copy_public_tree($sourceDir, $targetDir);
     }
 
-    foreach (['favicon.svg', 'favicon.png', '.htaccess'] as $file) {
+    // public_html/index.php is the live front controller (it boots ../urbanfocus).
+    // Never copy public/index.php over it.
+    foreach (['favicon.svg', 'favicon.png'] as $file) {
         $source = $sourcePublic.'/'.$file;
         if (! is_file($source)) {
             continue;
@@ -39,6 +41,11 @@ function cpanel_sync_public_assets(string $laravelRoot, string $publicHtml): int
             echo "Copied: {$file}\n";
             $copied++;
         }
+    }
+
+    $htaccess = $sourcePublic.'/.htaccess';
+    if (is_file($htaccess) && cpanel_copy_htaccess($htaccess, $publicHtml.'/.htaccess')) {
+        $copied++;
     }
 
     $staleRobots = $publicHtml.'/robots.txt';
@@ -56,6 +63,56 @@ function cpanel_sync_public_assets(string $laravelRoot, string $publicHtml): int
     echo $copied > 0 ? "✓ Synced {$copied} asset file(s).\n\n" : "No asset files copied.\n\n";
 
     return $copied;
+}
+
+/**
+ * Copy .htaccess and keep a cPanel PHP handler that exists only on the server.
+ */
+function cpanel_copy_htaccess(string $source, string $target): bool
+{
+    $contents = file_get_contents($source);
+    if ($contents === false) {
+        echo "WARNING: could not read {$source}\n";
+
+        return false;
+    }
+
+    if (is_file($target)) {
+        $existing = file_get_contents($target);
+        $handler = '';
+        if (is_string($existing) && preg_match(
+            '/# php -- BEGIN cPanel-generated handler.*?# php -- END cPanel-generated handler, do not edit\s*/s',
+            $existing,
+            $match
+        )) {
+            $handler = $match[0];
+        }
+
+        if ($handler !== '' && ! str_contains($contents, '# php -- BEGIN cPanel-generated handler')) {
+            $contents = rtrim($contents)."\n\n".$handler;
+            if (! str_ends_with($contents, "\n")) {
+                $contents .= "\n";
+            }
+            echo "Kept cPanel PHP handler from existing .htaccess\n";
+        }
+    }
+
+    $directory = dirname($target);
+    if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
+        echo "WARNING: could not create {$directory}\n";
+
+        return false;
+    }
+
+    if (file_put_contents($target, $contents) === false) {
+        echo "WARNING: could not write {$target}\n";
+
+        return false;
+    }
+
+    echo "Copied: .htaccess\n";
+
+    return true;
 }
 
 /**
@@ -84,6 +141,10 @@ function cpanel_copy_public_tree(string $sourceDir, string $targetDir): int
                 mkdir($target, 0755, true);
             }
 
+            continue;
+        }
+
+        if (basename($item->getPathname()) === 'index.php') {
             continue;
         }
 
