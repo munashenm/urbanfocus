@@ -2,9 +2,11 @@
 # In-place cPanel Git deploy: this checkout IS the live app, so do not copy files.
 # config:cache is safe: PUBLIC_PATH is read only from config/app.php.
 # route:cache is omitted because routes/web.php uses Closures (Laravel cannot cache them).
-# No migrate and no composer.
+# migrate applies pending migrations only (chat tables included). No composer.
 deployment:
   tasks:
     - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php artisan optimize:clear
+    - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php artisan migrate --force
     - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache
     - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php artisan view:cache
+    - cd /home/urbanzdc/urbanfocus && /opt/cpanel/ea-php83/root/usr/bin/php -r 'require "deploy/cpanel-asset-sync.php"; cpanel_sync_public_assets("/home/urbanzdc/urbanfocus", "/home/urbanzdc/public_html");'

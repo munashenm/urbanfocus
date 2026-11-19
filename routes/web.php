@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\BlogAutomationController;
 use App\Http\Controllers\Admin\BrandController as AdminBrandController;
 use App\Http\Controllers\Admin\CatalogController as AdminCatalogController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -30,6 +31,7 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CaseStudyController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
@@ -104,6 +106,14 @@ Route::get('/checkout/paystack/{order}', [CheckoutController::class, 'paystackPa
 
 Route::get('/track-order', [OrderTrackingController::class, 'showForm'])->name('orders.track');
 Route::post('/track-order', [OrderTrackingController::class, 'lookup'])->name('orders.track.lookup');
+
+Route::middleware('throttle:30,1')->prefix('chat')->name('chat.')->group(function () {
+    Route::get('/session', [ChatController::class, 'session'])->name('session');
+    Route::post('/messages', [ChatController::class, 'message'])->name('messages');
+    Route::post('/handover', [ChatController::class, 'handover'])->name('handover');
+    Route::post('/track', [ChatController::class, 'track'])->middleware('throttle:8,1')->name('track');
+    Route::post('/requests', [ChatController::class, 'request'])->middleware('throttle:8,1')->name('requests');
+});
 
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
@@ -222,6 +232,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('catalog/api-key', [AdminCatalogController::class, 'regenerateApiKey'])->middleware('permission:settings.manage')->name('catalog.api-key');
         Route::get('import', fn () => redirect()->route('admin.catalog.index'))->name('import.index');
         Route::post('import', [AdminCatalogController::class, 'import'])->middleware('permission:products.create')->name('import.store');
+    });
+
+    Route::middleware('permission:orders.view,customers.view,rfqs.view')->group(function () {
+        Route::get('chat', [AdminChatController::class, 'index'])->name('chat.index');
+        Route::get('chat/{conversation}', [AdminChatController::class, 'show'])->name('chat.show');
+    });
+
+    Route::middleware('permission:orders.edit,customers.edit,rfqs.edit')->group(function () {
+        Route::post('chat/{conversation}/reply', [AdminChatController::class, 'reply'])->name('chat.reply');
+        Route::post('chat/{conversation}/close', [AdminChatController::class, 'close'])->name('chat.close');
+        Route::post('chat/{conversation}/messages/{message}/review', [AdminChatController::class, 'updateRequest'])->name('chat.requests.update');
     });
 
     Route::middleware('permission:orders.view,orders.edit,orders.refund')->group(function () {

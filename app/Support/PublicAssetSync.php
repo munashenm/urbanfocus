@@ -99,6 +99,11 @@ class PublicAssetSync
             self::copyDirectory($sourceRoot.'/js', $publicPath.'/js');
         }
 
+        $chatJs = '/js/chat.js';
+        if (is_file($sourceRoot.$chatJs) && (! is_file($publicPath.$chatJs) || filemtime($sourceRoot.$chatJs) > filemtime($publicPath.$chatJs))) {
+            self::copyFile($sourceRoot.$chatJs, $publicPath.$chatJs);
+        }
+
         $cssCanary = '/css/app.css';
         if (is_file($sourceRoot.$cssCanary) && (! is_file($publicPath.$cssCanary) || filemtime($sourceRoot.$cssCanary) > filemtime($publicPath.$cssCanary))) {
             self::copyDirectory($sourceRoot.'/css', $publicPath.'/css');
