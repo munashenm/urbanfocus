@@ -19,3 +19,9 @@ Schedule::command('blog:generate-article')
     ->weeklyOn(1, '07:00')
     ->when(fn () => (bool) config('blog_automation.openai.enabled') && config('blog_automation.openai.api_key'))
     ->withoutOverlapping();
+
+// Monday 08:00 SAST. Runs only when cPanel cron calls `artisan schedule:run` every minute.
+Schedule::command('chat:weekly-summary')
+    ->weeklyOn(1, '08:00')
+    ->timezone('Africa/Johannesburg')
+    ->withoutOverlapping();

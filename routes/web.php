@@ -242,6 +242,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::middleware('permission:orders.edit,customers.edit,rfqs.edit')->group(function () {
         Route::post('chat/{conversation}/reply', [AdminChatController::class, 'reply'])->name('chat.reply');
         Route::post('chat/{conversation}/close', [AdminChatController::class, 'close'])->name('chat.close');
+        Route::delete('chat/{conversation}', [AdminChatController::class, 'destroy'])->name('chat.destroy');
         Route::post('chat/{conversation}/messages/{message}/review', [AdminChatController::class, 'updateRequest'])->name('chat.requests.update');
     });
 

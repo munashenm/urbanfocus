@@ -2,8 +2,10 @@
 
 namespace App\Services\Chat;
 
+use App\Mail\ChatHandoverAlert;
 use App\Mail\ChatStaffAlert;
 use App\Models\ChatConversation;
+use App\Models\ChatInsight;
 use App\Models\ChatMessage;
 use App\Models\Order;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +23,8 @@ class ChatService
         protected ChatAssistant $assistant,
         protected ChatScope $scope,
         protected BusinessKnowledge $knowledge,
+        protected ChatQuoteFlow $quotes,
+        protected ChatSmsAlert $sms,
     ) {}
 
     public function current(): ?ChatConversation
@@ -64,9 +68,17 @@ class ChatService
         $this->acknowledgeOffline($conversation);
 
         if ($this->isHandover($body, $intent)) {
+            $this->alertHandoverOnce($conversation);
             $this->markWaiting($conversation, 'general');
             $this->add($conversation, 'assistant', 'handover', $this->handoverCopy());
-            $this->notifyStaff($conversation, $visitor);
+
+            return $conversation->fresh();
+        }
+
+        $quoteReply = $this->quotes->handle($conversation, $body);
+        if ($quoteReply !== null) {
+            $this->add($conversation, 'assistant', 'message', $quoteReply);
+            $this->notifyIfOffline($conversation, $visitor);
 
             return $conversation->fresh();
         }
@@ -128,12 +140,16 @@ class ChatService
             $answer = $this->assistant->answerBusiness($this->redact($body), $this->knowledge->forQuestion($body));
             $conversation->update(['topic' => 'general']);
             $this->add($conversation, 'assistant', 'message', $answer['body'], []);
+            $this->logIfUnanswered($conversation, $body, $answer['body']);
             $this->notifyIfOffline($conversation, $visitor);
 
             return $conversation->fresh();
         }
 
         $facts = $this->catalogue->forQuestion($body);
+        if ($facts === []) {
+            ChatInsight::record($conversation, 'not_found', $this->redact($body));
+        }
         $answer = $this->assistant->answer($this->redact($body), $facts);
         $conversation->update(['topic' => $facts === [] ? 'general' : 'product']);
         $this->add($conversation, 'assistant', 'message', $answer['body'], $answer['cards']);
@@ -149,11 +165,11 @@ class ChatService
         $this->rememberVisitor($conversation, $name, $email);
         $this->rememberPage($conversation, $pageUrl);
         $this->reopen($conversation);
-        $visitor = $this->add($conversation, 'visitor', 'handover', 'The customer asked to talk to the team.');
+        $this->add($conversation, 'visitor', 'handover', 'The customer asked to talk to the team.');
         $this->acknowledgeOffline($conversation);
+        $this->alertHandoverOnce($conversation);
         $this->markWaiting($conversation, $conversation->topic ?: 'general');
         $this->add($conversation, 'assistant', 'handover', $this->handoverCopy());
-        $this->notifyStaff($conversation, $visitor);
 
         return $conversation->fresh();
     }
@@ -362,13 +378,45 @@ class ChatService
     protected function handoverCopy(): string
     {
         $availability = $this->availability->snapshot();
-        $when = $availability['open']
-            ? 'We are open until '.$availability['closes'].'.'
-            : 'We are offline until '.$availability['next_open'].'.';
+        $contact = 'You can also call '.$availability['phone'].' or email '.$availability['email'].'.';
 
-        return 'A person on the Urban Focus team has this conversation in Customer chat. '
-            .$when.' '
-            .'You can also call '.$availability['phone'].' or email '.$availability['email'].'.';
+        if ($availability['open']) {
+            return 'A person on the Urban Focus team has this conversation. We are open until '
+                .$availability['closes'].' today ('.$availability['hours'].'). '
+                .'A reply will come during these hours, not necessarily straight away. '.$contact;
+        }
+
+        return 'A person on the Urban Focus team has this conversation. We are offline until '
+            .$availability['next_open'].' ('.$availability['hours'].'). '
+            .'They will read it when we are back. This is not an immediate reply. '.$contact;
+    }
+
+    protected function alertHandoverOnce(ChatConversation $conversation): void
+    {
+        $alreadyAlerted = $conversation->status === 'waiting_staff' && $conversation->handover_alerted_at !== null;
+        if ($alreadyAlerted) {
+            return;
+        }
+
+        $recent = $conversation->messages()->orderByDesc('id')->limit(8)->get()->reverse()->values();
+        $email = config('business.email');
+        if (is_string($email) && $email !== '') {
+            try {
+                Mail::to($email)->send(new ChatHandoverAlert($conversation, $recent));
+            } catch (Throwable $e) {
+                Log::warning('Customer chat handover alert failed', ['error' => $e->getMessage()]);
+            }
+        }
+
+        $this->sms->send($conversation);
+        $conversation->forceFill(['handover_alerted_at' => now()])->save();
+    }
+
+    protected function logIfUnanswered(ChatConversation $conversation, string $question, string $reply): void
+    {
+        if (preg_match('/do not have that detail|don\'t have that detail/i', $reply)) {
+            ChatInsight::record($conversation, 'unanswered', $this->redact($question));
+        }
     }
 
     protected function guardOfflineContact(?string $name, ?string $email): void

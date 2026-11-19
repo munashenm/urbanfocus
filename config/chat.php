@@ -27,4 +27,24 @@ return [
     'open_days' => [1, 2, 3, 4, 5],
     'opens_at' => '08:00',
     'closes_at' => '17:00',
+
+    /*
+    | Optional SMS when a visitor asks for a person. Disabled unless
+    | CHAT_SMS_ENABLED=true and the chosen provider's credentials are set.
+    | There is no WhatsApp channel.
+    */
+    'sms' => [
+        'enabled' => env('CHAT_SMS_ENABLED', false),
+        'driver' => env('CHAT_SMS_DRIVER', 'bulksms'),
+        'to' => env('CHAT_SMS_TO'),
+        'bulksms' => [
+            'token_id' => env('BULKSMS_TOKEN_ID'),
+            'token_secret' => env('BULKSMS_TOKEN_SECRET'),
+            'url' => env('BULKSMS_URL', 'https://api.bulksms.com/v1/messages'),
+        ],
+        'clickatell' => [
+            'api_key' => env('CLICKATELL_API_KEY'),
+            'url' => env('CLICKATELL_URL', 'https://platform.clickatell.com/v1/message'),
+        ],
+    ],
 ];

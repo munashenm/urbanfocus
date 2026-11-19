@@ -65,6 +65,18 @@ Confirm `public_html/js/chat.js` and `public_html/css/app.css` updated. On https
 
 No new queue worker is required. Staff email uses the existing mailer during the request. If mail fails, the message still stays in the inbox.
 
+## Handover, quotes, and the weekly summary
+
+During Monday–Friday 08:00–17:00 the visitor is told a person will reply during those hours, not straight away. Outside those hours they are told when the team is back. Asking for a person, or clicking Talk to the team, emails `config('business.email')` once per waiting conversation. A second click while that conversation is already waiting does not send another email. Optional SMS uses BulkSMS or Clickatell only when `CHAT_SMS_ENABLED=true` and that provider's credentials are set. There is no WhatsApp channel.
+
+A visitor can ask for a quote in the chat. The bot collects items, quantities, company, contact name, email, an optional phone, delivery area and notes, shows a summary with no prices, and on yes stores a normal quote (`type` quote) so it appears under Admin → Quotes. The team gets the existing new-quote email.
+
+`chat:weekly-summary` emails the business address every Monday at 08:00 Africa/Johannesburg: conversations, handovers, chat quotes, topics, top questions, questions the bot could not answer, and product searches that found nothing. It runs only when cPanel cron calls `artisan schedule:run` every minute. The repository does not install that cron. Check cPanel → Cron Jobs for an existing `artisan schedule:run` line before adding another. Use the PHP path from the latest deploy log line that starts with `PHP:` (often `/opt/cpanel/ea-php83/root/usr/bin/php` on this account):
+
+```
+* * * * * /opt/cpanel/ea-php83/root/usr/bin/php /home/urbanzdc/urbanfocus/artisan schedule:run >> /dev/null 2>&1
+```
+
 ## Rollback
 
 Set `CHAT_ENABLED=false`, then `config:cache`. The tables can stay. Dropping them is only needed if the code that references them is removed.
