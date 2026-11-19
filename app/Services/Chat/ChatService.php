@@ -9,6 +9,7 @@ use App\Models\Order;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class ChatService
@@ -48,14 +49,17 @@ class ChatService
         return $conversation;
     }
 
-    public function handleMessage(string $body, ?string $intent = null, ?string $pageUrl = null): ChatConversation
+    public function handleMessage(string $body, ?string $intent = null, ?string $pageUrl = null, ?string $name = null, ?string $email = null): ChatConversation
     {
         $body = trim($body);
+        $this->guardOfflineContact($name, $email);
         $conversation = $this->conversation();
+        $this->rememberVisitor($conversation, $name, $email);
         $this->rememberPage($conversation, $pageUrl);
         $this->reopen($conversation);
 
         $visitor = $this->add($conversation, 'visitor', 'message', $body);
+        $this->acknowledgeOffline($conversation);
 
         if ($this->isHandover($body, $intent)) {
             $this->markWaiting($conversation, 'general');
@@ -111,12 +115,15 @@ class ChatService
         return $conversation->fresh();
     }
 
-    public function handover(?string $pageUrl = null): ChatConversation
+    public function handover(?string $pageUrl = null, ?string $name = null, ?string $email = null): ChatConversation
     {
+        $this->guardOfflineContact($name, $email);
         $conversation = $this->conversation();
+        $this->rememberVisitor($conversation, $name, $email);
         $this->rememberPage($conversation, $pageUrl);
         $this->reopen($conversation);
         $visitor = $this->add($conversation, 'visitor', 'handover', 'The customer asked to talk to the team.');
+        $this->acknowledgeOffline($conversation);
         $this->markWaiting($conversation, $conversation->topic ?: 'general');
         $this->add($conversation, 'assistant', 'handover', $this->handoverCopy());
         $this->notifyStaff($conversation, $visitor);
@@ -328,10 +335,66 @@ class ChatService
     protected function handoverCopy(): string
     {
         $availability = $this->availability->snapshot();
+        $when = $availability['open']
+            ? 'We are open until '.$availability['closes'].'.'
+            : 'We are offline until '.$availability['next_open'].'.';
 
         return 'A person on the Urban Focus team has this conversation in Customer chat. '
-            .$availability['message'].' '
+            .$when.' '
             .'You can also call '.$availability['phone'].' or email '.$availability['email'].'.';
+    }
+
+    protected function guardOfflineContact(?string $name, ?string $email): void
+    {
+        if ($this->availability->isOpen()) {
+            return;
+        }
+
+        $existing = $this->current();
+        $name = trim((string) ($name ?: $existing?->visitor_name));
+        $email = trim((string) ($email ?: $existing?->visitor_email));
+
+        if ($name === '' || $email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw ValidationException::withMessages([
+                'email' => 'Please leave your name and email so we can reply.',
+            ]);
+        }
+    }
+
+    protected function rememberVisitor(ChatConversation $conversation, ?string $name, ?string $email): void
+    {
+        $updates = [];
+        $name = trim((string) $name);
+        $email = strtolower(trim((string) $email));
+
+        if ($name !== '') {
+            $updates['visitor_name'] = $name;
+        }
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $updates['visitor_email'] = $email;
+        }
+
+        if ($updates !== []) {
+            $conversation->fill($updates)->save();
+        }
+    }
+
+    protected function acknowledgeOffline(ChatConversation $conversation): void
+    {
+        if ($this->availability->isOpen() || blank($conversation->visitor_email)) {
+            return;
+        }
+
+        if ($conversation->messages()->where('kind', 'offline_ack')->exists()) {
+            return;
+        }
+
+        $this->add(
+            $conversation,
+            'assistant',
+            'offline_ack',
+            "Thanks, we'll get back to you by ".$this->availability->nextOpenLabel().'.',
+        );
     }
 
     protected function trackingPrompt(): string

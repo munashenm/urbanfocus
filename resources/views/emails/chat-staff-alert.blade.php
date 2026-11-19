@@ -7,10 +7,10 @@
     </div>
     <div style="padding:24px">
         <p>{{ $conversation->topicLabel() }} · {{ $conversation->statusLabel() }}</p>
-        <p style="white-space:pre-wrap">{{ $message->body }}</p>
-        @if($message->payload)
+        <p style="white-space:pre-wrap">{{ $chatMessage->body }}</p>
+        @if($chatMessage->payload)
             <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse">
-                @foreach($message->payload as $label => $value)
+                @foreach($chatMessage->payload as $label => $value)
                     @if(filled($value))
                         <tr>
                             <td style="color:#666;width:140px">{{ str_replace('_', ' ', $label) }}</td>

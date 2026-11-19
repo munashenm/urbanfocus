@@ -16,7 +16,7 @@ class ChatStaffAlert extends Mailable
 
     public function __construct(
         public ChatConversation $conversation,
-        public ChatMessage $message,
+        public ChatMessage $chatMessage,
     ) {}
 
     public function envelope(): Envelope

@@ -51,24 +51,42 @@ class CustomerChatTest extends TestCase
             ->assertSee('Request a quote', false)
             ->assertSee('data-uf-quick="track"', false)
             ->assertSee('Track an order', false)
-            ->assertSee('data-uf-quick="contact"', false)
             ->assertSee(route('orders.track'), false)
             ->assertSee(route('b2b.quote'), false)
-            ->assertSee('Hours open', false)
+            ->assertSee('Open until 17:00', false)
+            ->assertSee('Hi! Looking for a product or a quote? Ask away.', false)
+            ->assertSee('Minimise chat', false)
+            ->assertSee('uf-chat-launcher-icon', false)
             ->assertSee('sales@urbanfocus.co.za', false)
             ->assertSee('087 550 1813', false)
             ->assertSee('It is not approved from this chat', false)
             ->assertSee(route('warranty'), false)
             ->assertSee(route('returns'), false)
+            ->assertDontSee('data-chat-view="messages"', false)
+            ->assertDontSee('data-chat-view="support"', false)
             ->assertDontSee('online now', false)
-            ->assertDontSee('Our team is offline', false);
+            ->assertDontSee('Our team is offline', false)
+            ->assertDontSee('Back Monday', false);
 
         $css = file_get_contents(public_path('css/app.css'));
         $this->assertIsString($css);
         $this->assertStringContainsString('width: 380px', $css);
         $this->assertStringContainsString('@media (max-width: 640px)', $css);
         $this->assertStringContainsString('.uf-chat-panel', $css);
+        $this->assertStringContainsString('.uf-chat-bubble', $css);
+        $this->assertStringContainsString('.uf-chat-panel.is-min', $css);
         $this->assertStringNotContainsString('SEO', file_get_contents(resource_path('views/partials/chat-widget.blade.php')));
+
+        $js = file_get_contents(public_path('js/chat.js'));
+        $this->assertIsString($js);
+        $this->assertStringContainsString("event.key === 'Enter'", $js);
+        $this->assertStringContainsString('Sorry, chat is having trouble. Email sales@urbanfocus.co.za or call 087 550 1813.', $js);
+        $this->assertStringContainsString('uf-chat-bubble', $js);
+
+        $migration = file_get_contents(database_path('migrations/2026_11_19_120000_create_chat_tables.php'));
+        $this->assertIsString($migration);
+        $this->assertStringContainsString("char('public_token', 36)", $migration);
+        $this->assertStringNotContainsString('->uuid(', $migration);
 
         $chatConfig = file_get_contents(config_path('chat.php'));
         $this->assertIsString($chatConfig);
@@ -84,18 +102,39 @@ class CustomerChatTest extends TestCase
 
         $this->get(route('contact'))
             ->assertOk()
-            ->assertSee('Offline', false)
-            ->assertSee('Our team is offline', false)
+            ->assertSee('Back Monday 08:00', false)
+            ->assertSee('Hi! Looking for a product or a quote? Ask away.', false)
             ->assertSee('sales@urbanfocus.co.za', false)
-            ->assertDontSee('Hours open', false);
+            ->assertDontSee('Open until 17:00', false);
 
         $this->postJson(route('chat.messages'), ['body' => 'Please call me about a laptop'])
-            ->assertOk()
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('email');
+        $this->assertDatabaseCount('chat_conversations', 0);
+
+        $this->postJson(route('chat.messages'), [
+            'body' => 'Please call me about a laptop',
+            'name' => 'Thandi Mokoena',
+            'email' => 'thandi@example.com',
+        ])->assertOk()
             ->assertJsonPath('availability.open', false)
-            ->assertJsonPath('messages.0.body', 'Please call me about a laptop');
+            ->assertJsonPath('needs_contact', false)
+            ->assertJsonPath('messages.0.body', 'Please call me about a laptop')
+            ->assertSee("Thanks, we'll get back to you by Monday 08:00.", false);
 
         Mail::assertSent(ChatStaffAlert::class);
         $this->assertDatabaseHas('chat_messages', ['body' => 'Please call me about a laptop']);
+        $this->assertDatabaseHas('chat_conversations', [
+            'visitor_name' => 'Thandi Mokoena',
+            'visitor_email' => 'thandi@example.com',
+        ]);
+
+        $html = (new ChatStaffAlert(
+            ChatConversation::query()->firstOrFail(),
+            ChatMessage::query()->firstOrFail(),
+        ))->render();
+        $this->assertStringContainsString('Please call me about a laptop', $html);
+        $this->assertStringNotContainsString('thandi@example.com', $html);
     }
 
     public function test_staff_can_read_and_reply_and_a_viewer_cannot(): void
@@ -262,6 +301,7 @@ class CustomerChatTest extends TestCase
         $response->assertSee('not a confirmed delivery date', false);
         $response->assertDontSee('R 50.00', false);
         $response->assertDontSee('BRK-NONE', false);
+        $response->assertDontSee("Thanks, we'll get back to you by", false);
 
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'openai.com'));
         Mail::assertNotSent(ChatStaffAlert::class);
