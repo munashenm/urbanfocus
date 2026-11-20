@@ -30,18 +30,20 @@
         </header>
 
         <div class="uf-chat-body">
-            <nav class="uf-chat-quick" aria-label="Quick help">
-                <a data-uf-quick="search" href="{{ route('shop.index') }}">Search products</a>
-                <a data-uf-quick="quote" href="{{ route('b2b.quote') }}">Request a quote</a>
-                <button type="button" data-uf-quick="track" data-chat-view="track">Track an order</button>
-                <button type="button" data-chat-handover>Talk to the team</button>
-            </nav>
+            <div class="uf-chat-tools" data-chat-tools>
+                <nav class="uf-chat-quick" aria-label="Quick help">
+                    <a data-uf-quick="search" href="{{ route('shop.index') }}">Search products</a>
+                    <a data-uf-quick="quote" href="{{ route('b2b.quote') }}">Request a quote</a>
+                    <button type="button" data-uf-quick="track" data-chat-view="track">Track an order</button>
+                    <button type="button" data-chat-handover>Talk to the team</button>
+                </nav>
 
-            <div class="uf-chat-direct">
-                <a href="tel:{{ $chatAvailability['phone_tel'] }}">{{ $chatAvailability['phone'] }}</a>
-                <a href="mailto:{{ $chatAvailability['email'] }}">{{ $chatAvailability['email'] }}</a>
-                <button type="button" data-chat-view="return">Returns</button>
-                <button type="button" data-chat-view="warranty">Warranty</button>
+                <div class="uf-chat-direct">
+                    <a href="tel:{{ $chatAvailability['phone_tel'] }}">{{ $chatAvailability['phone'] }}</a>
+                    <a href="mailto:{{ $chatAvailability['email'] }}">{{ $chatAvailability['email'] }}</a>
+                    <button type="button" data-chat-view="return">Returns</button>
+                    <button type="button" data-chat-view="warranty">Warranty</button>
+                </div>
             </div>
 
             <div class="uf-chat-log" data-chat-log role="log" aria-live="polite" aria-relevant="additions">
@@ -52,6 +54,7 @@
                 <div class="uf-chat-contact" data-chat-contact @if($chatAvailability['open']) hidden @endif>
                     <label>Name <input name="name" maxlength="120" autocomplete="name" @unless($chatAvailability['open']) required @endunless></label>
                     <label>Email <input name="email" type="email" maxlength="255" autocomplete="email" @unless($chatAvailability['open']) required @endunless></label>
+                    <label>Phone <input name="phone" maxlength="40" autocomplete="tel"></label>
                 </div>
                 <div class="uf-chat-compose-row">
                     <label class="visually-hidden" for="uf-chat-body">Message</label>

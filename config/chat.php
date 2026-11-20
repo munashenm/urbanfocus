@@ -29,6 +29,14 @@ return [
     'closes_at' => '17:00',
 
     /*
+    | Optional inbound channel for an agent reply from outside the admin
+    | console. Leave the token empty and the endpoint stays disabled.
+    */
+    'agent_channel' => [
+        'token' => env('CHAT_AGENT_CHANNEL_TOKEN'),
+    ],
+
+    /*
     | Optional SMS when a visitor asks for a person. Disabled unless
     | CHAT_SMS_ENABLED=true and the chosen provider's credentials are set.
     | There is no WhatsApp channel.

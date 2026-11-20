@@ -33,7 +33,7 @@
         launcher.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) {
             refresh();
-            if (!poll) poll = window.setInterval(refresh, 8000);
+            if (!poll) poll = window.setInterval(refresh, 4000);
             if (field) field.focus();
         } else if (poll) {
             window.clearInterval(poll);
@@ -144,8 +144,10 @@
         if (!box || box.hidden) return data;
         var name = box.querySelector('[name="name"]');
         var email = box.querySelector('[name="email"]');
+        var phone = box.querySelector('[name="phone"]');
         if (name && name.value.trim()) data.name = name.value.trim();
         if (email && email.value.trim()) data.email = email.value.trim();
+        if (phone && phone.value.trim()) data.phone = phone.value.trim();
         return data;
     }
 
@@ -251,8 +253,10 @@
             log.appendChild(messageNode(message));
         });
         unsent.forEach(function (body) {
-            log.appendChild(messageNode({ sender: 'visitor', body: body }));
+            log.appendChild(messageNode({ sender: 'visitor', sender_name: 'You', body: body }));
         });
+        var tools = root.querySelector('[data-chat-tools]');
+        if (tools) tools.classList.toggle('is-compact', messages.length > 0 || unsent.length > 0);
         if (troubleText) {
             var item = document.createElement('p');
             item.className = 'uf-chat-note';
@@ -271,16 +275,24 @@
 
     function messageNode(message) {
         var item = document.createElement('article');
-        item.className = 'uf-chat-message uf-chat-message-' + (message.sender || 'assistant');
-        var bubble = document.createElement('div');
-        bubble.className = 'uf-chat-bubble';
+        var sender = message.sender || 'assistant';
+        item.className = 'uf-chat-message uf-chat-message-' + sender;
+        if (sender === 'system' || message.kind === 'notice') {
+            var notice = document.createElement('p');
+            notice.className = 'uf-chat-system';
+            notice.textContent = message.body || '';
+            item.appendChild(notice);
+            return item;
+        }
         var who = document.createElement('p');
         who.className = 'uf-chat-who';
-        who.textContent = message.sender === 'visitor' ? 'You' : (message.sender === 'staff' ? 'Urban Focus team' : 'Urban Focus');
+        who.textContent = message.sender_name || (sender === 'visitor' ? 'You' : (sender === 'staff' ? 'Urban Focus team' : 'Urban Focus'));
+        var bubble = document.createElement('div');
+        bubble.className = 'uf-chat-bubble';
         var body = document.createElement('p');
         body.className = 'uf-chat-text';
         body.textContent = message.body || '';
-        bubble.appendChild(who);
+        item.appendChild(who);
         bubble.appendChild(body);
         (message.cards || []).forEach(function (card) {
             if (!card || !card.url) return;
@@ -299,5 +311,15 @@
         }
         item.appendChild(bubble);
         return item;
+    }
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function () {
+            if (!window.matchMedia('(max-width: 640px)').matches || panel.hidden) {
+                panel.style.height = '';
+                return;
+            }
+            panel.style.height = Math.round(window.visualViewport.height) + 'px';
+        });
     }
 })();

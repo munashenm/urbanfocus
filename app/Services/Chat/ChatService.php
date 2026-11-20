@@ -25,6 +25,7 @@ class ChatService
         protected BusinessKnowledge $knowledge,
         protected ChatQuoteFlow $quotes,
         protected ChatSmsAlert $sms,
+        protected ChatLiveService $live,
     ) {}
 
     public function current(): ?ChatConversation
@@ -55,22 +56,33 @@ class ChatService
         return $conversation;
     }
 
-    public function handleMessage(string $body, ?string $intent = null, ?string $pageUrl = null, ?string $name = null, ?string $email = null): ChatConversation
+    public function handleMessage(string $body, ?string $intent = null, ?string $pageUrl = null, ?string $name = null, ?string $email = null, ?string $phone = null): ChatConversation
     {
-        $body = trim($body);
+        $body = trim(strip_tags($body));
         $this->guardOfflineContact($name, $email);
         $conversation = $this->conversation();
-        $this->rememberVisitor($conversation, $name, $email);
+        $this->rememberVisitor($conversation, $name, $email, $phone);
         $this->rememberPage($conversation, $pageUrl);
         $this->reopen($conversation);
 
         $visitor = $this->add($conversation, 'visitor', 'message', $body);
         $this->acknowledgeOffline($conversation);
 
-        if ($this->isHandover($body, $intent)) {
+        if ($this->isHandover($body, $intent, $conversation)) {
             $this->alertHandoverOnce($conversation);
             $this->markWaiting($conversation, 'general');
             $this->add($conversation, 'assistant', 'handover', $this->handoverCopy());
+            $this->live->notifyQueued($conversation->fresh());
+
+            return $conversation->fresh();
+        }
+
+        if ($conversation->bot_paused) {
+            if ($conversation->status === 'live') {
+                $this->live->notifyAssigned($conversation, $visitor);
+            } else {
+                $this->live->notifyQueued($conversation);
+            }
 
             return $conversation->fresh();
         }
@@ -122,6 +134,13 @@ class ChatService
 
         $classification = $this->scope->classify($body);
 
+        if ($classification === ChatScope::CLARIFY) {
+            $this->add($conversation, 'assistant', 'message', $this->scope->clarify());
+            $this->notifyIfOffline($conversation, $visitor);
+
+            return $conversation->fresh();
+        }
+
         if ($classification === ChatScope::OFF_TOPIC) {
             $this->add($conversation, 'assistant', 'message', $this->scope->refusal());
             $this->notifyIfOffline($conversation, $visitor);
@@ -158,11 +177,11 @@ class ChatService
         return $conversation->fresh();
     }
 
-    public function handover(?string $pageUrl = null, ?string $name = null, ?string $email = null): ChatConversation
+    public function handover(?string $pageUrl = null, ?string $name = null, ?string $email = null, ?string $phone = null): ChatConversation
     {
         $this->guardOfflineContact($name, $email);
         $conversation = $this->conversation();
-        $this->rememberVisitor($conversation, $name, $email);
+        $this->rememberVisitor($conversation, $name, $email, $phone);
         $this->rememberPage($conversation, $pageUrl);
         $this->reopen($conversation);
         $this->add($conversation, 'visitor', 'handover', 'The customer asked to talk to the team.');
@@ -170,6 +189,7 @@ class ChatService
         $this->alertHandoverOnce($conversation);
         $this->markWaiting($conversation, $conversation->topic ?: 'general');
         $this->add($conversation, 'assistant', 'handover', $this->handoverCopy());
+        $this->live->notifyQueued($conversation->fresh());
 
         return $conversation->fresh();
     }
@@ -253,11 +273,18 @@ class ChatService
             $conversation->status = 'open';
         }
 
-        $message = $this->add($conversation, 'staff', 'message', trim($body), userId: $userId);
-        $conversation->forceFill([
+        $message = $this->add($conversation, 'staff', 'message', trim(strip_tags($body)), userId: $userId);
+        $updates = [
             'staff_read_at' => now(),
             'status' => $conversation->status === 'closed' ? 'open' : $conversation->status,
-        ])->save();
+        ];
+        if ($conversation->status === 'waiting_staff' && $conversation->assigned_user_id === null) {
+            $updates['assigned_user_id'] = $userId;
+            $updates['claimed_at'] = now();
+            $updates['status'] = 'live';
+            $updates['bot_paused'] = true;
+        }
+        $conversation->forceFill($updates)->save();
 
         return $message;
     }
@@ -356,13 +383,23 @@ class ChatService
         return (bool) preg_match('/\b(track(ing)?|where is my order|order status)\b/i', $body);
     }
 
-    protected function isHandover(string $body, ?string $intent): bool
+    protected function isHandover(string $body, ?string $intent, ?ChatConversation $conversation = null): bool
     {
         if ($intent === 'handover') {
             return true;
         }
 
-        return (bool) preg_match('/\b(talk|speak|chat)\s+to\s+(a\s+)?(person|human|someone|staff|the team|agent)\b|\breal person\b/i', $body);
+        if (preg_match('/\b(talk|speak|chat)\s+to\s+(a\s+)?(person|human|someone|staff|the team|agent)\b|\b(real person|live agent|live chat)\b/i', $body)) {
+            return true;
+        }
+
+        if ($conversation && preg_match('/^(yes|yeah|yep|please|ok|okay|connect me)[.!\s]*$/iu', trim($body))) {
+            $last = $conversation->messages()->where('sender', 'assistant')->orderByDesc('id')->value('body');
+
+            return is_string($last) && str_contains(strtolower($last), 'live agent');
+        }
+
+        return false;
     }
 
     protected function isReturnQuestion(string $body): bool
@@ -381,7 +418,7 @@ class ChatService
         $contact = 'You can also call '.$availability['phone'].' or email '.$availability['email'].'.';
 
         if ($availability['open']) {
-            return 'A person on the Urban Focus team has this conversation. We are open until '
+            return 'A person on the Urban Focus team has this conversation. You are in the queue, and the first available agent will join this chat. We are open until '
                 .$availability['closes'].' today ('.$availability['hours'].'). '
                 .'A reply will come during these hours, not necessarily straight away. '.$contact;
         }
@@ -436,17 +473,21 @@ class ChatService
         }
     }
 
-    protected function rememberVisitor(ChatConversation $conversation, ?string $name, ?string $email): void
+    protected function rememberVisitor(ChatConversation $conversation, ?string $name, ?string $email, ?string $phone = null): void
     {
         $updates = [];
         $name = trim((string) $name);
         $email = strtolower(trim((string) $email));
+        $phone = trim(strip_tags((string) $phone));
 
         if ($name !== '') {
             $updates['visitor_name'] = $name;
         }
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $updates['visitor_email'] = $email;
+        }
+        if ($phone !== '') {
+            $updates['visitor_phone'] = mb_substr($phone, 0, 40);
         }
 
         if ($updates !== []) {
@@ -483,13 +524,19 @@ class ChatService
         $conversation->forceFill([
             'status' => 'waiting_staff',
             'topic' => $topic,
+            'bot_paused' => true,
+            'assigned_user_id' => null,
         ])->save();
     }
 
     protected function reopen(ChatConversation $conversation): void
     {
         if ($conversation->status === 'closed') {
-            $conversation->forceFill(['status' => 'open'])->save();
+            $conversation->forceFill([
+                'status' => 'open',
+                'bot_paused' => false,
+                'assigned_user_id' => null,
+            ])->save();
         }
     }
 

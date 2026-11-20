@@ -21,6 +21,7 @@ return [
         'users.manage' => ['label' => 'Manage users', 'group' => 'Users'],
         'roles.manage' => ['label' => 'Manage roles', 'group' => 'Users'],
         'audit_logs.view' => ['label' => 'View audit logs', 'group' => 'Security'],
+        'chat.agent' => ['label' => 'Handle live chat', 'group' => 'Support'],
     ],
 
     'roles' => [
@@ -38,7 +39,7 @@ return [
                 'orders.view', 'orders.edit', 'orders.refund',
                 'customers.view', 'customers.edit',
                 'rfqs.view', 'rfqs.create', 'rfqs.edit', 'quotations.create',
-                'invoices.view', 'reports.view',
+                'invoices.view', 'reports.view', 'chat.agent',
             ],
             'system' => true,
         ],
@@ -49,7 +50,7 @@ return [
                 'orders.view', 'orders.edit',
                 'customers.view', 'customers.edit',
                 'rfqs.view', 'rfqs.create', 'rfqs.edit', 'quotations.create',
-                'invoices.view',
+                'invoices.view', 'chat.agent',
             ],
             'system' => true,
         ],
@@ -74,8 +75,14 @@ return [
             'description' => 'View customers and orders, update support notes.',
             'permissions' => [
                 'orders.view', 'orders.edit',
-                'customers.view',
+                'customers.view', 'chat.agent',
             ],
+            'system' => true,
+        ],
+        'chat_agent' => [
+            'label' => 'Chat agent',
+            'description' => 'Claim and reply to live website chats.',
+            'permissions' => ['chat.agent'],
             'system' => true,
         ],
         'viewer' => [

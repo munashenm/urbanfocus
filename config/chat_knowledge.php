@@ -22,6 +22,8 @@ return [
 
     'greeting' => 'Hello. I can help with Urban Focus products, quotes, delivery, orders and policies. What do you need?',
 
+    'clarify' => 'Sorry to hear it is urgent. What do you need help with: an order, a product, a quote, or a repair or IT support? I can also connect you to a live agent now.',
+
     'topics' => [
         'company' => [
             'title' => 'Company',
