@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Product;
+use App\Services\BlackFridaySpecialService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -109,7 +110,7 @@ class SyncSyntechStock extends Command
                                 if ($hasSupplierCost) {
                                     $upd['supplier_cost_price'] = $f['cost'];
                                 }
-                                if (abs($price - $old) >= 0.01) {
+                                if (abs($price - $old) >= 0.01 && ! app(BlackFridaySpecialService::class)->preservesSellingPrice($p)) {
                                     $upd['price'] = $price;
                                     $s['price_changed']++;
                                     if ($p->sale_price && (float) $p->sale_price >= $price) {
@@ -261,7 +262,7 @@ class SyncSyntechStock extends Command
     protected function parseFeed(string $path, array $wanted): array
     {
         $out = [];
-        $r = new XMLReader();
+        $r = new XMLReader;
         if (! $r->open($path, null, LIBXML_NONET | LIBXML_COMPACT)) {
             throw new \RuntimeException('cannot open feed');
         }

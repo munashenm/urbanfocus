@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Services\CatalogDeduper;
+use App\Services\CatalogMediaHealthService;
+use App\Services\CatalogOosPolicy;
 use App\Services\InternalPricingCopySanitizer;
 use App\Support\WarrantyCopy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class Product extends Model
@@ -168,6 +171,19 @@ class Product extends Model
         $label = trim((string) $this->promo_label);
 
         return $label !== '' ? $label : 'Black Friday';
+    }
+
+    /**
+     * Black Friday badge. A "was" price is separate and only exists when the
+     * sale price is lower than the current selling price.
+     */
+    public function showsPromoBadge(): bool
+    {
+        if (trim((string) $this->promo_label) === '') {
+            return $this->isOnSale();
+        }
+
+        return $this->saleWindowIsOpen();
     }
 
     /**
@@ -497,7 +513,7 @@ class Product extends Model
         static $hasColumn = null;
 
         if ($hasColumn === null) {
-            $hasColumn = \Illuminate\Support\Facades\Schema::hasColumn((new static)->getTable(), 'is_oos_listable');
+            $hasColumn = Schema::hasColumn((new static)->getTable(), 'is_oos_listable');
         }
 
         return $hasColumn;
@@ -681,8 +697,8 @@ class Product extends Model
             return 'In Stock';
         }
 
-        if (class_exists(\App\Services\CatalogOosPolicy::class)) {
-            return \App\Services\CatalogOosPolicy::customerLabel();
+        if (class_exists(CatalogOosPolicy::class)) {
+            return CatalogOosPolicy::customerLabel();
         }
 
         return 'Out of Stock';
@@ -1142,8 +1158,8 @@ class Product extends Model
 
         return match ($issue) {
             'missing_image' => $query->merchantIssue('no_image'),
-            'broken_image' => $query->whereIn('id', app(\App\Services\CatalogMediaHealthService::class)->lastIssueProductIds('broken_image') ?: [0]),
-            'placeholder_image' => $query->whereIn('id', app(\App\Services\CatalogMediaHealthService::class)->lastIssueProductIds('placeholder_image') ?: [0]),
+            'broken_image' => $query->whereIn('id', app(CatalogMediaHealthService::class)->lastIssueProductIds('broken_image') ?: [0]),
+            'placeholder_image' => $query->whereIn('id', app(CatalogMediaHealthService::class)->lastIssueProductIds('placeholder_image') ?: [0]),
             'missing_description' => $query->merchantIssue('no_description'),
             'missing_sku' => $query->where(function ($q) {
                 $q->whereNull('sku')->orWhere('sku', '');

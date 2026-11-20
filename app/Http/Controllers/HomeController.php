@@ -7,14 +7,14 @@ use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\BlackFridaySpecialService;
 use App\Services\CatalogDeduper;
 use App\Services\CategoryMapperService;
-use Illuminate\Support\Collection;
 use App\Support\SafeCache;
 use App\Support\StorefrontCache;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -63,7 +63,10 @@ class HomeController extends Controller
         $sectionBrands = $this->remember('home.section_brands', fn () => $this->sectionBrands());
 
         $blackFridayActive = StorefrontCache::remember(StorefrontCache::BLACK_FRIDAY_ACTIVE, function () {
-            return Product::query()->where('is_active', true)->onSale()->exists();
+            return Product::query()
+                ->where('is_active', true)
+                ->tap(fn ($query) => app(BlackFridaySpecialService::class)->constrainToSpecials($query))
+                ->exists();
         }, 60);
         $blackFridayProducts = $this->blackFridaySpecials();
 
@@ -85,11 +88,12 @@ class HomeController extends Controller
         return Product::query()
             ->with(['images', 'category'])
             ->where('is_active', true)
-            ->onSale()
-            ->availableInStock()
+            ->tap(fn ($query) => app(BlackFridaySpecialService::class)->constrainHomepage($query))
             ->withoutDuplicateListings()
+            ->tap(fn ($query) => app(BlackFridaySpecialService::class)->orderPinnedFirst($query))
             ->orderByDesc('is_featured')
             ->orderByRaw('((price - sale_price) / NULLIF(price, 0)) DESC')
+            ->orderByDesc('id')
             ->limit($limit)
             ->get();
     }

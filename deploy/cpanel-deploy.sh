@@ -144,6 +144,12 @@ if ! run "$PHP_BIN" artisan migrate --force --no-interaction; then
 fi
 log "Migrations finished."
 
+log "Applying Black Friday specials. Pending prices stay unchanged until config/black_friday.php has a sale price."
+if ! run "$PHP_BIN" artisan black-friday:apply --no-interaction; then
+  log "ERROR: black-friday:apply failed."
+  exit 1
+fi
+
 fail=0
 
 # PUBLIC_PATH is read from config/app.php, so caching config is safe.
