@@ -100,6 +100,11 @@ class BusinessKnowledge
         return $this->copy('refusal', 'I can only help with Urban Focus: our products, services, orders and policies. I cannot answer that. Ask about the catalogue, a quote, delivery or an order, or use Talk to the team.');
     }
 
+    public function clarify(): string
+    {
+        return $this->copy('clarify', 'Sorry to hear it is urgent. What do you need help with: an order, a product, a quote, or a repair or IT support? I can also connect you to a live agent now.');
+    }
+
     public function greeting(): string
     {
         return $this->copy('greeting', 'Hello. I can help with Urban Focus products, quotes, delivery, orders and policies. What do you need?');

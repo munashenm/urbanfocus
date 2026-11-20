@@ -38,6 +38,11 @@
                 <a class="admin-nav-link {{ request()->routeIs('admin.chat.*') ? 'active' : '' }}" href="{{ route('admin.chat.index') }}"><span class="admin-nav-icon">💬</span> Customer chat{{ $chatUnread > 0 ? ' ('.$chatUnread.')' : '' }}</a>
             @endif
         @endanypermission
+        @anypermission('chat.agent', 'orders.view', 'customers.view', 'rfqs.view')
+            @if(Route::has('admin.live-chat.index'))
+                <a class="admin-nav-link {{ request()->routeIs('admin.live-chat.*') ? 'active' : '' }}" href="{{ route('admin.live-chat.index') }}"><span class="admin-nav-icon">🎧</span> Live Chat</a>
+            @endif
+        @endanypermission
         @permission('customers.view')
             <a class="admin-nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" href="{{ route('admin.customers.index') }}"><span class="admin-nav-icon">👥</span> Customers</a>
         @endpermission

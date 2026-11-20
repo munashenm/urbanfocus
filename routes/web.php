@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
+use App\Http\Controllers\Admin\LiveChatController as AdminLiveChatController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\QuotationController as AdminQuotationController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CaseStudyController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ChatAgentChannelController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactController;
@@ -106,6 +108,10 @@ Route::get('/checkout/paystack/{order}', [CheckoutController::class, 'paystackPa
 
 Route::get('/track-order', [OrderTrackingController::class, 'showForm'])->name('orders.track');
 Route::post('/track-order', [OrderTrackingController::class, 'lookup'])->name('orders.track.lookup');
+
+Route::post('/chat/agent-channel', [ChatAgentChannelController::class, 'handle'])
+    ->middleware('throttle:30,1')
+    ->name('chat.agent-channel');
 
 Route::middleware('throttle:30,1')->prefix('chat')->name('chat.')->group(function () {
     Route::get('/session', [ChatController::class, 'session'])->name('session');
@@ -232,6 +238,20 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('catalog/api-key', [AdminCatalogController::class, 'regenerateApiKey'])->middleware('permission:settings.manage')->name('catalog.api-key');
         Route::get('import', fn () => redirect()->route('admin.catalog.index'))->name('import.index');
         Route::post('import', [AdminCatalogController::class, 'import'])->middleware('permission:products.create')->name('import.store');
+    });
+
+    Route::middleware('permission:chat.agent,orders.view,customers.view,rfqs.view')->group(function () {
+        Route::get('live-chat', [AdminLiveChatController::class, 'index'])->name('live-chat.index');
+        Route::get('live-chat/feed', [AdminLiveChatController::class, 'feed'])->name('live-chat.feed');
+        Route::get('live-chat/{conversation}/transcript', [AdminLiveChatController::class, 'transcript'])->name('live-chat.transcript');
+    });
+
+    Route::middleware('permission:chat.agent,orders.edit,customers.edit,rfqs.edit')->group(function () {
+        Route::post('live-chat/presence', [AdminLiveChatController::class, 'presence'])->name('live-chat.presence');
+        Route::post('live-chat/{conversation}/claim', [AdminLiveChatController::class, 'claim'])->name('live-chat.claim');
+        Route::post('live-chat/{conversation}/reply', [AdminLiveChatController::class, 'reply'])->name('live-chat.reply');
+        Route::post('live-chat/{conversation}/hand-back', [AdminLiveChatController::class, 'handBack'])->name('live-chat.hand-back');
+        Route::post('live-chat/{conversation}/close', [AdminLiveChatController::class, 'close'])->name('live-chat.close');
     });
 
     Route::middleware('permission:orders.view,customers.view,rfqs.view')->group(function () {

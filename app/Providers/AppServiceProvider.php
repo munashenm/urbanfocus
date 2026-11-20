@@ -13,6 +13,8 @@ use App\Observers\ProductObserver;
 use App\Services\CartService;
 use App\Services\CatalogFilterService;
 use App\Services\CategoryMapperService;
+use App\Services\Chat\ChatAgentChannel;
+use App\Services\Chat\EmailChatAgentChannel;
 use App\Services\IndexNowService;
 use App\Support\PublicAssetSync;
 use App\View\Composers\LayoutComposer;
@@ -38,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(IndexNowService::class);
         $this->app->singleton(CatalogFilterService::class);
         $this->app->singleton(CategoryMapperService::class);
+        $this->app->singleton(ChatAgentChannel::class, EmailChatAgentChannel::class);
     }
 
     public function boot(): void

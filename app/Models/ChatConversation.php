@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -19,6 +20,9 @@ class ChatConversation extends Model
         'quote_draft',
         'staff_read_at',
         'handover_alerted_at',
+        'assigned_user_id',
+        'claimed_at',
+        'bot_paused',
         'last_message_at',
     ];
 
@@ -28,6 +32,8 @@ class ChatConversation extends Model
             'quote_draft' => 'array',
             'staff_read_at' => 'datetime',
             'handover_alerted_at' => 'datetime',
+            'claimed_at' => 'datetime',
+            'bot_paused' => 'boolean',
             'last_message_at' => 'datetime',
         ];
     }
@@ -35,6 +41,11 @@ class ChatConversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(ChatMessage::class, 'conversation_id');
+    }
+
+    public function assignedAgent(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_user_id');
     }
 
     public function latestMessage(): HasOne
@@ -59,6 +70,7 @@ class ChatConversation extends Model
     {
         return match ($this->status) {
             'waiting_staff' => 'Waiting for staff',
+            'live' => 'Live with an agent',
             'closed' => 'Closed',
             default => 'Open',
         };

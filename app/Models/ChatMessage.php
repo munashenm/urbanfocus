@@ -36,6 +36,16 @@ class ChatMessage extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function publicSenderName(): string
+    {
+        return match ($this->sender) {
+            'visitor' => 'You',
+            'staff' => $this->user?->name ?: 'Urban Focus team',
+            'system' => 'Urban Focus',
+            default => 'Urban Focus',
+        };
+    }
+
     public function senderLabel(): string
     {
         return match ($this->sender) {
@@ -62,6 +72,7 @@ class ChatMessage extends Model
             'body' => $this->body,
             'cards' => $this->cards ?? [],
             'review_status' => $this->review_status,
+            'sender_name' => $this->publicSenderName(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

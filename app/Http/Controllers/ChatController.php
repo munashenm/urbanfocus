@@ -32,6 +32,7 @@ class ChatController extends Controller
             'page_url' => 'nullable|string|max:500',
             'name' => 'nullable|string|max:120',
             'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:40',
         ]);
 
         $conversation = $this->chat->handleMessage(
@@ -40,6 +41,7 @@ class ChatController extends Controller
             $validated['page_url'] ?? null,
             $validated['name'] ?? null,
             $validated['email'] ?? null,
+            $validated['phone'] ?? null,
         );
 
         return $this->payload($conversation);
@@ -51,12 +53,14 @@ class ChatController extends Controller
             'page_url' => 'nullable|string|max:500',
             'name' => 'nullable|string|max:120',
             'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:40',
         ]);
 
         return $this->payload($this->chat->handover(
             $validated['page_url'] ?? null,
             $validated['name'] ?? null,
             $validated['email'] ?? null,
+            $validated['phone'] ?? null,
         ));
     }
 
@@ -90,8 +94,12 @@ class ChatController extends Controller
 
     protected function payload(?ChatConversation $conversation): JsonResponse
     {
+        if ($conversation) {
+            $conversation->loadMissing('assignedAgent');
+        }
+
         $messages = $conversation
-            ? $conversation->messages()->orderBy('id')->get()->map->toPublicArray()->values()
+            ? $conversation->messages()->with('user')->orderBy('id')->get()->map->toPublicArray()->values()
             : collect();
 
         $open = $this->availability->isOpen();
@@ -110,6 +118,10 @@ class ChatController extends Controller
                 'support' => $this->policies->supportSummary(),
             ],
             'messages' => $messages,
+            'conversation' => [
+                'status' => $conversation?->status,
+                'agent_name' => $conversation?->assignedAgent?->name,
+            ],
         ])->header('Cache-Control', 'private, no-store')
             ->header('X-Robots-Tag', 'noindex, nofollow');
     }

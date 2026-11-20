@@ -16,6 +16,8 @@ class ChatScope
 
     public const GREETING = 'greeting';
 
+    public const CLARIFY = 'clarify';
+
     public function __construct(protected BusinessKnowledge $knowledge) {}
 
     public function classify(string $question): string
@@ -31,6 +33,10 @@ class ChatScope
 
         if ($this->isGreeting($question)) {
             return self::GREETING;
+        }
+
+        if ($this->isUrgent($question) || $this->isVague($question)) {
+            return self::CLARIFY;
         }
 
         if ($this->isProduct($question)) {
@@ -59,9 +65,33 @@ class ChatScope
         return $this->knowledge->greeting();
     }
 
+    public function clarify(): string
+    {
+        return $this->knowledge->clarify();
+    }
+
     protected function isGreeting(string $question): bool
     {
         return (bool) preg_match('/^(hi|hello|hey|howzit|good (morning|afternoon|evening))[!.?\s]*$/iu', trim($question));
+    }
+
+    protected function isUrgent(string $question): bool
+    {
+        return (bool) preg_match('/\b(urgent|asap|emergency|immediately|right now)\b/iu', $question);
+    }
+
+    protected function isVague(string $question): bool
+    {
+        $question = trim($question);
+        if ($question === '' || mb_strlen($question) > 48) {
+            return false;
+        }
+
+        if ($this->isGreeting($question) || $this->hasSpecificProduct($question) || $this->knowledge->matches($question)) {
+            return false;
+        }
+
+        return (bool) preg_match('/^(help|please|i need help|need help|support|problem|issue)[!.?\s]*$/iu', $question);
     }
 
     protected function isInjection(string $question): bool
